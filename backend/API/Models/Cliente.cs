@@ -56,7 +56,7 @@ namespace API.Models
         /// <summary>
         /// Es para saber la fecha de alta del cliente, que es la fecha en que el cliente fue registrado o agregado al sistema.
         /// </summary>
-        public DateOnly FechaAlta { get; set; }
+        public DateTime FechaAlta { get; set; }
 
         //Listas
         /// <summary>

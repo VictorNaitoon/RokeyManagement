@@ -57,7 +57,7 @@ namespace API.Models
         /// <summary>
         /// Es un campo que almacena la fecha de inicio de actividades del negocio, que es la fecha en que el negocio comenzó a operar o realizar actividades comerciales.
         /// </summary>
-        public DateOnly FechaInicioActividades { get; set; }
+        public DateTime FechaInicioActividades { get; set; }
         /// <summary>
         /// Es un campo opcional que almacena el punto de venta del negocio, que es un número o código que identifica el lugar físico donde se realizan las ventas, 
         /// y se utiliza para la gestión y organización de las ventas dentro del sistema.
