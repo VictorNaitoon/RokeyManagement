@@ -50,7 +50,7 @@ namespace API.Data
                 .WithMany(c => c.Ventas)
                 .HasForeignKey(v => v.IdCliente)
                 .OnDelete(DeleteBehavior.Restrict); // No borrar la venta si el cliente es borrado.
-            
+
             modelBuilder.Entity<Venta>()
                 .HasOne(v => v.Usuario)
                 .WithMany(u => u.Ventas)
@@ -76,7 +76,7 @@ namespace API.Data
                 .WithMany(c => c.Presupuestos)
                 .HasForeignKey(p => p.IdCliente)
                 .OnDelete(DeleteBehavior.Restrict); // No borrar el presupuesto si el cliente es borrado.
-            
+
             modelBuilder.Entity<Presupuesto>()
                 .HasOne(p => p.Usuario)
                 .WithMany(u => u.Presupuestos)
@@ -145,8 +145,8 @@ namespace API.Data
             // --- FACTURACIÓN ---
             modelBuilder.Entity<Factura>()
                 .HasOne(f => f.Venta)
-                .WithMany(v => v.Facturas)
-                .HasForeignKey(f => f.IdVenta)
+                .WithOne(v => v.Factura)
+                .HasForeignKey<Factura>(f => f.IdVenta)
                 .OnDelete(DeleteBehavior.Restrict); // No borrar la factura si la venta es borrada, para mantener el historial de facturación de esa venta.
 
             // --- CATEGORIA ---

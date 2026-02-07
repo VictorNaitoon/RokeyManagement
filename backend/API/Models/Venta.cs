@@ -53,7 +53,7 @@ namespace API.Models
         /// <summary>
         /// Es el listado de las facturas asociadas a esta venta.
         /// </summary>
-        public ICollection<Factura>? Facturas { get; set; }
+        public Factura? Factura { get; set; }
         /// <summary>
         /// Es el listado de los pagos realizados para esta venta que pueden ser transferencia, efectivo, etc.
         /// </summary>
