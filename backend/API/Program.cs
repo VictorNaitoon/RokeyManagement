@@ -1,3 +1,6 @@
+using API.Data;
+using Microsoft.EntityFrameworkCore;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -5,6 +8,13 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+/// <summary>
+/// Inyección de dependencias para el contexto de la base de datos, utilizando PostgreSQL como proveedor.
+/// </summary>
+builder.Services.AddDbContext<AppDbContext>(
+    options => options.UseNpgsql(builder.Configuration.GetConnectionString("WebApiDatabase"))    
+);
 
 var app = builder.Build();
 
