@@ -10,12 +10,13 @@ namespace API.Models
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int Id { get; set; }
         /// <summary>
-        /// Identificador del negocio al que pertenece el producto, es obligatorio. Hace refetencia a la tabla "negocio" a través de la clave foránea "IdNegocio".
+        /// Identificador del negocio al que pertenece el producto, es obligatorio. Hace refetencia a la tabla "negocio" a través de la clave foránea "id_negocio".
         /// Al establecer esta relación, se garantiza que cada producto esté vinculado a un negocio existente, lo que facilita la gestión y organización de los productos dentro del sistema.
         /// </summary>
         [Required]
-        public int IdNegocio { get; set; }
-        [ForeignKey("IdNegocio")]
+        [Column("IdNegocio")]
+        public int Id_negocio { get; set; }
+        [ForeignKey("Id_negocio")]
         public Negocio Negocio { get; set; } = null!;
         /// <summary>
         /// Identificador del usuario que creó el producto, es obligatorio. Hace referencia a la tabla "usuario" a través de la clave foránea "IdUsuarioCreador".

@@ -10,13 +10,14 @@ namespace API.Models
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int Id { get; set; }
         /// <summary>
-        /// Es para saber a que negocio pertenece el presupuesto linkeando la tabla "negocio" por IdNegocio. 
-        /// Es importante para saber a qué negocio pertenece el presupuesto, ya que un mismo sistema puede ser utilizado por varios negocios diferentes, y cada presupuesto debe estar asociado al negocio correspondiente para mantener la organización y la integridad de los datos. 
+        /// Es para saber a que negocio pertenece el presupuesto linkeando la tabla "negocio" por id_negocio. 
+        /// Es importante saber a qué negocio pertenece el presupuesto, ya que un mismo sistema puede ser utilizado por varios negocios diferentes, y cada presupuesto debe estar asociado al negocio correspondiente para mantener la organización y la integridad de los datos. 
         /// Además, permite filtrar y gestionar los presupuestos de manera eficiente según el negocio al que pertenecen.
         /// </summary>
         [Required]
-        public int IdNegocio { get; set; }
-        [ForeignKey("IdNegocio")]
+        [Column("IdNegocio")]
+        public int Id_negocio { get; set; }
+        [ForeignKey("Id_negocio")]
         public virtual Negocio Negocio { get; set; } = null!;
         /// <summary>
         /// Es para saber qué usuario creó el presupuesto, linkeando la tabla "usuario" por IdUsuario.

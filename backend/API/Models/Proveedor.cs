@@ -15,8 +15,9 @@ namespace API.Models
         /// y cada negocio puede tener su propia lista de proveedores.
         /// </summary>
         [Required]
-        public int IdNegocio { get; set; }
-        [ForeignKey("IdNegocio")]
+        [Column("IdNegocio")]
+        public int Id_negocio { get; set; }
+        [ForeignKey("Id_negocio")]
         public virtual Negocio Negocio { get; set; } = null!;
         /// <summary>
         /// Es un campo obligatorio que almacena el nombre del proveedor o su razón social.

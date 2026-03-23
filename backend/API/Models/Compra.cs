@@ -14,12 +14,13 @@ namespace API.Models
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int Id { get; set; }
         /// <summary>
-        /// Identificador del negocio al que pertenece la compra. Es obligatorio porque cada compra debe estar asociada a un negocio específico. Hace referencia a la tabla "negocio" a través de la clave foránea "IdNegocio". 
+        /// Identificador del negocio al que pertenece la compra. Es obligatorio porque cada compra debe estar asociada a un negocio específico. Hace referencia a la tabla "negocio" a través de la clave foránea "id_negocio". 
         /// Esto permite organizar las compras por negocio y facilita la gestión de las compras dentro del sistema lo que es esencial para el seguimiento y control de las compras realizadas por cada negocio.
         /// </summary>
         [Required]
-        public int IdNegocio { get; set; }
-        [ForeignKey("IdNegocio")]
+        [Column("IdNegocio")]
+        public int Id_negocio { get; set; }
+        [ForeignKey("Id_negocio")]
         public virtual Negocio Negocio { get; set; } = null!;
         /// <summary>
         /// Identificador del proveedor al que se le realizó la compra. Es obligatorio porque cada compra debe estar asociada a un proveedor específico. Hace referencia a la tabla "proveedor" a través de la clave foránea "IdProveedor".

@@ -10,11 +10,12 @@ namespace API.Models
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int Id { get; set; }
         /// <summary>
-        /// Es para saber a que negocio pertenece la venta. Por eso linkea con la tabla negocio por medio de IdNegocio.
+        /// Es para saber a que negocio pertenece la venta. Por eso linkea con la tabla negocio por medio de id_negocio.
         /// </summary>
         [Required]
-        public int IdNegocio { get; set; }
-        [ForeignKey("IdNegocio")]
+        [Column("IdNegocio")]
+        public int Id_negocio { get; set; }
+        [ForeignKey("Id_negocio")]
         public virtual Negocio Negocio { get; set; } = null!;
         /// <summary>
         /// Es para saber que usuario realizó la venta. Por eso linkea con la tabla usuario por medio de IdUsuario.

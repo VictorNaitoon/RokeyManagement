@@ -11,11 +11,12 @@ namespace API.Models
         public int Id { get; set; }
         /// <summary>
         /// Es para saber a que negocio pertenece el usuario. 
-        /// Por eso linkea con la tabla negocio por medio de IdNegocio.
+        /// Por eso linkea con la tabla negocio por medio de Id_negocio.
         /// </summary>
         [Required]
-        public int IdNegocio { get; set; }
-        [ForeignKey("IdNegocio")]
+        [Column("IdNegocio")]
+        public int Id_negocio { get; set; }
+        [ForeignKey("Id_negocio")]
         public Negocio Negocio { get; set; } = null!;
         /// <summary>
         /// Es para saber el nombre del usuario

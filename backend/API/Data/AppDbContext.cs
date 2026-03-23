@@ -25,6 +25,13 @@ namespace API.Data
         public DbSet<Presupuesto> Presupuestos { get; set; }
         public DbSet<DetallePresupuesto> DetallesPresupuesto { get; set; }
 
+        // --- SAAS / Suscripciones ---
+        public DbSet<Plan> Planes { get; set; }
+        public DbSet<Suscripcion> Suscripciones { get; set; }
+        public DbSet<PagoSuscripcion> PagosSuscripcion { get; set; }
+        public DbSet<MetricaUso> MetricasUso { get; set; }
+        public DbSet<SuperAdmin> SuperAdmins { get; set; }
+
         protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
         {
             configurationBuilder.Properties<DateTime>()
@@ -166,6 +173,35 @@ namespace API.Data
                 .WithMany(v => v.Pagos)
                 .HasForeignKey(p => p.IdVenta)
                 .OnDelete(DeleteBehavior.Restrict); // No borrar el pago si la venta es borrada, para mantener el historial de pagos relacionados con esa venta.
+
+            // --- SAAS / SUSCRIPCIONES ---
+            // Plan - Suscripcion
+            modelBuilder.Entity<Suscripcion>()
+                .HasOne(s => s.Plan)
+                .WithMany(p => p.Suscripciones)
+                .HasForeignKey(s => s.IdPlan)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Negocio - Suscripcion
+            modelBuilder.Entity<Suscripcion>()
+                .HasOne(s => s.Negocio)
+                .WithMany()
+                .HasForeignKey(s => s.Id_negocio)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Suscripcion - PagoSuscripcion
+            modelBuilder.Entity<PagoSuscripcion>()
+                .HasOne(p => p.Suscripcion)
+                .WithMany(s => s.Pagos)
+                .HasForeignKey(p => p.IdSuscripcion)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Negocio - MetricaUso
+            modelBuilder.Entity<MetricaUso>()
+                .HasOne(m => m.Negocio)
+                .WithMany()
+                .HasForeignKey(m => m.Id_negocio)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

@@ -17,8 +17,9 @@ namespace API.Models
         /// Es un campo obligatorio que almacena el identificador del negocio al que pertenece la factura. Establece una relación entre la factura y el negocio correspondiente en la base de datos.
         /// </summary>
         [Required]
-        public int IdNegocio { get; set; }
-        [ForeignKey("IdNegocio")]
+        [Column("IdNegocio")]
+        public int Id_negocio { get; set; }
+        [ForeignKey("Id_negocio")]
         public virtual Negocio Negocio { get; set; } = null!;
         /// <summary>
         /// Es un campo obligatorio que almacena el identificador de la venta asociada a la factura. Establece una relación entre la factura y la venta correspondiente en la base de datos, lo que permite vincular la información de la factura con los detalles de la venta realizada.

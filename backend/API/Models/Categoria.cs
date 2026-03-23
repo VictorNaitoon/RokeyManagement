@@ -14,12 +14,13 @@ namespace API.Models
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int Id { get; set; }
         /// <summary>
-        /// Es un campo obligatorio que almacena el identificador del negocio al que pertenece la categoría, que hace referencia a la tabla "negocio" a través de la clave foránea "IdNegocio".
+        /// Es un campo obligatorio que almacena el identificador del negocio al que pertenece la categoría, que hace referencia a la tabla "negocio" a través de la clave foránea "id_negocio".
         /// Ayuda a organizar y clasificar las categorías dentro del sistema, facilitando la gestión y organización de los datos.
         /// </summary>
         [Required]
-        public int IdNegocio { get; set; }
-        [ForeignKey("IdNegocio")]
+        [Column("IdNegocio")]
+        public int Id_negocio { get; set; }
+        [ForeignKey("Id_negocio")]
         public virtual Negocio Negocio { get; set; } = null!;
         /// <summary>
         /// Es un campo obligatorio que almacena el identificador del usuario que creó la categoría, que hace referencia a la tabla "usuario" a través de la clave foránea "IdUsuario".

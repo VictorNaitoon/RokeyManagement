@@ -3,6 +3,7 @@ using System;
 using API.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace API.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260323203256_Add_Suscripciones_To_Negocio")]
+    partial class Add_Suscripciones_To_Negocio
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -51,7 +54,7 @@ namespace API.Migrations
 
                     b.HasIndex("IdProducto");
 
-                    b.ToTable("carrito", (string)null);
+                    b.ToTable("carrito");
                 });
 
             modelBuilder.Entity("API.Models.Categoria", b =>
@@ -86,7 +89,7 @@ namespace API.Migrations
 
                     b.HasIndex("IdUsuario");
 
-                    b.ToTable("categoria", (string)null);
+                    b.ToTable("categoria");
                 });
 
             modelBuilder.Entity("API.Models.Cliente", b =>
@@ -136,7 +139,7 @@ namespace API.Migrations
 
                     b.HasIndex("IdNegocio");
 
-                    b.ToTable("cliente", (string)null);
+                    b.ToTable("cliente");
                 });
 
             modelBuilder.Entity("API.Models.Compra", b =>
@@ -174,7 +177,7 @@ namespace API.Migrations
 
                     b.HasIndex("IdUsuario");
 
-                    b.ToTable("compra", (string)null);
+                    b.ToTable("compra");
                 });
 
             modelBuilder.Entity("API.Models.DetalleCompra", b =>
@@ -203,7 +206,7 @@ namespace API.Migrations
 
                     b.HasIndex("IdProducto");
 
-                    b.ToTable("detalle_compra", (string)null);
+                    b.ToTable("detalle_compra");
                 });
 
             modelBuilder.Entity("API.Models.DetallePresupuesto", b =>
@@ -232,7 +235,7 @@ namespace API.Migrations
 
                     b.HasIndex("IdProducto");
 
-                    b.ToTable("detalle_presupuesto", (string)null);
+                    b.ToTable("detalle_presupuesto");
                 });
 
             modelBuilder.Entity("API.Models.DetalleVenta", b =>
@@ -261,7 +264,7 @@ namespace API.Migrations
 
                     b.HasIndex("IdVenta");
 
-                    b.ToTable("detalle_venta", (string)null);
+                    b.ToTable("detalle_venta");
                 });
 
             modelBuilder.Entity("API.Models.Factura", b =>
@@ -314,7 +317,7 @@ namespace API.Migrations
                     b.HasIndex("IdVenta")
                         .IsUnique();
 
-                    b.ToTable("factura", (string)null);
+                    b.ToTable("factura");
                 });
 
             modelBuilder.Entity("API.Models.MetricaUso", b =>
@@ -356,7 +359,7 @@ namespace API.Migrations
 
                     b.HasIndex("IdNegocio");
 
-                    b.ToTable("metrica_uso", (string)null);
+                    b.ToTable("metrica_uso");
                 });
 
             modelBuilder.Entity("API.Models.MovimientoStock", b =>
@@ -398,7 +401,7 @@ namespace API.Migrations
 
                     b.HasIndex("IdVenta");
 
-                    b.ToTable("movimiento_stock", (string)null);
+                    b.ToTable("movimiento_stock");
                 });
 
             modelBuilder.Entity("API.Models.Negocio", b =>
@@ -458,7 +461,7 @@ namespace API.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("negocio", (string)null);
+                    b.ToTable("negocio");
                 });
 
             modelBuilder.Entity("API.Models.Pago", b =>
@@ -482,7 +485,7 @@ namespace API.Migrations
 
                     b.HasIndex("IdVenta");
 
-                    b.ToTable("pago", (string)null);
+                    b.ToTable("pago");
                 });
 
             modelBuilder.Entity("API.Models.PagoSuscripcion", b =>
@@ -520,7 +523,7 @@ namespace API.Migrations
 
                     b.HasIndex("IdSuscripcion");
 
-                    b.ToTable("pago_suscripcion", (string)null);
+                    b.ToTable("pago_suscripcion");
                 });
 
             modelBuilder.Entity("API.Models.Plan", b =>
@@ -572,7 +575,7 @@ namespace API.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("plan", (string)null);
+                    b.ToTable("plan");
                 });
 
             modelBuilder.Entity("API.Models.Presupuesto", b =>
@@ -612,7 +615,7 @@ namespace API.Migrations
 
                     b.HasIndex("IdUsuario");
 
-                    b.ToTable("presupuesto", (string)null);
+                    b.ToTable("presupuesto");
                 });
 
             modelBuilder.Entity("API.Models.Producto", b =>
@@ -674,7 +677,7 @@ namespace API.Migrations
 
                     b.HasIndex("IdUsuarioCreador");
 
-                    b.ToTable("producto", (string)null);
+                    b.ToTable("producto");
                 });
 
             modelBuilder.Entity("API.Models.Proveedor", b =>
@@ -705,7 +708,7 @@ namespace API.Migrations
 
                     b.HasIndex("IdNegocio");
 
-                    b.ToTable("proveedor", (string)null);
+                    b.ToTable("proveedor");
                 });
 
             modelBuilder.Entity("API.Models.SuperAdmin", b =>
@@ -738,7 +741,7 @@ namespace API.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("super_admin", (string)null);
+                    b.ToTable("super_admin");
                 });
 
             modelBuilder.Entity("API.Models.Suscripcion", b =>
@@ -788,7 +791,7 @@ namespace API.Migrations
 
                     b.HasIndex("NegocioId");
 
-                    b.ToTable("suscripcion", (string)null);
+                    b.ToTable("suscripcion");
                 });
 
             modelBuilder.Entity("API.Models.Usuario", b =>
@@ -831,7 +834,7 @@ namespace API.Migrations
 
                     b.HasIndex("IdNegocio");
 
-                    b.ToTable("usuario", (string)null);
+                    b.ToTable("usuario");
                 });
 
             modelBuilder.Entity("API.Models.Venta", b =>
@@ -865,7 +868,7 @@ namespace API.Migrations
 
                     b.HasIndex("IdUsuario");
 
-                    b.ToTable("venta", (string)null);
+                    b.ToTable("venta");
                 });
 
             modelBuilder.Entity("API.Models.Carrito", b =>

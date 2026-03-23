@@ -56,5 +56,37 @@
             Egreso = 2,
             Otro = 3
         }
+
+        // --- SAAS / Suscripciones ---
+        public enum EstadoSuscripcion
+        {
+            Activa = 1,
+            PendientePago = 2,
+            Cancelada = 3,
+            Vencida = 4,
+            Suspendida = 5
+        }
+
+        public enum TipoFacturacion
+        {
+            Mensual = 1,
+            Anual = 2
+        }
+
+        public enum MetodoPagoSuscripcion
+        {
+            TarjetaCredito = 1,
+            TarjetaDebito = 2,
+            MercadoPago = 3,
+            Transferencia = 4
+        }
+
+        public enum EstadoPago
+        {
+            Pendiente = 1,
+            Exitoso = 2,
+            Fallido = 3,
+            Reembolsado = 4
+        }
     }
 }

@@ -119,5 +119,8 @@ namespace API.Models
         /// Es una colección de facturas asociadas al negocio, que representa los documentos comerciales que se generan como resultado de las ventas realizadas por el negocio. En esta colección se registran los productos o servicios incluidos en la factura, el cliente al que se le hizo la factura, el usuario que realizó la venta, la fecha de emisión de la factura, el total de la factura, etc.
         /// </summary>
         public ICollection<Factura> Facturas { get; set; } = new List<Factura>();
+
+        // --- SAAS ---
+        public ICollection<Suscripcion> Suscripciones { get; set; } = new List<Suscripcion>();
     }
 }

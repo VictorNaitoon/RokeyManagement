@@ -14,12 +14,13 @@ namespace API.Models
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int Id { get; set; }
         /// <summary>
-        /// Es para saber a qué negocio pertenece el cliente, linkeando la tabla "negocio" por IdNegocio.
+        /// Es para saber a qué negocio pertenece el cliente, linkeando la tabla "negocio" por id_negocio.
         /// Si agregamos un cliente al sistema, es importante saber a qué negocio pertenece ese cliente.
         /// </summary>
         [Required]
-        public int IdNegocio { get; set; }
-        [ForeignKey("IdNegocio")]
+        [Column("IdNegocio")]
+        public int Id_negocio { get; set; }
+        [ForeignKey("Id_negocio")]
         public virtual Negocio Negocio { get; set; } = null!;
         /// <summary>
         /// Es para saber el nombre o razón social del cliente, que es un campo obligatorio y se utiliza para identificar al cliente de manera única en el sistema.

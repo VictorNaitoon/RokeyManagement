@@ -744,3 +744,9 @@ buck-out/
 .fakebuckversion
 
 # End of https://www.toptal.com/developers/gitignore/api/csharp,node,react,reactnative
+
+# Archivos de configuración local (raíz)
+.gga
+.atl/
+AGENTS.md
+PRD.md
