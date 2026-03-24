@@ -6,6 +6,7 @@ using API.Services.Tenant;
 using API.Services.SuperAdmin;
 using API.Services.Common;
 using API.Services.Usuarios;
+using API.Services.Categorias;
 using API.Services.Negocios;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -88,6 +89,7 @@ builder.Services.AddScoped<ITenantService, TenantService>();
 builder.Services.AddScoped<ISuperAdminService, SuperAdminService>();
 builder.Services.AddScoped<IUsuarioService, UsuarioService>();
 builder.Services.AddScoped<INegocioService, NegocioService>();
+builder.Services.AddScoped<ICategoriaService, CategoriaService>();
 
 var app = builder.Build();
 

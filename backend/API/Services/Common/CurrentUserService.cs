@@ -21,6 +21,11 @@ namespace API.Services.Common
         /// Verifica si el usuario es Administrador (Dueño/Admin/SuperAdmin)
         /// </summary>
         bool IsAdmin => Rol == "Admin" || Rol == "Administrador" || Rol == "Dueño" || Rol == "SuperAdmin";
+
+        /// <summary>
+        /// Verifica si el usuario es Super Admin (dueño de la plataforma, no de un negocio)
+        /// </summary>
+        bool IsSuperAdmin => Rol == "SuperAdmin";
         
         /// <summary>
         /// Verifica si el usuario es Manager (Gerente)
