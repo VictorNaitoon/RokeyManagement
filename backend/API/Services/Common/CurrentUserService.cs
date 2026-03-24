@@ -18,19 +18,19 @@ namespace API.Services.Common
         string Rol { get; }
         
         /// <summary>
-        /// Verifica si el usuario es Administrador
+        /// Verifica si el usuario es Administrador (Dueño/Admin/SuperAdmin)
         /// </summary>
-        bool IsAdmin => Rol == "Admin" || Rol == "Administrador";
+        bool IsAdmin => Rol == "Admin" || Rol == "Administrador" || Rol == "Dueño" || Rol == "SuperAdmin";
         
         /// <summary>
-        /// Verifica si el usuario es Manager
+        /// Verifica si el usuario es Manager (Gerente)
         /// </summary>
         bool IsManager => Rol == "Manager" || Rol == "Gerente";
         
         /// <summary>
-        /// Verifica si el usuario es Vendedor
+        /// Verifica si el usuario es Vendedor (Empleado)
         /// </summary>
-        bool IsVendedor => Rol == "Vendedor" || Rol == "Seller";
+        bool IsVendedor => Rol == "Vendedor" || Rol == "Seller" || Rol == "Empleado";
     }
 
     public class CurrentUserService : ICurrentUserService

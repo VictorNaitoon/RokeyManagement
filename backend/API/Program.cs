@@ -5,6 +5,7 @@ using API.Services.Auth;
 using API.Services.Tenant;
 using API.Services.SuperAdmin;
 using API.Services.Common;
+using API.Services.Usuarios;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -84,10 +85,23 @@ builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ITenantService, TenantService>();
 builder.Services.AddScoped<ISuperAdminService, SuperAdminService>();
+builder.Services.AddScoped<IUsuarioService, UsuarioService>();
 
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
+
+// 1. Manejo global de excepciones
+app.UseExceptionHandler(errorApp =>
+{
+    errorApp.Run(async context =>
+    {
+        context.Response.StatusCode = 500;
+        context.Response.ContentType = "application/json";
+        await context.Response.WriteAsync("{\"error\":\"Error interno del servidor\"}");
+    });
+});
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
