@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using API.DTO.Request;
+using API.DTO.Request.SuperAdmin;
 using API.DTO.Response;
 using API.DTO.Response.SuperAdmin;
 using API.Models;
@@ -96,6 +98,86 @@ namespace API.Controllers.SuperAdmin
             }).ToList();
 
             return Ok(response);
+        }
+
+        /// <summary>
+        /// Registrar un nuevo negocio manualmente (solo Super Admin)
+        /// </summary>
+        [HttpPost("tenants")]
+        [AllowAnonymous]
+        [ProducesResponseType(typeof(TenantResponse), StatusCodes.Status201Created)]
+        [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> CreateTenant([FromBody] CreateTenantRequest request)
+        {
+            try
+            {
+                // Convertir tipo de negocio
+                if (!Enum.TryParse<API.Models.Enums.TipoNegocio>(request.Tipo.ToString(), out var tipoEnum))
+                {
+                    tipoEnum = API.Models.Enums.TipoNegocio.Ferreteria;
+                }
+
+                var negocio = await _superAdminService.CreateTenantAsync(
+                    emailAdmin: request.EmailAdmin,
+                    passwordAdmin: request.PasswordAdmin,
+                    nombreAdmin: request.NombreAdmin,
+                    apellidoAdmin: request.ApellidoAdmin,
+                    nombre: request.Nombre,
+                    cuit: request.CUIT,
+                    direccion: request.Direccion,
+                    logoUrl: request.LogoURL,
+                    telefono: request.Telefono,
+                    email: request.Email,
+                    puntoVenta: request.PuntoDeVenta,
+                    condicionVentas: request.CondicionVentas,
+                    tipo: tipoEnum,
+                    activo: request.Activo,
+                    idPlan: request.IdPlan,
+                    tipoFacturacion: request.TipoFacturacion,
+                    activarSuscripcion: request.ActivarSuscripcion);
+
+                if (negocio == null)
+                {
+                    return BadRequest(new ErrorResponse { Error = "Error al crear el negocio" });
+                }
+
+                // Obtener datos completos para la respuesta
+                var negocioCompleto = await _superAdminService.GetTenantByIdAsync(negocio.Id);
+                var suscripcion = negocioCompleto?.Suscripciones?.FirstOrDefault();
+                var plan = suscripcion?.Plan;
+
+                var response = new TenantResponse
+                {
+                    Id = negocio.Id,
+                    Nombre = negocio.Nombre,
+                    CUIT = negocio.CUIT,
+                    Direccion = negocio.Direccion,
+                    Telefono = negocio.Telefono,
+                    Estado = negocio.Estado.ToString(),
+                    Tipo = negocio.Tipo.ToString(),
+                    FechaInicio = negocio.FechaInicioActividades,
+                    TotalUsuarios = negocioCompleto?.Usuarios?.Count ?? 0,
+                    TotalProductos = negocioCompleto?.Productos?.Count ?? 0,
+                    Suscripcion = suscripcion != null ? new SuscripcionInfo
+                    {
+                        Id = suscripcion.Id,
+                        Plan = plan?.Nombre ?? "Sin plan",
+                        Estado = suscripcion.Estado.ToString(),
+                        TipoFacturacion = suscripcion.TipoFacturacion.ToString(),
+                        Monto = suscripcion.TipoFacturacion == Models.Enums.TipoFacturacion.Anual
+                            ? plan?.PrecioAnual ?? 0
+                            : plan?.PrecioMensual ?? 0,
+                        FechaProximoPago = suscripcion.FechaProximoPago,
+                        FechaInicio = suscripcion.FechaInicio
+                    } : null
+                };
+
+                return CreatedAtAction(nameof(GetTenant), new { id = negocio.Id }, response);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new ErrorResponse { Error = ex.Message });
+            }
         }
 
         /// <summary>

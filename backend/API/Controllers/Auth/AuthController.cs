@@ -1,7 +1,9 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using API.DTO.Response;
 using API.Services.Auth;
 using API.Models;
+using API.Services.Common;
 
 namespace API.Controllers.Auth
 {
@@ -11,11 +13,16 @@ namespace API.Controllers.Auth
     {
         private readonly IAuthService _authService;
         private readonly IJwtService _jwtService;
+        private readonly ICurrentUserService _currentUser;
 
-        public AuthController(IAuthService authService, IJwtService jwtService)
+        public AuthController(
+            IAuthService authService, 
+            IJwtService jwtService,
+            ICurrentUserService currentUser)
         {
             _authService = authService;
             _jwtService = jwtService;
+            _currentUser = currentUser;
         }
 
         /// <summary>
@@ -90,19 +97,28 @@ namespace API.Controllers.Auth
         }
 
         /// <summary>
-        /// Registrar un nuevo usuario en un negocio
+        /// Registrar un nuevo usuario en el negocio (solo el Administrador puede hacerlo)
         /// </summary>
         [HttpPost("register")]
+        [Authorize]
         [ProducesResponseType(typeof(AuthResponse), StatusCodes.Status201Created)]
         [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> Register([FromBody] RegisterRequest request)
         {
+            // Verificar que el usuario actual sea Admin
+            if (!_currentUser.IsAdmin)
+            {
+                return StatusCode(403, new ErrorResponse { Error = "Solo el administrador puede registrar nuevos usuarios" });
+            }
+
             var (usuario, error) = await _authService.RegisterAsync(
                 request.Email,
                 request.Password,
                 request.Nombre,
                 request.Apellido,
-                request.IdNegocio,
+                _currentUser.NegocioId, // Usar el negocio del usuario actual
                 request.Rol
             );
 
@@ -140,7 +156,6 @@ namespace API.Controllers.Auth
         public string Password { get; set; } = string.Empty;
         public string Nombre { get; set; } = string.Empty;
         public string Apellido { get; set; } = string.Empty;
-        public int IdNegocio { get; set; }
         public Enums.RolUsuario Rol { get; set; }
     }
 }

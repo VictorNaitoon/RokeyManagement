@@ -9,6 +9,24 @@ namespace API.Services.SuperAdmin
         // Gestión de Tenants
         Task<List<Negocio>> GetAllTenantsAsync();
         Task<Negocio?> GetTenantByIdAsync(int id);
+        Task<Negocio?> CreateTenantAsync(
+            string emailAdmin,
+            string passwordAdmin,
+            string nombreAdmin,
+            string apellidoAdmin,
+            string nombre,
+            string cuit,
+            string? direccion,
+            string? logoUrl,
+            string? telefono,
+            string? email,
+            string? puntoVenta,
+            string? condicionVentas,
+            Enums.TipoNegocio tipo,
+            bool activo,
+            int idPlan,
+            string tipoFacturacion,
+            bool activarSuscripcion);
         Task<Negocio?> UpdateTenantEstadoAsync(int id, Enums.EstadoNegocio estado);
         Task<DashboardMetrics> GetDashboardMetricsAsync();
 
@@ -73,6 +91,114 @@ namespace API.Services.SuperAdmin
                 .Include(n => n.Usuarios)
                 .Include(n => n.Productos)
                 .FirstOrDefaultAsync(n => n.Id == id);
+        }
+
+        /// <summary>
+        /// Crea un nuevo negocio con su usuario admin y suscripción
+        /// (Usado por el Super Admin para registrar negocios manualmente)
+        /// </summary>
+        public async Task<Negocio?> CreateTenantAsync(
+            string emailAdmin,
+            string passwordAdmin,
+            string nombreAdmin,
+            string apellidoAdmin,
+            string nombre,
+            string cuit,
+            string? direccion,
+            string? logoUrl,
+            string? telefono,
+            string? email,
+            string? puntoVenta,
+            string? condicionVentas,
+            Enums.TipoNegocio tipo,
+            bool activo,
+            int idPlan,
+            string tipoFacturacion,
+            bool activarSuscripcion)
+        {
+            // Verificar que el CUIT no exista
+            var existingNegocio = await _context.Negocios.FirstOrDefaultAsync(n => n.CUIT == cuit);
+            if (existingNegocio != null)
+            {
+                throw new InvalidOperationException("Ya existe un negocio registrado con este CUIT");
+            }
+
+            // Verificar que el email no exista
+            var existingUser = await _context.Usuarios.FirstOrDefaultAsync(u => u.Email == emailAdmin);
+            if (existingUser != null)
+            {
+                throw new InvalidOperationException("Ya existe un usuario con este email");
+            }
+
+            // Verificar que el plan exista
+            var plan = await _context.Planes.FindAsync(idPlan);
+            if (plan == null)
+            {
+                throw new InvalidOperationException("Plan no encontrado");
+            }
+
+            // Crear el negocio
+            var negocio = new Negocio
+            {
+                Nombre = nombre,
+                CUIT = cuit,
+                Direccion = direccion ?? string.Empty,
+                LogoURL = logoUrl,
+                Telefono = telefono,
+                Email = email,
+                PuntoDeVenta = puntoVenta,
+                CondicionVentas = condicionVentas,
+                Tipo = tipo,
+                Estado = activo ? Enums.EstadoNegocio.Activo : Enums.EstadoNegocio.Inactivo,
+                FechaInicioActividades = DateTime.UtcNow,
+                IngresosBrutos = 0
+            };
+
+            _context.Negocios.Add(negocio);
+            await _context.SaveChangesAsync();
+
+                // Crear usuario admin del negocio
+                var passwordHash = Services.Auth.AuthService.HashPassword(passwordAdmin);
+            var usuarioAdmin = new Usuario
+            {
+                Id_negocio = negocio.Id,
+                Email = emailAdmin,
+                PasswordHash = passwordHash,
+                Nombre = nombreAdmin,
+                Apellido = apellidoAdmin,
+                Rol = Enums.RolUsuario.Dueño,
+                Activo = true
+            };
+
+            _context.Usuarios.Add(usuarioAdmin);
+            await _context.SaveChangesAsync();
+
+            // Crear suscripción
+            var tipoFacturacionEnum = tipoFacturacion == "Anual"
+                ? Enums.TipoFacturacion.Anual
+                : Enums.TipoFacturacion.Mensual;
+
+            var fechaInicio = DateTime.UtcNow;
+            var fechaProximoPago = tipoFacturacionEnum == Enums.TipoFacturacion.Anual
+                ? fechaInicio.AddYears(1)
+                : fechaInicio.AddMonths(1);
+
+            var suscripcion = new Suscripcion
+            {
+                Id_negocio = negocio.Id,
+                IdPlan = idPlan,
+                FechaInicio = fechaInicio,
+                FechaProximoPago = fechaProximoPago,
+                Estado = activarSuscripcion
+                    ? Enums.EstadoSuscripcion.Activa
+                    : Enums.EstadoSuscripcion.PendientePago,
+                TipoFacturacion = tipoFacturacionEnum
+            };
+
+            _context.Suscripciones.Add(suscripcion);
+            await _context.SaveChangesAsync();
+
+            return negocio;
         }
 
         public async Task<Negocio?> UpdateTenantEstadoAsync(int id, Enums.EstadoNegocio estado)
