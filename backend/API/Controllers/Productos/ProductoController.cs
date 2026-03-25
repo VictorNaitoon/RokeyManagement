@@ -178,6 +178,46 @@ namespace API.Controllers.Productos
         }
 
         /// <summary>
+        /// Reactiva un producto desactivado
+        /// </summary>
+        /// <param name="id">ID del producto a activar</param>
+        /// <returns>Sin contenido</returns>
+        [HttpPost("{id}/activar")]
+        [ProducesResponseType(200)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(401)]
+        [ProducesResponseType(403)]
+        [ProducesResponseType(404)]
+        public async Task<IActionResult> Activar(int id)
+        {
+            if (_currentUser.IsSuperAdmin)
+            {
+                return StatusCode(403, new { message = "El super administrador no puede gestionar productos de un negocio" });
+            }
+
+            if (!_currentUser.IsAdmin)
+            {
+                return StatusCode(403, new { message = "Solo el administrador puede activar productos" });
+            }
+
+            try
+            {
+                var result = await _productoService.ActivarAsync(id);
+                
+                if (!result)
+                {
+                    return NotFound(new { message = "Producto no encontrado" });
+                }
+
+                return Ok(new { message = "Producto activado exitosamente" });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        /// <summary>
         /// Duplica un producto existente
         /// </summary>
         /// <param name="id">ID del producto a duplicar</param>

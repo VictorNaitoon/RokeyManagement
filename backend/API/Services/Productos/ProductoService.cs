@@ -212,6 +212,20 @@ namespace API.Services.Productos
             return true;
         }
 
+        public async Task<bool> ActivarAsync(int id)
+        {
+            var producto = await _context.Productos
+                .FirstOrDefaultAsync(p => p.Id == id && p.Id_negocio == _currentUser.NegocioId);
+
+            if (producto == null) return false;
+
+            // Reactivar el producto
+            producto.Activo = true;
+            await _context.SaveChangesAsync();
+
+            return true;
+        }
+
         public async Task<ProductoResponse> DuplicateAsync(int id, string nuevoNombre)
         {
             var productoOriginal = await _context.Productos

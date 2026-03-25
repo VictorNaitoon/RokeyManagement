@@ -10,6 +10,7 @@ namespace API.Services.Productos
         Task<ProductoResponse> CreateAsync(CrearProductoRequest request);
         Task<ProductoResponse?> UpdateAsync(int id, ActualizarProductoRequest request);
         Task<bool> DeleteAsync(int id);
+        Task<bool> ActivarAsync(int id);
         Task<ProductoResponse> DuplicateAsync(int id, string nuevoNombre);
     }
 }
