@@ -54,7 +54,14 @@
         {
             Ingreso = 1,
             Egreso = 2,
-            Otro = 3
+            Otro = 3,
+            
+            // Stock management
+            VentaSalida = 10,        // Stock deducted when a sale is recorded
+            VentaAnulacion = 11,     // Stock restored when a sale is cancelled
+            CompraEntrada = 20,      // Stock added when a purchase is recorded
+            CompraAnulacion = 21,    // Stock removed when a purchase is cancelled
+            AjusteManual = 30        // Manual inventory adjustment
         }
 
         // --- SAAS / Suscripciones ---

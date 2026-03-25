@@ -41,6 +41,10 @@ namespace API.Models
         /// </summary>
         [Column(TypeName = "decimal(18,2)")]
         public decimal TotalVenta { get; set; }
+        /// <summary>
+        /// Indica si la venta ha sido anulada
+        /// </summary>
+        public bool Anulada { get; set; }
 
         //Relaciones y listas
         /// <summary>

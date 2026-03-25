@@ -8,6 +8,7 @@ using API.Services.Usuarios;
 using API.Services.Categorias;
 using API.Services.Negocios;
 using API.Services.Productos;
+using API.Services.Ventas;
 using API.Services.Common;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -16,6 +17,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
+
 
 // Add services to the container.
 
@@ -46,7 +48,7 @@ builder.Services.AddSwaggerGen(c =>
             Array.Empty<string>()
         }
     });
-    
+
     // Resolver conflictos de nombres de schemas duplicados
     c.ResolveConflictingActions(apiDescriptions => apiDescriptions.First());
 });
@@ -55,7 +57,7 @@ builder.Services.AddSwaggerGen(c =>
 /// Inyección de dependencias para el contexto de la base de datos, utilizando PostgreSQL como proveedor.
 /// </summary>
 builder.Services.AddDbContext<AppDbContext>(
-    options => options.UseNpgsql(builder.Configuration.GetConnectionString("WebApiDatabase"))    
+    options => options.UseNpgsql(builder.Configuration.GetConnectionString("WebApiDatabase"))
 );
 
 builder.Services.AddScoped<SeedService>();
@@ -68,6 +70,7 @@ var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "RoKeyApp";
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
+        // Mapear el claim "rol" al claim "role" para que funcione la autorización
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
@@ -76,7 +79,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateIssuerSigningKey = true,
             ValidIssuer = jwtIssuer,
             ValidAudience = jwtAudience,
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
+            RoleClaimType = "rol",  // Usar el claim "rol" como rol
+            NameClaimType = "email"  // Usar el claim "email" como nombre
         };
     });
 
@@ -93,6 +98,7 @@ builder.Services.AddScoped<IUsuarioService, UsuarioService>();
 builder.Services.AddScoped<INegocioService, NegocioService>();
 builder.Services.AddScoped<ICategoriaService, CategoriaService>();
 builder.Services.AddScoped<IProductoService, ProductoService>();
+builder.Services.AddScoped<IVentaService, VentaService>();
 
 // FluentValidation
 builder.Services.AddFluentValidationAutoValidation();
@@ -101,6 +107,7 @@ builder.Services.AddFluentValidation(fv => fv.RegisterValidatorsFromAssemblyCont
 builder.Services.AddFluentValidation(fv => fv.RegisterValidatorsFromAssemblyContaining<API.DTO.Request.Productos.ActualizarProductoRequestValidator>());
 builder.Services.AddFluentValidation(fv => fv.RegisterValidatorsFromAssemblyContaining<API.DTO.Request.Categorias.CrearCategoriaRequestValidator>());
 builder.Services.AddFluentValidation(fv => fv.RegisterValidatorsFromAssemblyContaining<API.DTO.Request.Categorias.ActualizarCategoriaRequestValidator>());
+builder.Services.AddFluentValidation(fv => fv.RegisterValidatorsFromAssemblyContaining<API.DTO.Request.Ventas.CrearVentaValidator>());
 
 var app = builder.Build();
 
@@ -130,7 +137,7 @@ using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     var seedService = scope.ServiceProvider.GetRequiredService<SeedService>();
-    
+
     context.Database.EnsureCreated();
     await seedService.SeedPlanesAsync();
     await seedService.SeedSuperAdminAsync();

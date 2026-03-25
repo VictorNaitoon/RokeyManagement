@@ -51,7 +51,7 @@ namespace API.Migrations
 
                     b.HasIndex("IdProducto");
 
-                    b.ToTable("carrito", (string)null);
+                    b.ToTable("carrito");
                 });
 
             modelBuilder.Entity("API.Models.Categoria", b =>
@@ -69,11 +69,12 @@ namespace API.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
 
-                    b.Property<int>("IdNegocio")
-                        .HasColumnType("integer");
-
                     b.Property<int>("IdUsuario")
                         .HasColumnType("integer");
+
+                    b.Property<int>("Id_negocio")
+                        .HasColumnType("integer")
+                        .HasColumnName("IdNegocio");
 
                     b.Property<string>("Nombre")
                         .IsRequired()
@@ -82,11 +83,11 @@ namespace API.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("IdNegocio");
-
                     b.HasIndex("IdUsuario");
 
-                    b.ToTable("categoria", (string)null);
+                    b.HasIndex("Id_negocio");
+
+                    b.ToTable("categoria");
                 });
 
             modelBuilder.Entity("API.Models.Cliente", b =>
@@ -120,8 +121,9 @@ namespace API.Migrations
                     b.Property<DateTime>("FechaAlta")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<int>("IdNegocio")
-                        .HasColumnType("integer");
+                    b.Property<int>("Id_negocio")
+                        .HasColumnType("integer")
+                        .HasColumnName("IdNegocio");
 
                     b.Property<string>("Nombre")
                         .IsRequired()
@@ -134,9 +136,9 @@ namespace API.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("IdNegocio");
+                    b.HasIndex("Id_negocio");
 
-                    b.ToTable("cliente", (string)null);
+                    b.ToTable("cliente");
                 });
 
             modelBuilder.Entity("API.Models.Compra", b =>
@@ -150,14 +152,15 @@ namespace API.Migrations
                     b.Property<DateTime>("FechaCompra")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<int>("IdNegocio")
-                        .HasColumnType("integer");
-
                     b.Property<int>("IdProveedor")
                         .HasColumnType("integer");
 
                     b.Property<int>("IdUsuario")
                         .HasColumnType("integer");
+
+                    b.Property<int>("Id_negocio")
+                        .HasColumnType("integer")
+                        .HasColumnName("IdNegocio");
 
                     b.Property<string>("NumeroComprobante")
                         .HasMaxLength(50)
@@ -168,13 +171,13 @@ namespace API.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("IdNegocio");
-
                     b.HasIndex("IdProveedor");
 
                     b.HasIndex("IdUsuario");
 
-                    b.ToTable("compra", (string)null);
+                    b.HasIndex("Id_negocio");
+
+                    b.ToTable("compra");
                 });
 
             modelBuilder.Entity("API.Models.DetalleCompra", b =>
@@ -203,7 +206,7 @@ namespace API.Migrations
 
                     b.HasIndex("IdProducto");
 
-                    b.ToTable("detalle_compra", (string)null);
+                    b.ToTable("detalle_compra");
                 });
 
             modelBuilder.Entity("API.Models.DetallePresupuesto", b =>
@@ -232,7 +235,7 @@ namespace API.Migrations
 
                     b.HasIndex("IdProducto");
 
-                    b.ToTable("detalle_presupuesto", (string)null);
+                    b.ToTable("detalle_presupuesto");
                 });
 
             modelBuilder.Entity("API.Models.DetalleVenta", b =>
@@ -261,7 +264,7 @@ namespace API.Migrations
 
                     b.HasIndex("IdVenta");
 
-                    b.ToTable("detalle_venta", (string)null);
+                    b.ToTable("detalle_venta");
                 });
 
             modelBuilder.Entity("API.Models.Factura", b =>
@@ -287,11 +290,12 @@ namespace API.Migrations
                     b.Property<DateTime>("FechaRealizada")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<int>("IdNegocio")
-                        .HasColumnType("integer");
-
                     b.Property<int>("IdVenta")
                         .HasColumnType("integer");
+
+                    b.Property<int>("Id_negocio")
+                        .HasColumnType("integer")
+                        .HasColumnName("IdNegocio");
 
                     b.Property<string>("NumeroComprobante")
                         .IsRequired()
@@ -309,12 +313,12 @@ namespace API.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("IdNegocio");
-
                     b.HasIndex("IdVenta")
                         .IsUnique();
 
-                    b.ToTable("factura", (string)null);
+                    b.HasIndex("Id_negocio");
+
+                    b.ToTable("factura");
                 });
 
             modelBuilder.Entity("API.Models.MetricaUso", b =>
@@ -331,8 +335,9 @@ namespace API.Migrations
                     b.Property<int>("Anio")
                         .HasColumnType("integer");
 
-                    b.Property<int>("IdNegocio")
-                        .HasColumnType("integer");
+                    b.Property<int>("Id_negocio")
+                        .HasColumnType("integer")
+                        .HasColumnName("IdNegocio");
 
                     b.Property<int>("Mes")
                         .HasColumnType("integer");
@@ -354,9 +359,9 @@ namespace API.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("IdNegocio");
+                    b.HasIndex("Id_negocio");
 
-                    b.ToTable("metrica_uso", (string)null);
+                    b.ToTable("metrica_uso");
                 });
 
             modelBuilder.Entity("API.Models.MovimientoStock", b =>
@@ -398,7 +403,7 @@ namespace API.Migrations
 
                     b.HasIndex("IdVenta");
 
-                    b.ToTable("movimiento_stock", (string)null);
+                    b.ToTable("movimiento_stock");
                 });
 
             modelBuilder.Entity("API.Models.Negocio", b =>
@@ -458,7 +463,7 @@ namespace API.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("negocio", (string)null);
+                    b.ToTable("negocio");
                 });
 
             modelBuilder.Entity("API.Models.Pago", b =>
@@ -482,7 +487,7 @@ namespace API.Migrations
 
                     b.HasIndex("IdVenta");
 
-                    b.ToTable("pago", (string)null);
+                    b.ToTable("pago");
                 });
 
             modelBuilder.Entity("API.Models.PagoSuscripcion", b =>
@@ -520,7 +525,7 @@ namespace API.Migrations
 
                     b.HasIndex("IdSuscripcion");
 
-                    b.ToTable("pago_suscripcion", (string)null);
+                    b.ToTable("pago_suscripcion");
                 });
 
             modelBuilder.Entity("API.Models.Plan", b =>
@@ -572,7 +577,7 @@ namespace API.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("plan", (string)null);
+                    b.ToTable("plan");
                 });
 
             modelBuilder.Entity("API.Models.Presupuesto", b =>
@@ -595,11 +600,12 @@ namespace API.Migrations
                     b.Property<int?>("IdCliente")
                         .HasColumnType("integer");
 
-                    b.Property<int>("IdNegocio")
-                        .HasColumnType("integer");
-
                     b.Property<int>("IdUsuario")
                         .HasColumnType("integer");
+
+                    b.Property<int>("Id_negocio")
+                        .HasColumnType("integer")
+                        .HasColumnName("IdNegocio");
 
                     b.Property<decimal>("TotalPresupuesto")
                         .HasColumnType("decimal(18,2)");
@@ -608,11 +614,11 @@ namespace API.Migrations
 
                     b.HasIndex("IdCliente");
 
-                    b.HasIndex("IdNegocio");
-
                     b.HasIndex("IdUsuario");
 
-                    b.ToTable("presupuesto", (string)null);
+                    b.HasIndex("Id_negocio");
+
+                    b.ToTable("presupuesto");
                 });
 
             modelBuilder.Entity("API.Models.Producto", b =>
@@ -640,11 +646,12 @@ namespace API.Migrations
                     b.Property<int?>("IdCategoria")
                         .HasColumnType("integer");
 
-                    b.Property<int>("IdNegocio")
-                        .HasColumnType("integer");
-
                     b.Property<int>("IdUsuarioCreador")
                         .HasColumnType("integer");
+
+                    b.Property<int>("Id_negocio")
+                        .HasColumnType("integer")
+                        .HasColumnName("IdNegocio");
 
                     b.Property<string>("ImagenURL")
                         .HasColumnType("text");
@@ -670,11 +677,15 @@ namespace API.Migrations
 
                     b.HasIndex("IdCategoria");
 
-                    b.HasIndex("IdNegocio");
-
                     b.HasIndex("IdUsuarioCreador");
 
-                    b.ToTable("producto", (string)null);
+                    b.HasIndex("Id_negocio");
+
+                    b.HasIndex("CodigoBusqueda", "Id_negocio")
+                        .IsUnique()
+                        .HasFilter("[CodigoBusqueda] IS NOT NULL");
+
+                    b.ToTable("producto");
                 });
 
             modelBuilder.Entity("API.Models.Proveedor", b =>
@@ -689,8 +700,9 @@ namespace API.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
-                    b.Property<int>("IdNegocio")
-                        .HasColumnType("integer");
+                    b.Property<int>("Id_negocio")
+                        .HasColumnType("integer")
+                        .HasColumnName("IdNegocio");
 
                     b.Property<string>("Nombre")
                         .IsRequired()
@@ -703,9 +715,9 @@ namespace API.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("IdNegocio");
+                    b.HasIndex("Id_negocio");
 
-                    b.ToTable("proveedor", (string)null);
+                    b.ToTable("proveedor");
                 });
 
             modelBuilder.Entity("API.Models.SuperAdmin", b =>
@@ -738,7 +750,7 @@ namespace API.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("super_admin", (string)null);
+                    b.ToTable("super_admin");
                 });
 
             modelBuilder.Entity("API.Models.Suscripcion", b =>
@@ -764,11 +776,12 @@ namespace API.Migrations
                     b.Property<DateTime?>("FechaProximoPago")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<int>("IdNegocio")
-                        .HasColumnType("integer");
-
                     b.Property<int>("IdPlan")
                         .HasColumnType("integer");
+
+                    b.Property<int>("Id_negocio")
+                        .HasColumnType("integer")
+                        .HasColumnName("NegocioId");
 
                     b.Property<string>("MotivoCancelacion")
                         .HasMaxLength(500)
@@ -782,13 +795,17 @@ namespace API.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("IdNegocio");
-
                     b.HasIndex("IdPlan");
+
+                    b.HasIndex("Id_negocio");
 
                     b.HasIndex("NegocioId");
 
-                    b.ToTable("suscripcion", (string)null);
+                    b.ToTable("suscripcion", t =>
+                        {
+                            t.Property("NegocioId")
+                                .HasColumnName("NegocioId1");
+                        });
                 });
 
             modelBuilder.Entity("API.Models.Usuario", b =>
@@ -812,8 +829,9 @@ namespace API.Migrations
                         .HasMaxLength(150)
                         .HasColumnType("character varying(150)");
 
-                    b.Property<int>("IdNegocio")
-                        .HasColumnType("integer");
+                    b.Property<int>("Id_negocio")
+                        .HasColumnType("integer")
+                        .HasColumnName("IdNegocio");
 
                     b.Property<string>("Nombre")
                         .IsRequired()
@@ -829,9 +847,9 @@ namespace API.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("IdNegocio");
+                    b.HasIndex("Id_negocio");
 
-                    b.ToTable("usuario", (string)null);
+                    b.ToTable("usuario");
                 });
 
             modelBuilder.Entity("API.Models.Venta", b =>
@@ -842,17 +860,21 @@ namespace API.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<bool>("Anulada")
+                        .HasColumnType("boolean");
+
                     b.Property<DateTime>("FechaVenta")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("IdCliente")
                         .HasColumnType("integer");
 
-                    b.Property<int>("IdNegocio")
-                        .HasColumnType("integer");
-
                     b.Property<int>("IdUsuario")
                         .HasColumnType("integer");
+
+                    b.Property<int>("Id_negocio")
+                        .HasColumnType("integer")
+                        .HasColumnName("IdNegocio");
 
                     b.Property<decimal>("TotalVenta")
                         .HasColumnType("decimal(18,2)");
@@ -861,11 +883,11 @@ namespace API.Migrations
 
                     b.HasIndex("IdCliente");
 
-                    b.HasIndex("IdNegocio");
-
                     b.HasIndex("IdUsuario");
 
-                    b.ToTable("venta", (string)null);
+                    b.HasIndex("Id_negocio");
+
+                    b.ToTable("venta");
                 });
 
             modelBuilder.Entity("API.Models.Carrito", b =>
@@ -881,15 +903,15 @@ namespace API.Migrations
 
             modelBuilder.Entity("API.Models.Categoria", b =>
                 {
-                    b.HasOne("API.Models.Negocio", "Negocio")
-                        .WithMany("Categorias")
-                        .HasForeignKey("IdNegocio")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("API.Models.Usuario", "Usuario")
                         .WithMany("Categorias")
                         .HasForeignKey("IdUsuario")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("API.Models.Negocio", "Negocio")
+                        .WithMany("Categorias")
+                        .HasForeignKey("Id_negocio")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -902,7 +924,7 @@ namespace API.Migrations
                 {
                     b.HasOne("API.Models.Negocio", "Negocio")
                         .WithMany("Clientes")
-                        .HasForeignKey("IdNegocio")
+                        .HasForeignKey("Id_negocio")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -911,12 +933,6 @@ namespace API.Migrations
 
             modelBuilder.Entity("API.Models.Compra", b =>
                 {
-                    b.HasOne("API.Models.Negocio", "Negocio")
-                        .WithMany("Compras")
-                        .HasForeignKey("IdNegocio")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("API.Models.Proveedor", "Proveedor")
                         .WithMany("Compras")
                         .HasForeignKey("IdProveedor")
@@ -927,6 +943,12 @@ namespace API.Migrations
                         .WithMany("Compras")
                         .HasForeignKey("IdUsuario")
                         .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("API.Models.Negocio", "Negocio")
+                        .WithMany("Compras")
+                        .HasForeignKey("Id_negocio")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Negocio");
@@ -995,16 +1017,16 @@ namespace API.Migrations
 
             modelBuilder.Entity("API.Models.Factura", b =>
                 {
-                    b.HasOne("API.Models.Negocio", "Negocio")
-                        .WithMany("Facturas")
-                        .HasForeignKey("IdNegocio")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("API.Models.Venta", "Venta")
                         .WithOne("Factura")
                         .HasForeignKey("API.Models.Factura", "IdVenta")
                         .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("API.Models.Negocio", "Negocio")
+                        .WithMany("Facturas")
+                        .HasForeignKey("Id_negocio")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Negocio");
@@ -1016,7 +1038,7 @@ namespace API.Migrations
                 {
                     b.HasOne("API.Models.Negocio", "Negocio")
                         .WithMany()
-                        .HasForeignKey("IdNegocio")
+                        .HasForeignKey("Id_negocio")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -1085,16 +1107,16 @@ namespace API.Migrations
                         .HasForeignKey("IdCliente")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("API.Models.Negocio", "Negocio")
-                        .WithMany("Presupuestos")
-                        .HasForeignKey("IdNegocio")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("API.Models.Usuario", "Usuario")
                         .WithMany("Presupuestos")
                         .HasForeignKey("IdUsuario")
                         .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("API.Models.Negocio", "Negocio")
+                        .WithMany("Presupuestos")
+                        .HasForeignKey("Id_negocio")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Cliente");
@@ -1111,15 +1133,15 @@ namespace API.Migrations
                         .HasForeignKey("IdCategoria")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("API.Models.Negocio", "Negocio")
-                        .WithMany("Productos")
-                        .HasForeignKey("IdNegocio")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("API.Models.Usuario", "UsuarioCreador")
                         .WithMany("Productos")
                         .HasForeignKey("IdUsuarioCreador")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("API.Models.Negocio", "Negocio")
+                        .WithMany("Productos")
+                        .HasForeignKey("Id_negocio")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -1134,7 +1156,7 @@ namespace API.Migrations
                 {
                     b.HasOne("API.Models.Negocio", "Negocio")
                         .WithMany("Proveedores")
-                        .HasForeignKey("IdNegocio")
+                        .HasForeignKey("Id_negocio")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -1143,16 +1165,16 @@ namespace API.Migrations
 
             modelBuilder.Entity("API.Models.Suscripcion", b =>
                 {
-                    b.HasOne("API.Models.Negocio", "Negocio")
-                        .WithMany()
-                        .HasForeignKey("IdNegocio")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("API.Models.Plan", "Plan")
                         .WithMany("Suscripciones")
                         .HasForeignKey("IdPlan")
                         .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("API.Models.Negocio", "Negocio")
+                        .WithMany()
+                        .HasForeignKey("Id_negocio")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("API.Models.Negocio", null)
@@ -1168,7 +1190,7 @@ namespace API.Migrations
                 {
                     b.HasOne("API.Models.Negocio", "Negocio")
                         .WithMany("Usuarios")
-                        .HasForeignKey("IdNegocio")
+                        .HasForeignKey("Id_negocio")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -1183,16 +1205,16 @@ namespace API.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("API.Models.Negocio", "Negocio")
-                        .WithMany("Ventas")
-                        .HasForeignKey("IdNegocio")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("API.Models.Usuario", "Usuario")
                         .WithMany("Ventas")
                         .HasForeignKey("IdUsuario")
                         .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("API.Models.Negocio", "Negocio")
+                        .WithMany("Ventas")
+                        .HasForeignKey("Id_negocio")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Cliente");
