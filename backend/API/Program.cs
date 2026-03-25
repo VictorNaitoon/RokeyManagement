@@ -4,10 +4,12 @@ using API.Services;
 using API.Services.Auth;
 using API.Services.Tenant;
 using API.Services.SuperAdmin;
-using API.Services.Common;
 using API.Services.Usuarios;
 using API.Services.Categorias;
 using API.Services.Negocios;
+using API.Services.Productos;
+using API.Services.Common;
+using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -90,6 +92,15 @@ builder.Services.AddScoped<ISuperAdminService, SuperAdminService>();
 builder.Services.AddScoped<IUsuarioService, UsuarioService>();
 builder.Services.AddScoped<INegocioService, NegocioService>();
 builder.Services.AddScoped<ICategoriaService, CategoriaService>();
+builder.Services.AddScoped<IProductoService, ProductoService>();
+
+// FluentValidation
+builder.Services.AddFluentValidationAutoValidation();
+builder.Services.AddFluentValidationClientsideAdapters();
+builder.Services.AddFluentValidation(fv => fv.RegisterValidatorsFromAssemblyContaining<API.DTO.Request.Productos.CrearProductoRequestValidator>());
+builder.Services.AddFluentValidation(fv => fv.RegisterValidatorsFromAssemblyContaining<API.DTO.Request.Productos.ActualizarProductoRequestValidator>());
+builder.Services.AddFluentValidation(fv => fv.RegisterValidatorsFromAssemblyContaining<API.DTO.Request.Categorias.CrearCategoriaRequestValidator>());
+builder.Services.AddFluentValidation(fv => fv.RegisterValidatorsFromAssemblyContaining<API.DTO.Request.Categorias.ActualizarCategoriaRequestValidator>());
 
 var app = builder.Build();
 

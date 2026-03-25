@@ -163,6 +163,12 @@ namespace API.Data
                 .HasForeignKey(p => p.IdCategoria)
                 .OnDelete(DeleteBehavior.Restrict); // No borrar el producto si la categoría es borrada, para mantener el historial de productos de esa categoría.
 
+            // Índice único para CodigoBusqueda por negocio
+            modelBuilder.Entity<Producto>()
+                .HasIndex(p => new { p.CodigoBusqueda, p.Id_negocio })
+                .IsUnique()
+                .HasFilter("[CodigoBusqueda] IS NOT NULL"); // Solo aplica cuando CodigoBusqueda no es null
+
             // --- PAGOS ---
             /// <summary>
             /// Si borramos una venta, normalmente si se deben borrar sus pagos con Cascade, porque no existe un pago sin venta.
