@@ -53,6 +53,15 @@ namespace API.Models
         /// </summary>
         [MaxLength(50)]
         public string? NumeroComprobante { get; set; }
+        /// <summary>
+        /// Indica si la compra ha sido anulada. Una compra anulada no puede volver a anularse y su stock debe haber sido revertido.
+        /// </summary>
+        public bool Anulada { get; set; } = false;
+        /// <summary>
+        /// Motivo opcional de la anulación de la compra. Solo se llena cuando la compra es anulada.
+        /// </summary>
+        [MaxLength(500)]
+        public string? MotivoAnulacion { get; set; }
 
         // Listas
         /// <summary>
