@@ -28,8 +28,10 @@
         public enum EstadoPresupuesto
         {
             Pendiente = 1,
-            Aprobado = 2,
-            Vencido = 3
+            Aceptado = 2,  // Cambiado de "Aprobado" -> "Aceptado"
+            Vencido = 3,
+            Anulado = 4,
+            Rechazado = 5
         }
         public enum MetodoPago
         {

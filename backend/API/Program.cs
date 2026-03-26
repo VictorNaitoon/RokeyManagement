@@ -9,6 +9,7 @@ using API.Services.Categorias;
 using API.Services.Negocios;
 using API.Services.Productos;
 using API.Services.Ventas;
+using API.Services.Presupuestos;
 using API.Services.Common;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -99,6 +100,7 @@ builder.Services.AddScoped<INegocioService, NegocioService>();
 builder.Services.AddScoped<ICategoriaService, CategoriaService>();
 builder.Services.AddScoped<IProductoService, ProductoService>();
 builder.Services.AddScoped<IVentaService, VentaService>();
+builder.Services.AddScoped<IPresupuestoService, PresupuestoService>();
 
 // FluentValidation
 builder.Services.AddFluentValidationAutoValidation();
@@ -108,6 +110,8 @@ builder.Services.AddFluentValidation(fv => fv.RegisterValidatorsFromAssemblyCont
 builder.Services.AddFluentValidation(fv => fv.RegisterValidatorsFromAssemblyContaining<API.DTO.Request.Categorias.CrearCategoriaRequestValidator>());
 builder.Services.AddFluentValidation(fv => fv.RegisterValidatorsFromAssemblyContaining<API.DTO.Request.Categorias.ActualizarCategoriaRequestValidator>());
 builder.Services.AddFluentValidation(fv => fv.RegisterValidatorsFromAssemblyContaining<API.DTO.Request.Ventas.CrearVentaValidator>());
+builder.Services.AddFluentValidation(fv => fv.RegisterValidatorsFromAssemblyContaining<API.DTO.Request.Presupuestos.CreatePresupuestoValidator>());
+builder.Services.AddFluentValidation(fv => fv.RegisterValidatorsFromAssemblyContaining<API.DTO.Request.Presupuestos.UpdatePresupuestoValidator>());
 
 var app = builder.Build();
 
