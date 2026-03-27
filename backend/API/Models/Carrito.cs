@@ -21,6 +21,12 @@ namespace API.Models
         [MaxLength(200)]
         public string IdSesion { get; set; } = string.Empty;
         /// <summary>
+        /// Identificador del cliente (para clientes autenticados). Nullable - puede ser null para carritos de usuarios anonymous.
+        /// </summary>
+        public int? IdCliente { get; set; }
+        [ForeignKey("IdCliente")]
+        public virtual Cliente? Cliente { get; set; }
+        /// <summary>
         /// Identificador del producto que se ha agregado al carrito. Es obligatorio y hace referencia a la tabla "producto" a través de la clave foránea "IdProducto".
         /// Permite agregar productos al carrito y realizar un seguimiento de los productos que el usuario cliente seleccionó para su compra.
         /// </summary>

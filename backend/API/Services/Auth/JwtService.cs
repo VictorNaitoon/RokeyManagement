@@ -10,6 +10,7 @@ namespace API.Services.Auth
     {
         string GenerateToken(Usuario usuario);
         string GenerateSuperAdminToken(Models.SuperAdmin superAdmin);
+        string GenerateClienteToken(Cliente cliente);
     }
 
     public class JwtService : IJwtService
@@ -68,6 +69,33 @@ namespace API.Services.Auth
                 audience: _configuration["Jwt:Audience"] ?? "RoKeyApp",
                 claims: claims,
                 expires: DateTime.UtcNow.AddHours(8),
+                signingCredentials: credentials
+            );
+
+            return new JwtSecurityTokenHandler().WriteToken(token);
+        }
+
+        public string GenerateClienteToken(Cliente cliente)
+        {
+            var key = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(_configuration["Jwt:Key"] ?? "RoKeySuperSecretKey2026!@#$%^&*()")
+            );
+            var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+            var claims = new[]
+            {
+                new Claim(JwtRegisteredClaimNames.Sub, cliente.Id.ToString()),
+                new Claim(JwtRegisteredClaimNames.Email, cliente.Email ?? ""),
+                new Claim("negocioId", cliente.Id_negocio.ToString()),
+                new Claim("rol", "Cliente"),
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+            };
+
+            var token = new JwtSecurityToken(
+                issuer: _configuration["Jwt:Issuer"] ?? "RoKeyAPI",
+                audience: _configuration["Jwt:Audience"] ?? "RoKeyApp",
+                claims: claims,
+                expires: DateTime.UtcNow.AddHours(24), // 24 horas para clientes
                 signingCredentials: credentials
             );
 

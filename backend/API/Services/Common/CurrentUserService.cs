@@ -13,15 +13,15 @@ namespace API.Services.Common
         int NegocioId { get; }
         
         /// <summary>
-        /// Rol del usuario (Admin, Manager, Vendedor)
+        /// Rol del usuario (Admin/Dueño, Manager, Vendedor, SuperAdmin)
         /// </summary>
         string Rol { get; }
         
         /// <summary>
-        /// Verifica si el usuario es Administrador (Dueño/Admin/SuperAdmin)
+        /// Verifica si el usuario es el Dueño/Admin del negocio (puede gestionar clientes)
         /// </summary>
-        bool IsAdmin => Rol == "Admin" || Rol == "Administrador" || Rol == "Dueño" || Rol == "SuperAdmin";
-
+        bool IsAdmin => Rol == "Admin" || Rol == "Administrador" || Rol == "Dueño";
+        
         /// <summary>
         /// Verifica si el usuario es Super Admin (dueño de la plataforma, no de un negocio)
         /// </summary>

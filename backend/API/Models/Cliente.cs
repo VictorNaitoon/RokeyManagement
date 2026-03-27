@@ -58,6 +58,24 @@ namespace API.Models
         /// Es para saber la fecha de alta del cliente, que es la fecha en que el cliente fue registrado o agregado al sistema.
         /// </summary>
         public DateTime FechaAlta { get; set; }
+        /// <summary>
+        /// Indica si el cliente está activo (para soft-delete)
+        /// </summary>
+        public bool Activo { get; set; } = true;
+        /// <summary>
+        /// Fecha de baja del cliente (null si está activo)
+        /// </summary>
+        public DateTime? FechaBaja { get; set; }
+        /// <summary>
+        /// Indica si el cliente puede comprar a crédito/fiado. 
+        /// Si es true, el cliente puede registrar compras que se registran en su cuenta corriente.
+        /// </summary>
+        public bool PermiteFiado { get; set; } = false;
+        /// <summary>
+        /// Límite máximo de crédito permitido para compras fiadas. 
+        /// Null significa sin límite.
+        /// </summary>
+        public decimal? LimiteCredito { get; set; }
 
         //Listas
         /// <summary>

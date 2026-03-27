@@ -3,6 +3,7 @@ using System;
 using API.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace API.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260327033237_Add_Activo_FechaBaja_To_Cliente")]
+    partial class Add_Activo_FechaBaja_To_Cliente
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -36,9 +39,6 @@ namespace API.Migrations
                     b.Property<DateTime>("FechaCreacion")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<int?>("IdCliente")
-                        .HasColumnType("integer");
-
                     b.Property<int>("IdProducto")
                         .HasColumnType("integer");
 
@@ -51,8 +51,6 @@ namespace API.Migrations
                         .HasColumnType("decimal(18,2)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("IdCliente");
 
                     b.HasIndex("IdProducto");
 
@@ -136,16 +134,10 @@ namespace API.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("IdNegocio");
 
-                    b.Property<decimal?>("LimiteCredito")
-                        .HasColumnType("numeric");
-
                     b.Property<string>("Nombre")
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
-
-                    b.Property<bool>("PermiteFiado")
-                        .HasColumnType("boolean");
 
                     b.Property<string>("Telefono")
                         .HasMaxLength(50)
@@ -916,17 +908,11 @@ namespace API.Migrations
 
             modelBuilder.Entity("API.Models.Carrito", b =>
                 {
-                    b.HasOne("API.Models.Cliente", "Cliente")
-                        .WithMany()
-                        .HasForeignKey("IdCliente");
-
                     b.HasOne("API.Models.Producto", "Producto")
                         .WithMany("Carritos")
                         .HasForeignKey("IdProducto")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Cliente");
 
                     b.Navigation("Producto");
                 });

@@ -13,8 +13,10 @@ using API.Services.Presupuestos;
 using API.Services.Proveedores;
 using API.Services.Compras;
 using API.Services.Common;
+using API.Services.Publicos;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -90,6 +92,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 
+// Data Protection para cookies del carrito público
+builder.Services.AddDataProtection();
+
 // Services
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
@@ -105,6 +110,12 @@ builder.Services.AddScoped<IVentaService, VentaService>();
 builder.Services.AddScoped<IPresupuestoService, PresupuestoService>();
 builder.Services.AddScoped<IProveedorService, ProveedorService>();
 builder.Services.AddScoped<ICompraService, CompraService>();
+
+// Public Services (Cliente Público)
+builder.Services.AddScoped<ICatalogoPublicoService, CatalogoPublicoService>();
+builder.Services.AddScoped<ICarritoPublicoService, CarritoPublicoService>();
+builder.Services.AddScoped<ICuentaPublicaService, CuentaPublicaService>();
+
 
 // FluentValidation
 builder.Services.AddFluentValidationAutoValidation();
