@@ -3,6 +3,7 @@ using API.DTO.Request.Compras;
 using API.DTO.Response.Compras;
 using API.Models;
 using API.Services.Common;
+using API.Services.Caja;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -12,12 +13,14 @@ namespace API.Services.Compras
     {
         private readonly AppDbContext _context;
         private readonly ICurrentUserService _currentUser;
+        private readonly ICajaService _cajaService;
         private readonly ILogger<CompraService> _logger;
 
-        public CompraService(AppDbContext context, ICurrentUserService currentUser, ILogger<CompraService> logger)
+        public CompraService(AppDbContext context, ICurrentUserService currentUser, ICajaService cajaService, ILogger<CompraService> logger)
         {
             _context = context;
             _currentUser = currentUser;
+            _cajaService = cajaService;
             _logger = logger;
         }
 
@@ -187,6 +190,24 @@ namespace API.Services.Compras
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
+                // 11. Registrar movimiento de caja automático (Egreso)
+                try
+                {
+                    await _cajaService.AgregarMovimientoAsync(
+                        new API.DTO.Request.Caja.AgregarMovimientoCajaRequest
+                        {
+                            Tipo = "Egreso",
+                            Monto = totalGasto,
+                            Descripcion = $"Compra #{compra.Id}"
+                        },
+                        _currentUser.UserId,
+                        _currentUser.NegocioId);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "No se pudo registrar movimiento de caja para la compra {CompraId}", compra.Id);
+                }
+
                 _logger.LogInformation("Compra {CompraId} creada por usuario {UserId} en negocio {NegocioId}", 
                     compra.Id, _currentUser.UserId, _currentUser.NegocioId);
 
@@ -255,6 +276,24 @@ namespace API.Services.Compras
 
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
+
+                // 8. Registrar movimiento de caja automático (Ingreso por anulación)
+                try
+                {
+                    await _cajaService.AgregarMovimientoAsync(
+                        new API.DTO.Request.Caja.AgregarMovimientoCajaRequest
+                        {
+                            Tipo = "Ingreso",
+                            Monto = compra.TotalGasto,
+                            Descripcion = $"Anulación de Compra #{compra.Id}"
+                        },
+                        _currentUser.UserId,
+                        _currentUser.NegocioId);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "No se pudo registrar movimiento de caja por anulación de compra {CompraId}", compra.Id);
+                }
 
                 _logger.LogInformation("Compra {CompraId} anulada por usuario {UserId} en negocio {NegocioId}", 
                     id, _currentUser.UserId, _currentUser.NegocioId);

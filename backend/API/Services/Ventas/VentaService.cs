@@ -184,9 +184,28 @@ namespace API.Services.Ventas
                 await _context.SaveChangesAsync(ct);
                 await transaction.CommitAsync(ct);
 
+                // 13. Registrar movimiento de caja automático (Ingreso)
+                try
+                {
+                    await _cajaService.AgregarMovimientoAsync(
+                        new DTO.Request.Caja.AgregarMovimientoCajaRequest
+                        {
+                            Tipo = "Ingreso",
+                            Monto = totalVenta,
+                            Descripcion = $"Venta #{venta.Id}"
+                        },
+                        _currentUser.UserId,
+                        _currentUser.NegocioId,
+                        ct);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "No se pudo registrar movimiento de caja para la venta {VentaId}", venta.Id);
+                }
+
                 _logger.LogInformation("Venta {VentaId} creada exitosamente por usuario {UsuarioId}", venta.Id, _currentUser.UserId);
 
-                // 13. Retornar la venta creada
+                // 14. Retornar la venta creada
                 return await ObtenerVentaPorIdAsync(venta.Id, ct)
                     ?? throw new InvalidOperationException("Error al recuperar la venta creada");
             }
@@ -268,6 +287,25 @@ namespace API.Services.Ventas
 
                 await _context.SaveChangesAsync(ct);
                 await transaction.CommitAsync(ct);
+
+                // 8. Registrar movimiento de caja automático (Egreso por anulación)
+                try
+                {
+                    await _cajaService.AgregarMovimientoAsync(
+                        new DTO.Request.Caja.AgregarMovimientoCajaRequest
+                        {
+                            Tipo = "Egreso",
+                            Monto = venta.TotalVenta,
+                            Descripcion = $"Anulación de Venta #{venta.Id}"
+                        },
+                        _currentUser.UserId,
+                        _currentUser.NegocioId,
+                        ct);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "No se pudo registrar movimiento de caja por anulación de venta {VentaId}", venta.Id);
+                }
 
                 _logger.LogInformation("Venta {VentaId} anulada exitosamente por usuario {UsuarioId}. Motivo: {Motivo}",
                     venta.Id, _currentUser.UserId, request.Motivo ?? "Sin motivo");
