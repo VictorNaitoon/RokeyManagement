@@ -80,5 +80,19 @@ namespace API.Models
         /// Es el listado de los movimientos de stock que se generaron por las acciones del usuario, como ventas, compras o ajustes de stock, guardando así un historial de los movimientos de stock realizados por cada usuario dentro del negocio.
         /// </summary>
         public ICollection<MovimientoStock> MovimientosStock { get; set; } = new List<MovimientoStock>();
+
+        // --- CAJA ---
+        /// <summary>
+        /// Es el listado de cajas que el usuario aperturó.
+        /// </summary>
+        public ICollection<Caja> CajasAbiertas { get; set; } = new List<Caja>();
+        /// <summary>
+        /// Es el listado de cajas que el usuario cerró.
+        /// </summary>
+        public ICollection<Caja> CajasCerradas { get; set; } = new List<Caja>();
+        /// <summary>
+        /// Es el listado de movimientos de caja que registró el usuario.
+        /// </summary>
+        public ICollection<MovimientoCaja> MovimientosCaja { get; set; } = new List<MovimientoCaja>();
     }
 }

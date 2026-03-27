@@ -13,6 +13,7 @@ using API.Services.Presupuestos;
 using API.Services.Proveedores;
 using API.Services.Compras;
 using API.Services.Common;
+using API.Services.Caja;
 using API.Services.Publicos;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -110,6 +111,7 @@ builder.Services.AddScoped<IVentaService, VentaService>();
 builder.Services.AddScoped<IPresupuestoService, PresupuestoService>();
 builder.Services.AddScoped<IProveedorService, ProveedorService>();
 builder.Services.AddScoped<ICompraService, CompraService>();
+builder.Services.AddScoped<ICajaService, CajaService>();
 
 // Public Services (Cliente Público)
 builder.Services.AddScoped<ICatalogoPublicoService, CatalogoPublicoService>();

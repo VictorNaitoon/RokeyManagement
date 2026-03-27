@@ -122,5 +122,11 @@ namespace API.Models
 
         // --- SAAS ---
         public ICollection<Suscripcion> Suscripciones { get; set; } = new List<Suscripcion>();
+
+        // --- CAJA ---
+        /// <summary>
+        /// Es una colección de cajas asociadas al negocio, que representa las cajas (aperturas y cierres) del negocio.
+        /// </summary>
+        public ICollection<Caja> Cajas { get; set; } = new List<Caja>();
     }
 }

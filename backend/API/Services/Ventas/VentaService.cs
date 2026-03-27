@@ -2,6 +2,7 @@ using API.Data;
 using API.DTO.Request.Ventas;
 using API.DTO.Response.Ventas;
 using API.Models;
+using API.Services.Caja;
 using API.Services.Common;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -12,12 +13,14 @@ namespace API.Services.Ventas
     {
         private readonly AppDbContext _context;
         private readonly ICurrentUserService _currentUser;
+        private readonly ICajaService _cajaService;
         private readonly ILogger<VentaService> _logger;
 
-        public VentaService(AppDbContext context, ICurrentUserService currentUser, ILogger<VentaService> logger)
+        public VentaService(AppDbContext context, ICurrentUserService currentUser, ICajaService cajaService, ILogger<VentaService> logger)
         {
             _context = context;
             _currentUser = currentUser;
+            _cajaService = cajaService;
             _logger = logger;
         }
 
@@ -33,6 +36,12 @@ namespace API.Services.Ventas
             if (negocio.Estado == Enums.EstadoNegocio.Inactivo)
             {
                 throw new InvalidOperationException("El negocio se encuentra inactivo");
+            }
+
+            // 1.5. Validar que hay una caja abierta
+            if (!await _cajaService.TieneCajaAbiertaAsync(_currentUser.NegocioId, ct))
+            {
+                throw new InvalidOperationException("No hay una caja abierta. Abra una caja antes de registrar ventas.");
             }
 
             // 2. Validar que todos los productos existen y pertenecen al mismo negocio

@@ -25,6 +25,10 @@ namespace API.Data
         public DbSet<Presupuesto> Presupuestos { get; set; }
         public DbSet<DetallePresupuesto> DetallesPresupuesto { get; set; }
 
+        // --- CAJA ---
+        public DbSet<Caja> Cajas { get; set; }
+        public DbSet<MovimientoCaja> MovimientosCaja { get; set; }
+
         // --- SAAS / Suscripciones ---
         public DbSet<Plan> Planes { get; set; }
         public DbSet<Suscripcion> Suscripciones { get; set; }
@@ -208,6 +212,55 @@ namespace API.Data
                 .WithMany()
                 .HasForeignKey(m => m.Id_negocio)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            // --- CAJA ---
+            // Caja -> UsuarioApertura
+            modelBuilder.Entity<Caja>()
+                .HasOne(c => c.UsuarioApertura)
+                .WithMany(u => u.CajasAbiertas)
+                .HasForeignKey(c => c.Id_usuario_apertura)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Caja -> UsuarioCierre (nullable)
+            modelBuilder.Entity<Caja>()
+                .HasOne(c => c.UsuarioCierre)
+                .WithMany(u => u.CajasCerradas)
+                .HasForeignKey(c => c.Id_usuario_cierre)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Caja -> Negocio
+            modelBuilder.Entity<Caja>()
+                .HasOne(c => c.Negocio)
+                .WithMany(n => n.Cajas)
+                .HasForeignKey(c => c.Id_negocio)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Índice único parcial: solo una caja abierta por negocio
+            modelBuilder.Entity<Caja>()
+                .HasIndex(c => new { c.Id_negocio, c.Estado })
+                .IsUnique()
+                .HasFilter("[Estado] = 'Abierta'");
+
+            // MovimientoCaja -> Caja
+            modelBuilder.Entity<MovimientoCaja>()
+                .HasOne(m => m.Caja)
+                .WithMany(c => c.Movimientos)
+                .HasForeignKey(m => m.Id_caja)
+                .OnDelete(DeleteBehavior.Restrict); // No borrar movimiento si la caja es borrada
+
+            // MovimientoCaja -> Negocio
+            modelBuilder.Entity<MovimientoCaja>()
+                .HasOne(m => m.Negocio)
+                .WithMany()
+                .HasForeignKey(m => m.Id_negocio)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // MovimientoCaja -> Usuario
+            modelBuilder.Entity<MovimientoCaja>()
+                .HasOne(m => m.Usuario)
+                .WithMany(u => u.MovimientosCaja)
+                .HasForeignKey(m => m.Id_usuario)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }
