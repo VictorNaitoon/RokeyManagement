@@ -201,8 +201,19 @@ namespace API.Controllers.Facturas
                 return StatusCode(403, new { message = "El super administrador no puede gestionar facturas de un negocio" });
             }
 
-            var resultado = await _facturaService.ValidarVentaSinFacturaAsync(idVenta, ct);
-            return Ok(new { tieneFactura = !resultado });
+            try
+            {
+                var resultado = await _facturaService.ValidarVentaSinFacturaAsync(idVenta, ct);
+                return Ok(new { tieneFactura = !resultado });
+            }
+            catch (InvalidOperationException ex)
+            {
+                if (ex.Message.Contains("no encontrada", StringComparison.OrdinalIgnoreCase))
+                {
+                    return NotFound(new { message = ex.Message });
+                }
+                return BadRequest(new { message = ex.Message });
+            }
         }
     }
 }
