@@ -116,10 +116,9 @@ builder.Services.AddScoped<ICompraService, CompraService>();
 builder.Services.AddScoped<ICajaService, CajaService>();
 builder.Services.AddScoped<IFacturaService, FacturaService>();
 
-// Public Services (Cliente Público)
+// Public Services (Catálogo + Carrito)
 builder.Services.AddScoped<ICatalogoPublicoService, CatalogoPublicoService>();
 builder.Services.AddScoped<ICarritoPublicoService, CarritoPublicoService>();
-builder.Services.AddScoped<ICuentaPublicaService, CuentaPublicaService>();
 
 // Cliente Services
 builder.Services.AddScoped<IClienteService, ClienteService>();
