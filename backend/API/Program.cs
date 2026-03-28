@@ -15,6 +15,7 @@ using API.Services.Compras;
 using API.Services.Common;
 using API.Services.Caja;
 using API.Services.Publicos;
+using API.Services.Facturas;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.DataProtection;
@@ -112,6 +113,7 @@ builder.Services.AddScoped<IPresupuestoService, PresupuestoService>();
 builder.Services.AddScoped<IProveedorService, ProveedorService>();
 builder.Services.AddScoped<ICompraService, CompraService>();
 builder.Services.AddScoped<ICajaService, CajaService>();
+builder.Services.AddScoped<IFacturaService, FacturaService>();
 
 // Public Services (Cliente Público)
 builder.Services.AddScoped<ICatalogoPublicoService, CatalogoPublicoService>();
@@ -132,6 +134,8 @@ builder.Services.AddFluentValidation(fv => fv.RegisterValidatorsFromAssemblyCont
 builder.Services.AddFluentValidation(fv => fv.RegisterValidatorsFromAssemblyContaining<API.DTO.Request.Proveedores.CrearProveedorValidator>());
 builder.Services.AddFluentValidation(fv => fv.RegisterValidatorsFromAssemblyContaining<API.DTO.Request.Proveedores.ActualizarProveedorValidator>());
 builder.Services.AddFluentValidation(fv => fv.RegisterValidatorsFromAssemblyContaining<API.DTO.Request.Compras.CrearCompraValidator>());
+builder.Services.AddFluentValidation(fv => fv.RegisterValidatorsFromAssemblyContaining<API.DTO.Request.Facturas.CrearFacturaValidator>());
+builder.Services.AddFluentValidation(fv => fv.RegisterValidatorsFromAssemblyContaining<API.DTO.Request.Facturas.NotaCreditoValidator>());
 
 var app = builder.Build();
 
