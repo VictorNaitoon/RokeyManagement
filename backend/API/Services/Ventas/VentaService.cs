@@ -68,14 +68,20 @@ namespace API.Services.Ventas
             // 4. Calcular total de la venta
             var totalVenta = request.Detalles.Sum(d => d.Cantidad * d.PrecioUnitario);
 
-            // 5. Validar suma de pagos
+            // 5. Validar límite de crédito si el cliente tiene fiado habilitado
+            if (request.IdCliente.HasValue && request.IdCliente.Value > 0)
+            {
+                await ValidarCreditoClienteAsync(request.IdCliente.Value, request.Pagos, totalVenta, ct);
+            }
+
+            // 6. Validar suma de pagos
             var sumaPagos = request.Pagos.Sum(p => p.Monto);
             if (sumaPagos != totalVenta)
             {
                 throw new InvalidOperationException("La suma de pagos debe coincidir con el total de la venta");
             }
 
-            // 6. Si no hay cliente, usar "Consumidor Final"
+            // 7. Si no hay cliente, usar "Consumidor Final"
             int idCliente;
             if (request.IdCliente.HasValue && request.IdCliente.Value > 0)
             {
@@ -108,11 +114,11 @@ namespace API.Services.Ventas
                 idCliente = consumidorFinal.Id;
             }
 
-            // 7. Usar transacción para atomicidad
+            // 8. Usar transacción para atomicidad
             using var transaction = await _context.Database.BeginTransactionAsync(ct);
             try
             {
-                // 8. Crear la venta
+                // 9. Crear la venta
                 var venta = new Venta
                 {
                     Id_negocio = _currentUser.NegocioId,
@@ -125,7 +131,7 @@ namespace API.Services.Ventas
                 _context.Ventas.Add(venta);
                 await _context.SaveChangesAsync(ct);
 
-                // 8. Crear detalles de venta
+                // 10. Crear detalles de venta
                 foreach (var detalle in request.Detalles)
                 {
                     var detalleVenta = new DetalleVenta
@@ -138,14 +144,14 @@ namespace API.Services.Ventas
 
                     _context.DetallesVenta.Add(detalleVenta);
 
-                    // 9. Deducir stock para productos que no son servicios
+                    // 11. Deducir stock para productos que no son servicios
                     var producto = productos[detalle.IdProducto];
                     if (!producto.EsServicio)
                     {
                         var stockAnterior = producto.StockActual;
                         producto.StockActual -= detalle.Cantidad;
 
-                        // 10. Crear MovimientoStock
+                        // 12. Crear MovimientoStock
                         var movimientoStock = new MovimientoStock
                         {
                             IdProducto = producto.Id,
@@ -158,7 +164,7 @@ namespace API.Services.Ventas
 
                         _context.MovimientosStock.Add(movimientoStock);
 
-                        // 11. Verificar stock bajo (no bloquea, solo alerta)
+                        // 13. Verificar stock bajo (no bloquea, solo alerta)
                         if (producto.StockActual <= producto.StockMinimo)
                         {
                             _logger.LogWarning(
@@ -168,7 +174,7 @@ namespace API.Services.Ventas
                     }
                 }
 
-                // 12. Crear pagos
+                // 14. Crear pagos
                 foreach (var pago in request.Pagos)
                 {
                     var nuevoPago = new Pago
@@ -184,7 +190,7 @@ namespace API.Services.Ventas
                 await _context.SaveChangesAsync(ct);
                 await transaction.CommitAsync(ct);
 
-                // 13. Registrar movimiento de caja automático (Ingreso)
+                // 15. Registrar movimiento de caja automático (Ingreso)
                 try
                 {
                     await _cajaService.AgregarMovimientoAsync(
@@ -205,7 +211,7 @@ namespace API.Services.Ventas
 
                 _logger.LogInformation("Venta {VentaId} creada exitosamente por usuario {UsuarioId}", venta.Id, _currentUser.UserId);
 
-                // 14. Retornar la venta creada
+                // 16. Retornar la venta creada
                 return await ObtenerVentaPorIdAsync(venta.Id, ct)
                     ?? throw new InvalidOperationException("Error al recuperar la venta creada");
             }
@@ -481,6 +487,97 @@ namespace API.Services.Ventas
                 Detalles = detalles,
                 Pagos = pagos
             };
+        }
+
+        /// <summary>
+        /// Valida el límite de crédito del cliente antes de crear una venta.
+        /// Se salta la validación si:
+        /// - El cliente no tiene permitido el fiado (PermiteFiado = false)
+        /// - El límite de crédito es 0 o null
+        /// - La venta es pagada completamente en efectivo
+        /// </summary>
+        private async Task ValidarCreditoClienteAsync(
+            int clienteId,
+            List<DTO.Request.Ventas.PagoRequest> pagos,
+            decimal montoVenta,
+            CancellationToken ct)
+        {
+            // 1. Obtener el cliente
+            var cliente = await _context.Clientes
+                .FirstOrDefaultAsync(c => c.Id == clienteId && c.Id_negocio == _currentUser.NegocioId, ct);
+
+            if (cliente == null)
+            {
+                // Cliente no encontrado, no validamos crédito (podría ser consumidor final)
+                return;
+            }
+
+            // 2. Si el cliente no tiene permitido el fiado, omitir validación
+            if (!cliente.PermiteFiado)
+            {
+                _logger.LogDebug("Cliente {ClienteId} no tiene permitido el fiado. Se omite validación de crédito.", clienteId);
+                return;
+            }
+
+            // 3. Si el límite de crédito es 0 o null con fiado habilitado, no se permite crédito
+            if (cliente.LimiteCredito == null || cliente.LimiteCredito <= 0)
+            {
+                throw new InvalidOperationException(
+                    $"El cliente no tiene límite de crédito configured. Configure un límite de crédito mayor a 0 para permitir ventas a fiado.");
+            }
+
+            // 4. Determinar si la venta es pagada en efectivo (pago inmediato)
+            // Una venta es "pagada en efectivo" si TODOS los pagos son en efectivo
+            bool esPagoInmediato = pagos.All(p => p.MetodoPago == Enums.MetodoPago.Efectivo);
+            if (esPagoInmediato)
+            {
+                _logger.LogDebug("Venta pagada en efectivo. Se omite validación de crédito para cliente {ClienteId}.", clienteId);
+                return;
+            }
+
+            // 5. Calcular el saldo pendiente actual del cliente (ventas fiadas no pagadas)
+            var ventasFiado = await _context.Ventas
+                .Where(v => v.IdCliente == clienteId 
+                            && v.Id_negocio == _currentUser.NegocioId 
+                            && !v.Anulada)
+                .ToListAsync(ct);
+
+            decimal totalFiado = 0;
+            foreach (var venta in ventasFiado)
+            {
+                // Calcular cuanto se ha pagado en esta venta
+                var pagosVenta = await _context.Pagos
+                    .Where(p => p.IdVenta == venta.Id)
+                    .SumAsync(p => (decimal?)p.Monto, ct) ?? 0;
+
+                // Si el pago es menor al total, hay saldo pendiente
+                if (pagosVenta < venta.TotalVenta)
+                {
+                    totalFiado += (venta.TotalVenta - pagosVenta);
+                }
+            }
+
+            // 6. Verificar si agregar esta venta excede el límite
+            decimal creditoDisponible = cliente.LimiteCredito.Value - totalFiado;
+            if (montoVenta > creditoDisponible)
+            {
+                _logger.LogWarning(
+                    "Venta rechazada por límite de crédito. Cliente {ClienteId}, Límite: {LimiteCredito}, " +
+                    "Saldo pendiente: {SaldoPendiente}, Venta actual: {MontoVenta}, Crédito disponible: {CreditoDisponible}",
+                    clienteId, cliente.LimiteCredito, totalFiado, montoVenta, creditoDisponible);
+
+                throw new InvalidOperationException(
+                    $"La venta excede el límite de crédito del cliente. " +
+                    $"Límite: ${cliente.LimiteCredito:N2}, " +
+                    $"Saldo pendiente: ${totalFiado:N2}, " +
+                    $"Venta actual: ${montoVenta:N2}, " +
+                    $"Crédito disponible: ${creditoDisponible:N2}");
+            }
+
+            _logger.LogDebug(
+                "Validación de crédito passed. Cliente {ClienteId}, Saldo pendiente: {SaldoPendiente}, " +
+                "Venta actual: {MontoVenta}, Crédito disponible después: {CreditoDisponible}",
+                clienteId, totalFiado, montoVenta, creditoDisponible - montoVenta);
         }
     }
 }

@@ -15,6 +15,7 @@ using API.Services.Compras;
 using API.Services.Common;
 using API.Services.Caja;
 using API.Services.Publicos;
+using API.Services.Clientes;
 using API.Services.Facturas;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -119,6 +120,9 @@ builder.Services.AddScoped<IFacturaService, FacturaService>();
 builder.Services.AddScoped<ICatalogoPublicoService, CatalogoPublicoService>();
 builder.Services.AddScoped<ICarritoPublicoService, CarritoPublicoService>();
 builder.Services.AddScoped<ICuentaPublicaService, CuentaPublicaService>();
+
+// Cliente Services
+builder.Services.AddScoped<IClienteService, ClienteService>();
 
 
 // FluentValidation
