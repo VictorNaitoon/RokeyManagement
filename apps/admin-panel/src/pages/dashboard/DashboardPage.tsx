@@ -8,7 +8,7 @@
 import { useEffect, useState } from 'react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Clock, RefreshCw } from 'lucide-react';
+import { Clock, RefreshCw, WifiOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useDashboardData } from '@/hooks/useDashboardData';
 import {
@@ -28,6 +28,7 @@ export function DashboardPage() {
   
   const {
     isLoading,
+    isFetching,
     error,
     refetch,
     canViewAdminData,
@@ -35,10 +36,10 @@ export function DashboardPage() {
 
   // Track last update time
   useEffect(() => {
-    if (!isLoading && !error) {
+    if (!isLoading && !isFetching && !error) {
       setLastUpdated(new Date());
     }
-  }, [isLoading, error]);
+  }, [isLoading, isFetching, error]);
 
   // Auto-refresh indicator - update every second
   useEffect(() => {
@@ -66,13 +67,8 @@ export function DashboardPage() {
     return hours === 1 ? '1 hora' : `${hours} horas`;
   };
 
-  // Loading state
-  if (isLoading) {
-    return <DashboardSkeleton />;
-  }
-
-  // Error state
-  if (error) {
+  // Error state - show when there's an error and not loading
+  if (error && !isLoading) {
     return (
       <div className="space-y-6">
         {/* Header */}
@@ -82,11 +78,16 @@ export function DashboardPage() {
         </div>
         
         <DashboardError 
-          message="Error al cargar los datos del dashboard. Intente nuevamente."
+          message="No se pudo conectar con el servidor. Verifica que el backend esté corriendo."
           onRetry={refetch}
         />
       </div>
     );
+  }
+
+  // Loading state
+  if (isLoading || isFetching) {
+    return <DashboardSkeleton />;
   }
 
   return (
@@ -113,7 +114,7 @@ export function DashboardPage() {
               setLastUpdated(new Date());
             }}
           >
-            <RefreshCw className="h-4 w-4 mr-1.5" />
+            <RefreshCw className={`h-4 w-4 mr-1.5 ${isFetching ? 'animate-spin' : ''}`} />
             Actualizar
           </Button>
         </div>

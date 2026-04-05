@@ -209,6 +209,7 @@ export interface DashboardDataReturn {
   
   // Loading states
   isLoading: boolean;
+  isFetching: boolean;
   isLoadingVentasResumen: boolean;
   isLoadingIngresosGastos: boolean;
   isLoadingAlertasStock: boolean;
@@ -218,6 +219,7 @@ export interface DashboardDataReturn {
   isLoadingVentasPorVendedor: boolean;
   
   // Error states
+  isError: boolean;
   error: Error | null;
   errorVentasResumen: Error | null;
   errorIngresosGastos: Error | null;
@@ -267,6 +269,16 @@ export function useDashboardData(options: UseDashboardDataOptions = {}): Dashboa
     (ingresosGastos.isEnabled && ingresosGastos.isLoading) ||
     (ventasPorPago.isEnabled && ventasPorPago.isLoading) ||
     (ventasPorVendedor.isEnabled && ventasPorVendedor.isLoading);
+
+  // Determine if any query is fetching (re-fetching in background)
+  const isFetching = 
+    ventasResumen.isFetching ||
+    alertasStock.isFetching ||
+    productosTop.isFetching ||
+    flujoCaja.isFetching ||
+    (ingresosGastos.isEnabled && ingresosGastos.isFetching) ||
+    (ventasPorPago.isEnabled && ventasPorPago.isFetching) ||
+    (ventasPorVendedor.isEnabled && ventasPorVendedor.isFetching);
   
   // Collect all errors
   const errors = [
@@ -280,6 +292,7 @@ export function useDashboardData(options: UseDashboardDataOptions = {}): Dashboa
   ].filter(Boolean) as Error[];
   
   const error = errors.length > 0 ? errors[0] : null;
+  const isError = errors.length > 0;
   
   // Refetch all enabled queries
   const refetch = () => {
@@ -304,6 +317,7 @@ export function useDashboardData(options: UseDashboardDataOptions = {}): Dashboa
     
     // Loading
     isLoading,
+    isFetching,
     isLoadingVentasResumen: ventasResumen.isLoading,
     isLoadingIngresosGastos: ingresosGastos.isLoading,
     isLoadingAlertasStock: alertasStock.isLoading,
@@ -313,6 +327,7 @@ export function useDashboardData(options: UseDashboardDataOptions = {}): Dashboa
     isLoadingVentasPorVendedor: ventasPorVendedor.isLoading,
     
     // Errors
+    isError,
     error,
     errorVentasResumen: ventasResumen.error,
     errorIngresosGastos: ingresosGastos.error,
