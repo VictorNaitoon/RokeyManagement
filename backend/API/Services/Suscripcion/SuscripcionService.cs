@@ -133,6 +133,12 @@ namespace API.Services.Suscripcion
             suscripcion.IdPlan = request.IdPlan;
             suscripcion.TipoFacturacion = request.TipoFacturacion;
 
+            // Si estaba pendiente de pago, activarla al actualizarla
+            if (suscripcion.Estado == EstadoSuscripcion.PendientePago)
+            {
+                suscripcion.Estado = EstadoSuscripcion.Activa;
+            }
+
             await _context.SaveChangesAsync(ct);
 
             // Recargar con el nuevo plan
