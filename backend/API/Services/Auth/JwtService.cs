@@ -33,12 +33,16 @@ namespace API.Services.Auth
             );
             var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
+            // Mapeo seguro del rol — maneja roles viejos en la base de datos
+            var rol = MapRole(usuario.Rol);
+
             var claims = new[]
             {
                 new Claim(JwtRegisteredClaimNames.Sub, usuario.Id.ToString()),
                 new Claim(JwtRegisteredClaimNames.Email, usuario.Email),
                 new Claim("negocioId", usuario.Id_negocio.ToString()),
-                new Claim("rol", usuario.Rol.ToString()),
+                new Claim("rol", rol),
+                new Claim(System.Security.Claims.ClaimTypes.Role, rol), // Para que ASP.NET Core lo reconozca
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };
 
@@ -53,6 +57,21 @@ namespace API.Services.Auth
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
+        /// <summary>
+        /// Mapea el rol del enum al string correcto, manejando valores viejos o desconocidos
+        /// </summary>
+        private static string MapRole(Models.Enums.RolUsuario rol)
+        {
+            return rol switch
+            {
+                Models.Enums.RolUsuario.Dueño => "Dueño",
+                Models.Enums.RolUsuario.Gerente => "Gerente",
+                Models.Enums.RolUsuario.Empleado => "Empleado",
+                // Fallback para roles viejos en la base de datos
+                _ => "Empleado" // default seguro
+            };
+        }
+
         public string GenerateSuperAdminToken(Models.SuperAdmin superAdmin)
         {
             var key = new SymmetricSecurityKey(
@@ -65,6 +84,7 @@ namespace API.Services.Auth
                 new Claim(JwtRegisteredClaimNames.Sub, superAdmin.Id.ToString()),
                 new Claim(JwtRegisteredClaimNames.Email, superAdmin.Email),
                 new Claim("rol", superAdmin.Rol),
+                new Claim(System.Security.Claims.ClaimTypes.Role, superAdmin.Rol),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };
 
@@ -92,6 +112,7 @@ namespace API.Services.Auth
                 new Claim(JwtRegisteredClaimNames.Email, cliente.Email ?? ""),
                 new Claim("negocioId", cliente.Id_negocio.ToString()),
                 new Claim("rol", "Cliente"),
+                new Claim(System.Security.Claims.ClaimTypes.Role, "Cliente"),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };
 
@@ -120,8 +141,8 @@ namespace API.Services.Auth
             // Determinar tiempo de expiración según el rol
             var expirationHours = rol switch
             {
-                "Cliente" => 24,
-                _ => 8 // Usuario, SuperAdmin, Admin, Gerente, Empleado
+                "Empleado" => 24,
+                _ => 8 // Dueño, Gerente, SuperAdmin
             };
 
             var claims = new[]
@@ -130,6 +151,7 @@ namespace API.Services.Auth
                 new Claim(JwtRegisteredClaimNames.Email, email),
                 new Claim("negocioId", negocioId.ToString()),
                 new Claim("rol", rol),
+                new Claim(System.Security.Claims.ClaimTypes.Role, rol),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };
 
