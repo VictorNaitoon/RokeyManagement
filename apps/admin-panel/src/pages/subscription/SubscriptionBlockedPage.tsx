@@ -1,16 +1,15 @@
 import { AlertTriangle, ArrowLeft, CreditCard } from 'lucide-react';
 import { useSubscriptionStore } from '@/stores/subscriptionStore';
 import { authStore } from '@/stores/authStore';
-import { useNavigate } from 'react-router-dom';
 
 export function SubscriptionBlockedPage() {
-  const navigate = useNavigate();
   const { message, clearBlocked } = useSubscriptionStore();
   const { logout } = authStore;
 
   const handleLogout = async () => {
     clearBlocked();
-    await logout();
+    authStore.getState().clearState();
+    window.location.href = '/login';
   };
 
   return (

@@ -1,4 +1,5 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/sonner';
 import { queryClient } from '@/lib/api/query-client';
@@ -11,28 +12,35 @@ import { SuperAdminDashboardPage } from '@/pages/superadmin/SuperAdminDashboardP
 import { SubscriptionBlockedPage } from '@/pages/subscription/SubscriptionBlockedPage';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 
+/**
+ * Redirects to subscription blocked page when the store is activated.
+ * Must be inside BrowserRouter to use useNavigate.
+ */
+function SubscriptionRedirect() {
+  const navigate = useNavigate();
+  const isBlocked = useSubscriptionStore((state) => state.isBlocked);
+
+  useEffect(() => {
+    if (isBlocked) {
+      navigate('/suscripcion-bloqueada', { replace: true });
+    }
+  }, [isBlocked, navigate]);
+
+  return null;
+}
+
 function App() {
   const { isAuthenticated, user } = authStore();
-  const isBlocked = useSubscriptionStore((state) => state.isBlocked);
 
   // Redirect authenticated users based on role
   const defaultRedirect = user?.rol === 'SuperAdmin' ? '/admin' : '/dashboard';
 
-  // If subscription is blocked, show blocked page immediately (synchronous, no flash)
-  if (isBlocked) {
-    return (
-      <QueryClientProvider client={queryClient}>
-        <SubscriptionBlockedPage />
-        <Toaster />
-      </QueryClientProvider>
-    );
-  }
-
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
+        <SubscriptionRedirect />
         <Routes>
-          {/* Subscription blocked page */}
+          {/* Subscription blocked page — always accessible */}
           <Route
             path="/suscripcion-bloqueada"
             element={<SubscriptionBlockedPage />}
