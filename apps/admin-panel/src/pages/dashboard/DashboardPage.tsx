@@ -67,8 +67,8 @@ export function DashboardPage() {
     return hours === 1 ? '1 hora' : `${hours} horas`;
   };
 
-  // Error state - show when there's an error and not loading
-  if (error && !isLoading) {
+  // Error state - show when there's an error and nothing is fetching
+  if (error && !isFetching) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6 p-8">
         <WifiOff className="h-16 w-16 text-muted-foreground" />
