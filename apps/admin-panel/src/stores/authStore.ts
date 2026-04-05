@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { api } from '@/lib/api/axios';
 
-export type UserRole = 'SuperAdmin' | 'Admin' | 'Gerente' | 'Vendedor';
+export type UserRole = 'SuperAdmin' | 'Dueño' | 'Gerente' | 'Empleado';
 
 export interface User {
   id: number;

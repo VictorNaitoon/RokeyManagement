@@ -122,7 +122,7 @@ namespace API.Controllers.Ventas
         /// <param name="request">Motivo de anulación (opcional)</param>
         /// <returns>Venta anulada</returns>
         [HttpPost("{id}/anular")]
-        [Authorize(Roles = "Dueño,Admin")]
+        [Authorize(Roles = "Dueño")]
         [ProducesResponseType(typeof(VentaResponse), 200)]
         [ProducesResponseType(401)]
         [ProducesResponseType(403)]

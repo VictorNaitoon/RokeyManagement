@@ -307,13 +307,13 @@ namespace API.Services.Auth
             
             if (usuario != null)
             {
-                // Mapear RolUsuario enum al string que espera el JWT
+                // Los roles del JWT coinciden con los del enum RolUsuario
                 var rol = usuario.Rol switch
                 {
-                    Enums.RolUsuario.Dueño => "Admin",
+                    Enums.RolUsuario.Dueño => "Dueño",
                     Enums.RolUsuario.Gerente => "Gerente",
-                    Enums.RolUsuario.Empleado => "Vendedor",
-                    _ => "Vendedor"
+                    Enums.RolUsuario.Empleado => "Empleado",
+                    _ => "Empleado"
                 };
                 return (usuario.Email, usuario.Id_negocio, rol);
             }

@@ -8,7 +8,7 @@ namespace API.Controllers.Informes
 {
     [ApiController]
     [Route("api/v1/informes")]
-    [Authorize(Roles = "Admin,Dueño,Administrador,Gerente,Manager,Vendedor,Empleado,Seller,SuperAdmin")]
+    [Authorize(Roles = "Dueño,Gerente")]
     public class InformesController : ControllerBase
     {
         private readonly IInformesService _informesService;

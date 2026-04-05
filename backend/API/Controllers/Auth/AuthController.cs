@@ -130,7 +130,7 @@ namespace API.Controllers.Auth
             }
 
             // Generar nuevo access token con el rol real del usuario
-            var rol = userInfo.Value.rol ?? "Vendedor";
+            var rol = userInfo.Value.rol ?? "Empleado";
             var accessToken = _jwtService.GenerateTokenFromRefreshClaims(
                 userInfo.Value.userId!.Value,
                 userInfo.Value.email!,
@@ -139,7 +139,7 @@ namespace API.Controllers.Auth
             );
 
             // Calcular expiresIn según el rol
-            var expiresIn = rol == "Cliente" ? 86400 : 28800; // 24h o 8h en segundos
+            var expiresIn = rol == "Empleado" ? 86400 : 28800; // 24h Empleado, 8h Dueño/Gerente
 
             return Ok(new RefreshResponse
             {

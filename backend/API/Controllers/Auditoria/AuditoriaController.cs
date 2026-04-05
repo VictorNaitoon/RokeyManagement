@@ -9,7 +9,7 @@ namespace API.Controllers.Auditoria
 {
     [ApiController]
     [Route("api/v1/[controller]")]
-    [Authorize(Roles = "Admin,Administrador,Dueño,Manager,Gerente,SuperAdmin")]
+    [Authorize(Roles = "Dueño,Gerente")]
     public class AuditoriaController : ControllerBase
     {
         private readonly IAuditoriaService _auditoriaService;

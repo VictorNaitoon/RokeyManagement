@@ -18,9 +18,9 @@ namespace API.Services.Common
         string Rol { get; }
         
         /// <summary>
-        /// Verifica si el usuario es el Dueño/Admin del negocio (puede gestionar clientes)
+        /// Verifica si el usuario es el Dueño del negocio (acceso total)
         /// </summary>
-        bool IsAdmin => Rol == "Admin" || Rol == "Administrador" || Rol == "Dueño" || Rol == "Usuario";
+        bool IsAdmin => Rol == "Dueño";
         
         /// <summary>
         /// Verifica si el usuario es Super Admin (dueño de la plataforma, no de un negocio)
@@ -28,14 +28,14 @@ namespace API.Services.Common
         bool IsSuperAdmin => Rol == "SuperAdmin";
         
         /// <summary>
-        /// Verifica si el usuario es Manager (Gerente)
+        /// Verifica si el usuario es Gerente
         /// </summary>
-        bool IsManager => Rol == "Manager" || Rol == "Gerente";
+        bool IsManager => Rol == "Gerente";
         
         /// <summary>
-        /// Verifica si el usuario es Vendedor (Empleado)
+        /// Verifica si el usuario es Empleado
         /// </summary>
-        bool IsVendedor => Rol == "Vendedor" || Rol == "Seller" || Rol == "Empleado" || Rol == "Cliente";
+        bool IsVendedor => Rol == "Empleado";
     }
 
     public class CurrentUserService : ICurrentUserService

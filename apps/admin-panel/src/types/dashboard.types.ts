@@ -120,7 +120,7 @@ export interface DashboardData {
 /**
  * User roles for role-based access control
  */
-export type UserRole = 'SuperAdmin' | 'Admin' | 'Gerente' | 'Vendedor';
+export type UserRole = 'SuperAdmin' | 'Dueño' | 'Gerente' | 'Empleado';
 
 /**
  * Payment method types

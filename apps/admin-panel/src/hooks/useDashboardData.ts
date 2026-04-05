@@ -44,17 +44,17 @@ const DASHBOARD_QUERY_CONFIG = {
 function getUserRole(): UserRole | null {
   const user = authStore.getState().user;
   if (!user) return null;
-  // Map from auth store role (includes SuperAdmin) to dashboard role
-  if (user.rol === 'SuperAdmin') return 'Admin';
+  // SuperAdmin no accede a informes de negocio
+  if (user.rol === 'SuperAdmin') return 'SuperAdmin';
   return user.rol as UserRole;
 }
 
 /**
- * Check if user has access to admin-only data
+ * Check if user has access to admin-only data (Dueño or Gerente)
  */
 function canAccessAdminData(): boolean {
   const role = getUserRole();
-  return role === 'Admin' || role === 'Gerente';
+  return role === 'Dueño' || role === 'Gerente';
 }
 
 // ============================================
