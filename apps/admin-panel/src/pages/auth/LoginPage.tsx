@@ -62,7 +62,21 @@ export function LoginPage() {
         });
         navigate('/admin', { replace: true });
       } else {
-        authStore.getState().setAuth(result.data.token, result.data.usuario);
+        const usuario = result.data.usuario;
+        // Map backend roles to frontend roles
+        const roleMap: Record<string, UserRole> = {
+          'Usuario': 'Admin',
+          'Cliente': 'Vendedor',
+          'Admin': 'Admin',
+          'Gerente': 'Gerente',
+          'Vendedor': 'Vendedor',
+          'SuperAdmin': 'SuperAdmin',
+        };
+        const mappedRole = roleMap[usuario.rol as string] || 'Vendedor';
+        authStore.getState().setAuth(result.data.token, {
+          ...usuario,
+          rol: mappedRole,
+        });
         navigate(from, { replace: true });
       }
     },

@@ -62,9 +62,11 @@ function canAccessAdminData(): boolean {
 // ============================================
 
 /**
- * Hook for daily sales summary (all roles)
+ * Hook for daily sales summary (Admin/Gerente only - backend restriction)
  */
 export function useVentasResumen(fecha: string = 'hoy') {
+  const isAdmin = canAccessAdminData();
+  
   return useQuery({
     queryKey: ['dashboard', 'ventas-resumen', fecha],
     queryFn: async () => {
@@ -73,6 +75,7 @@ export function useVentasResumen(fecha: string = 'hoy') {
       });
       return response.data;
     },
+    enabled: isAdmin,
     ...DASHBOARD_QUERY_CONFIG,
   });
 }
@@ -97,23 +100,28 @@ export function useIngresosGastos(fecha: string = 'mes') {
 }
 
 /**
- * Hook for low stock alerts (all roles)
+ * Hook for low stock alerts (Admin/Gerente only - backend restriction)
  */
 export function useAlertasStock() {
+  const isAdmin = canAccessAdminData();
+  
   return useQuery({
     queryKey: ['dashboard', 'alertas-stock'],
     queryFn: async () => {
       const response = await api.get<AlertasStockResponse>('/api/v1/informes/alertas-stock');
       return response.data.productos;
     },
+    enabled: isAdmin,
     ...DASHBOARD_QUERY_CONFIG,
   });
 }
 
 /**
- * Hook for top selling products (all roles)
+ * Hook for top selling products (Admin/Gerente only - backend restriction)
  */
 export function useProductosTop(limite: number = 10) {
+  const isAdmin = canAccessAdminData();
+  
   return useQuery({
     queryKey: ['dashboard', 'productos-top', limite],
     queryFn: async () => {
@@ -122,6 +130,7 @@ export function useProductosTop(limite: number = 10) {
       });
       return response.data.productos;
     },
+    enabled: isAdmin,
     ...DASHBOARD_QUERY_CONFIG,
   });
 }
@@ -144,9 +153,11 @@ export function useVentasPorPago() {
 }
 
 /**
- * Hook for cash flow summary (all roles)
+ * Hook for cash flow summary (Admin/Gerente only - backend restriction)
  */
 export function useFlujoCaja(fecha: string = 'mes') {
+  const isAdmin = canAccessAdminData();
+  
   return useQuery({
     queryKey: ['dashboard', 'flujo-caja', fecha],
     queryFn: async () => {
@@ -155,6 +166,7 @@ export function useFlujoCaja(fecha: string = 'mes') {
       });
       return response.data;
     },
+    enabled: isAdmin,
     ...DASHBOARD_QUERY_CONFIG,
   });
 }
