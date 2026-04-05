@@ -242,6 +242,7 @@ export interface DashboardDataReturn {
   // Access control
   canViewAdminData: boolean;
   userRole: UserRole | null;
+  allFailed: boolean;
 }
 
 /**
@@ -269,6 +270,16 @@ export function useDashboardData(options: UseDashboardDataOptions = {}): Dashboa
     (ingresosGastos.isEnabled && ingresosGastos.isLoading) ||
     (ventasPorPago.isEnabled && ventasPorPago.isLoading) ||
     (ventasPorVendedor.isEnabled && ventasPorVendedor.isLoading);
+
+  // Determine if ALL enabled queries have failed
+  const allFailed = 
+    (ventasResumen.isError || ventasResumen.isLoading === false) &&
+    (alertasStock.isError || alertasStock.isLoading === false) &&
+    (productosTop.isError || productosTop.isLoading === false) &&
+    (flujoCaja.isError || flujoCaja.isLoading === false) &&
+    (!ingresosGastos.isEnabled || ingresosGastos.isError || ingresosGastos.isLoading === false) &&
+    (!ventasPorPago.isEnabled || ventasPorPago.isError || ventasPorPago.isLoading === false) &&
+    (!ventasPorVendedor.isEnabled || ventasPorVendedor.isError || ventasPorVendedor.isLoading === false);
 
   // Determine if any query is fetching (re-fetching in background)
   const isFetching = 
@@ -350,5 +361,6 @@ export function useDashboardData(options: UseDashboardDataOptions = {}): Dashboa
     // Access control
     canViewAdminData: canAccessAdminData(),
     userRole: getUserRole(),
+    allFailed,
   };
 }
