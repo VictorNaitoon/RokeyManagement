@@ -73,10 +73,10 @@ export function LoginPage() {
       // Determine error type from axios response
       const axiosError = error as { response?: { status?: number }; message?: string };
       const status = axiosError.response?.status;
-      
+
       if (status === 401) {
         toast.error('Credenciales inválidas');
-      } else if (status >= 500) {
+      } else if (status !== undefined && status >= 500) {
         toast.error('Error del servidor. Intenta más tarde');
       } else if (status === 0 || axiosError.message?.includes('Network Error')) {
         toast.error('Error de conexión. Verifica tu internet');
