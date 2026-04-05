@@ -70,17 +70,24 @@ export function DashboardPage() {
   // Error state - show when there's an error and not loading
   if (error && !isLoading) {
     return (
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="space-y-2">
-          <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
-          <p className="text-muted-foreground">Bienvenido al sistema de gestión</p>
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6 p-8">
+        <WifiOff className="h-16 w-16 text-muted-foreground" />
+        <div className="text-center space-y-2">
+          <h2 className="text-xl font-semibold text-foreground">
+            No se pudo conectar con el servidor
+          </h2>
+          <p className="text-muted-foreground max-w-md">
+            Verifica que el backend esté corriendo en https://localhost:7096
+          </p>
         </div>
-        
-        <DashboardError 
-          message="No se pudo conectar con el servidor. Verifica que el backend esté corriendo."
-          onRetry={refetch}
-        />
+        <Button 
+          onClick={() => refetch()}
+          size="lg"
+          className="gap-2"
+        >
+          <RefreshCw className={`h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
+          Reintentar
+        </Button>
       </div>
     );
   }
