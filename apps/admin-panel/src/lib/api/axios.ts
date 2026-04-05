@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { authStore } from '@/stores/authStore';
+import { useSubscriptionStore } from '@/stores/subscriptionStore';
 
 export const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'https://localhost:7096',
@@ -99,6 +100,16 @@ api.interceptors.response.use(
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;
+      }
+    }
+
+    // Detectar bloqueo por suscripción pendiente de pago
+    if (error.response?.status === 403) {
+      const data = error.response?.data;
+      if (data?.title === 'Subscription Blocked' || data?.detail?.includes('suscripción')) {
+        useSubscriptionStore.getState().setBlocked(
+          data?.detail || 'Su suscripción está pendiente de pago. Contacte al administrador.'
+        );
       }
     }
 

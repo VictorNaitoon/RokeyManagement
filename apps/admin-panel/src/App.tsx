@@ -3,22 +3,41 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/sonner';
 import { queryClient } from '@/lib/api/query-client';
 import { authStore } from '@/stores/authStore';
+import { useSubscriptionStore } from '@/stores/subscriptionStore';
 import { ProtectedRoute } from '@/components/layout/ProtectedRoute';
 import { LoginPage } from '@/pages/auth/LoginPage';
 import { DashboardPage } from '@/pages/dashboard/DashboardPage';
 import { SuperAdminDashboardPage } from '@/pages/superadmin/SuperAdminDashboardPage';
+import { SubscriptionBlockedPage } from '@/pages/subscription/SubscriptionBlockedPage';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 
 function App() {
   const { isAuthenticated, user } = authStore();
+  const isBlocked = useSubscriptionStore((state) => state.isBlocked);
 
   // Redirect authenticated users based on role
   const defaultRedirect = user?.rol === 'SuperAdmin' ? '/admin' : '/dashboard';
+
+  // If subscription is blocked, show blocked page immediately (synchronous, no flash)
+  if (isBlocked) {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <SubscriptionBlockedPage />
+        <Toaster />
+      </QueryClientProvider>
+    );
+  }
 
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <Routes>
+          {/* Subscription blocked page */}
+          <Route
+            path="/suscripcion-bloqueada"
+            element={<SubscriptionBlockedPage />}
+          />
+
           {/* Public routes */}
           <Route
             path="/login"
