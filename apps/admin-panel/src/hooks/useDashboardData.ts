@@ -73,7 +73,7 @@ export function useVentasResumen(fecha: string = 'hoy') {
       const response = await api.get<VentasResumen>('/api/v1/informes/ventas-resumen', {
         params: { fecha },
       });
-      return response.data;
+      return response.data ?? { totalVentas: 0, cantidadVentas: 0, ticketPromedio: 0 };
     },
     enabled: isAdmin,
     ...DASHBOARD_QUERY_CONFIG,
@@ -92,7 +92,7 @@ export function useIngresosGastos(fecha: string = 'mes') {
       const response = await api.get<IngresosGastos>('/api/v1/informes/ingresos-gastos', {
         params: { fecha },
       });
-      return response.data;
+      return response.data ?? { totalVentas: 0, totalCompras: 0, gananciaBruta: 0, margen: 0 };
     },
     enabled: isAdmin,
     ...DASHBOARD_QUERY_CONFIG,
@@ -109,7 +109,7 @@ export function useAlertasStock() {
     queryKey: ['dashboard', 'alertas-stock'],
     queryFn: async () => {
       const response = await api.get<AlertasStockResponse>('/api/v1/informes/alertas-stock');
-      return response.data.productos;
+      return response.data?.productos ?? [];
     },
     enabled: isAdmin,
     ...DASHBOARD_QUERY_CONFIG,
@@ -128,7 +128,7 @@ export function useProductosTop(limite: number = 10) {
       const response = await api.get<ProductosTopResponse>('/api/v1/informes/productos-top', {
         params: { limite },
       });
-      return response.data.productos;
+      return response.data?.productos ?? [];
     },
     enabled: isAdmin,
     ...DASHBOARD_QUERY_CONFIG,
@@ -145,7 +145,7 @@ export function useVentasPorPago() {
     queryKey: ['dashboard', 'ventas-por-pago'],
     queryFn: async () => {
       const response = await api.get<VentasPorPagoResponse>('/api/v1/informes/ventas-por-pago');
-      return response.data.ventas;
+      return response.data?.ventas ?? [];
     },
     enabled: isAdmin,
     ...DASHBOARD_QUERY_CONFIG,
@@ -164,7 +164,7 @@ export function useFlujoCaja(fecha: string = 'mes') {
       const response = await api.get<FlujoCaja>('/api/v1/informes/flujo-caja', {
         params: { fecha },
       });
-      return response.data;
+      return response.data ?? { ingresos: 0, egresos: 0, balance: 0 };
     },
     enabled: isAdmin,
     ...DASHBOARD_QUERY_CONFIG,
@@ -181,7 +181,7 @@ export function useVentasPorVendedor() {
     queryKey: ['dashboard', 'ventas-por-vendedor'],
     queryFn: async () => {
       const response = await api.get<VentasPorVendedorResponse>('/api/v1/informes/ventas-por-vendedor');
-      return response.data.ventas;
+      return response.data?.ventas ?? [];
     },
     enabled: isAdmin,
     ...DASHBOARD_QUERY_CONFIG,
@@ -201,11 +201,11 @@ export interface DashboardDataReturn {
   // Data states
   ventasResumen: VentasResumen | undefined;
   ingresosGastos: IngresosGastos | undefined;
-  alertasStock: AlertaStock[];
-  productosTop: ProductoTop[];
-  ventasPorPago: VentasPorPago[];
+  alertasStock: AlertaStock[] | undefined;
+  productosTop: ProductoTop[] | undefined;
+  ventasPorPago: VentasPorPago[] | undefined;
   flujoCaja: FlujoCaja | undefined;
-  ventasPorVendedor: VentasPorVendedor[];
+  ventasPorVendedor: VentasPorVendedor[] | undefined;
   
   // Loading states
   isLoading: boolean;
@@ -296,11 +296,11 @@ export function useDashboardData(options: UseDashboardDataOptions = {}): Dashboa
     // Data
     ventasResumen: ventasResumen.data,
     ingresosGastos: ingresosGastos.data,
-    alertasStock: alertasStock.data ?? [],
-    productosTop: productosTop.data ?? [],
-    ventasPorPago: ventasPorPago.data ?? [],
+    alertasStock: alertasStock.data,
+    productosTop: productosTop.data,
+    ventasPorPago: ventasPorPago.data,
     flujoCaja: flujoCaja.data,
-    ventasPorVendedor: ventasPorVendedor.data ?? [],
+    ventasPorVendedor: ventasPorVendedor.data,
     
     // Loading
     isLoading,
