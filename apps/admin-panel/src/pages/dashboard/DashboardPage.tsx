@@ -68,6 +68,11 @@ export function DashboardPage() {
     return hours === 1 ? '1 hora' : `${hours} horas`;
   };
 
+  // Debug: log state changes
+  useEffect(() => {
+    console.log('Dashboard state:', { isLoading, isFetching, error: error?.message, allFailed });
+  }, [isLoading, isFetching, error, allFailed]);
+
   // Error state - show when there's an error
   if (error) {
     return (
