@@ -10,6 +10,9 @@ import { LoginPage } from '@/pages/auth/LoginPage';
 import { DashboardPage } from '@/pages/dashboard/DashboardPage';
 import { SuperAdminDashboardPage } from '@/pages/superadmin/SuperAdminDashboardPage';
 import { SubscriptionBlockedPage } from '@/pages/subscription/SubscriptionBlockedPage';
+import { ProductosPage } from '@/pages/productos/ProductosPage';
+import { AlertasStockPage } from '@/pages/productos/AlertasStockPage';
+import { CategoriasPage } from '@/pages/categorias/CategoriasPage';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 
 /**
@@ -73,6 +76,9 @@ function App() {
           >
             <Route index element={<Navigate to="/dashboard" replace />} />
             <Route path="dashboard" element={<DashboardPage />} />
+            <Route path="productos" element={<ProductosPage />} />
+            <Route path="productos/alertas" element={<AlertasStockPage />} />
+            <Route path="categorias" element={<CategoriasPage />} />
           </Route>
 
           {/* SuperAdmin routes */}

@@ -5,3 +5,9 @@
 
 // Dashboard types
 export * from './dashboard.types';
+
+// Producto types
+export * from './producto.types';
+
+// Categoria types
+export * from './categoria.types';

@@ -3,4 +3,11 @@
  * RoKey MANAGEMENT - Multi-tenant SaaS ERP/POS for locksmiths
  */
 
-export * from './useDashboardData';
+// Dashboard hooks
+export { useDashboardData, useVentasResumen, useIngresosGastos, useAlertasStock as useAlertasStockDashboard, useProductosTop, useVentasPorPago, useFlujoCaja, useVentasPorVendedor } from './useDashboardData';
+
+// Productos hooks (renamed to avoid conflict)
+export { useAlertasStock as useAlertasStockProductos, useProductos, useProducto, useCreateProducto, useUpdateProducto, useDeleteProducto, useReactivarProducto, canViewPrecioCompra, canManageProductos, canManageEstadoProductos } from './useProductos';
+
+// Categorías hooks
+export { useCategorias, useCategoria, useCreateCategoria, useUpdateCategoria, useDeleteCategoria, canManageCategorias } from './useCategorias';

@@ -19,7 +19,6 @@ import {
   VentasPorPagoChart,
   ProductosTopChart,
   DashboardSkeleton,
-  DashboardError,
 } from '@/components/dashboard';
 
 export function DashboardPage() {
