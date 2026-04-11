@@ -55,7 +55,7 @@ function canManageCategorias(): boolean {
 
 /**
  * Hook for fetching list of categories
- * GET /api/v1/categorias
+ * GET /v1/categorias
  */
 export interface UseCategoriasOptions {
   filters?: CategoriaFilters;
@@ -65,7 +65,7 @@ export function useCategorias(options: UseCategoriasOptions = {}) {
   return useQuery({
     queryKey: ['categorias', options.filters],
     queryFn: async () => {
-      const response = await api.get<CategoriaListResponse>('/api/v1/categorias');
+      const response = await api.get<CategoriaListResponse>('/api/v1/Categoria');
       return response.data;
     },
     ...CATEGORIAS_QUERY_CONFIG,
@@ -74,14 +74,14 @@ export function useCategorias(options: UseCategoriasOptions = {}) {
 
 /**
  * Hook for fetching a single category by ID
- * GET /api/v1/categorias/{id}
+ * GET /api/v1/Categoria/{id}
  */
 export function useCategoria(id: number | null) {
   return useQuery({
     queryKey: ['categoria', id],
     queryFn: async () => {
       if (!id) return null;
-      const response = await api.get<Categoria>(`/api/v1/categorias/${id}`);
+      const response = await api.get<Categoria>(`/api/v1/Categoria/${id}`);
       return response.data;
     },
     enabled: !!id,
@@ -95,7 +95,7 @@ export function useCategoria(id: number | null) {
 
 /**
  * Hook for creating a new category
- * POST /api/v1/categorias
+ * POST /v1/categorias
  * Only Dueño or Gerente can create categories
  */
 export function useCreateCategoria() {
@@ -103,7 +103,7 @@ export function useCreateCategoria() {
 
   return useMutation({
     mutationFn: async (data: CrearCategoriaRequest) => {
-      const response = await api.post<Categoria>('/api/v1/categorias', data);
+      const response = await api.post<Categoria>('/api/v1/Categoria', data);
       return response.data;
     },
     onSuccess: () => {
@@ -119,7 +119,7 @@ export function useCreateCategoria() {
 
 /**
  * Hook for updating an existing category
- * PUT /api/v1/categorias/{id}
+ * PUT /api/v1/Categoria/{id}
  * Only Dueño or Gerente can update categories
  */
 export function useUpdateCategoria() {
@@ -127,7 +127,7 @@ export function useUpdateCategoria() {
 
   return useMutation({
     mutationFn: async ({ id, data }: { id: number; data: ActualizarCategoriaRequest }) => {
-      const response = await api.put<Categoria>(`/api/v1/categorias/${id}`, data);
+      const response = await api.put<Categoria>(`/api/v1/Categoria/${id}`, data);
       return response.data;
     },
     onSuccess: () => {
@@ -144,7 +144,7 @@ export function useUpdateCategoria() {
 
 /**
  * Hook for deleting (deactivating) a category
- * DELETE /api/v1/categorias/{id}
+ * DELETE /api/v1/Categoria/{id}
  * Only Dueño or Gerente can delete categories
  */
 export function useDeleteCategoria() {
@@ -152,7 +152,7 @@ export function useDeleteCategoria() {
 
   return useMutation({
     mutationFn: async (id: number) => {
-      await api.delete(`/api/v1/categorias/${id}`);
+      await api.delete(`/api/v1/Categoria/${id}`);
     },
     onSuccess: () => {
       toast.success('Categoría eliminada exitosamente');

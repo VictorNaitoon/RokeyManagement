@@ -71,7 +71,7 @@ function canManageEstadoProductos(): boolean {
 
 /**
  * Hook for fetching list of products
- * GET /api/v1/productos
+ * GET /v1/productos
  */
 export interface UseProductosOptions {
   filters?: ProductoFilters;
@@ -83,7 +83,7 @@ export function useProductos(options: UseProductosOptions = {}) {
   return useQuery({
     queryKey: ['productos', filters],
     queryFn: async () => {
-      const response = await api.get<ProductoListResponse>('/api/v1/productos', {
+      const response = await api.get<ProductoListResponse>('/api/v1/Producto', {
         params: {
           busqueda: filters.busqueda || undefined,
         },
@@ -96,14 +96,14 @@ export function useProductos(options: UseProductosOptions = {}) {
 
 /**
  * Hook for fetching a single product by ID
- * GET /api/v1/productos/{id}
+ * GET /api/v1/Producto/{id}
  */
 export function useProducto(id: number | null) {
   return useQuery({
     queryKey: ['producto', id],
     queryFn: async () => {
       if (!id) return null;
-      const response = await api.get<Producto>(`/api/v1/productos/${id}`);
+      const response = await api.get<Producto>(`/api/v1/Producto/${id}`);
       return response.data;
     },
     enabled: !!id,
@@ -113,13 +113,13 @@ export function useProducto(id: number | null) {
 
 /**
  * Hook for fetching low stock alerts
- * GET /api/v1/productos/alertas
+ * GET /api/v1/Producto/alertas
  */
 export function useAlertasStock() {
   return useQuery({
     queryKey: ['productos', 'alertas'],
     queryFn: async () => {
-      const response = await api.get<ProductoAlertasResponse>('/api/v1/productos/alertas');
+      const response = await api.get<ProductoAlertasResponse>('/api/v1/Producto/alertas');
       return response.data.productos ?? [];
     },
     ...PRODUCTOS_QUERY_CONFIG,
@@ -132,14 +132,14 @@ export function useAlertasStock() {
 
 /**
  * Hook for creating a new product
- * POST /api/v1/productos
+ * POST /v1/productos
  */
 export function useCreateProducto() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (data: CrearProductoRequest) => {
-      const response = await api.post<Producto>('/api/v1/productos', data);
+      const response = await api.post<Producto>('/api/v1/Producto', data);
       return response.data;
     },
     onSuccess: () => {
@@ -155,14 +155,14 @@ export function useCreateProducto() {
 
 /**
  * Hook for updating an existing product
- * PUT /api/v1/productos/{id}
+ * PUT /api/v1/Producto/{id}
  */
 export function useUpdateProducto() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async ({ id, data }: { id: number; data: ActualizarProductoRequest }) => {
-      const response = await api.put<Producto>(`/api/v1/productos/${id}`, data);
+      const response = await api.put<Producto>(`/api/v1/Producto/${id}`, data);
       return response.data;
     },
     onSuccess: () => {
@@ -179,14 +179,14 @@ export function useUpdateProducto() {
 
 /**
  * Hook for deleting (deactivating) a product
- * DELETE /api/v1/productos/{id}
+ * DELETE /api/v1/Producto/{id}
  */
 export function useDeleteProducto() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (id: number) => {
-      await api.delete(`/api/v1/productos/${id}`);
+      await api.delete(`/api/v1/Producto/${id}`);
     },
     onSuccess: () => {
       toast.success('Producto eliminado exitosamente');
@@ -201,14 +201,14 @@ export function useDeleteProducto() {
 
 /**
  * Hook for reactivating a deactivated product
- * POST /api/v1/productos/{id}/activar
+ * POST /api/v1/Producto/{id}/activar
  */
 export function useReactivarProducto() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (id: number) => {
-      const response = await api.post<Producto>(`/api/v1/productos/${id}/activar`);
+      const response = await api.post<Producto>(`/api/v1/Producto/${id}/activar`);
       return response.data;
     },
     onSuccess: () => {
