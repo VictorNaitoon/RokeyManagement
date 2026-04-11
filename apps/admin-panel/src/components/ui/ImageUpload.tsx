@@ -21,12 +21,73 @@ export interface ImageUploadProps {
 // Cloudinary configuration
 const CLOUDINARY_CLOUD_NAME = 'dt4prtxyr';
 const CLOUDINARY_UPLOAD_PRESET = 'Producto';
+const CLOUDINARY_SCRIPT_URL = 'https://upload-widget.cloudinary.com/global/all.js';
 
 interface CloudinaryWidgetResult {
   event: string;
   info: {
     secure_url: string;
   };
+}
+
+// Type for window.cloudinary
+interface CloudinaryWidgetInstance {
+  open: () => void;
+  close: () => void;
+}
+
+type CloudinaryCreateWidget = (
+  config: unknown,
+  callback: (error: unknown, result: CloudinaryWidgetResult) => void
+) => CloudinaryWidgetInstance | undefined;
+
+declare global {
+  interface Window {
+    cloudinary?: {
+      createUploadWidget?: CloudinaryCreateWidget;
+    };
+  }
+}
+
+// Load Cloudinary script dynamically
+function useCloudinaryScript() {
+  const [isLoaded, setIsLoaded] = React.useState(false);
+  const [isLoading, setIsLoading] = React.useState(false);
+
+  React.useEffect(() => {
+    // Check if already loaded
+    if (window.cloudinary?.createUploadWidget) {
+      setIsLoaded(true);
+      return;
+    }
+
+    // Check if script is already being loaded
+    const existingScript = document.querySelector(`script[src="${CLOUDINARY_SCRIPT_URL}"]`);
+    if (existingScript) {
+      setIsLoading(true);
+      existingScript.addEventListener('load', () => {
+        setIsLoaded(true);
+        setIsLoading(false);
+      });
+      return;
+    }
+
+    // Load the script
+    setIsLoading(true);
+    const script = document.createElement('script');
+    script.src = CLOUDINARY_SCRIPT_URL;
+    script.async = true;
+    script.onload = () => {
+      setIsLoaded(true);
+      setIsLoading(false);
+    };
+    script.onerror = () => {
+      setIsLoading(false);
+    };
+    document.body.appendChild(script);
+  }, []);
+
+  return { isLoaded, isLoading };
 }
 
 export function ImageUpload({
@@ -38,25 +99,13 @@ export function ImageUpload({
 }: ImageUploadProps) {
   const [isUploading, setIsUploading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const { isLoaded, isLoading } = useCloudinaryScript();
 
   // Open Cloudinary widget
   const openWidget = React.useCallback(() => {
-    if (disabled || isUploading) return;
+    if (disabled || isUploading || !isLoaded) return;
 
-    // Define the callback type
-    type WidgetCallback = (err: unknown, result: CloudinaryWidgetResult) => void;
-    
-    // Access cloudinary from window
-    const windowAny = window as unknown as {
-      cloudinary?: {
-        createUploadWidget?: (config: unknown, callback: WidgetCallback) => {
-          open: () => void;
-          close: () => void;
-        } | undefined;
-      };
-    };
-
-    const createUploadWidget = windowAny.cloudinary?.createUploadWidget;
+    const createUploadWidget = window.cloudinary?.createUploadWidget;
     
     if (!createUploadWidget) {
       setError('Cloudinary no está disponible');
@@ -99,7 +148,7 @@ export function ImageUpload({
       setIsUploading(true);
       widget.open();
     }
-  }, [disabled, isUploading, onChange]);
+  }, [disabled, isUploading, isLoaded, onChange]);
 
   // Remove image
   const handleRemove = React.useCallback(() => {
@@ -138,10 +187,15 @@ export function ImageUpload({
         type="button"
         variant="outline"
         onClick={openWidget}
-        disabled={disabled || isUploading}
+        disabled={disabled || isUploading || isLoading}
         className={cn('w-full h-32 flex flex-col items-center justify-center gap-2', error && 'border-destructive')}
       >
-        {isUploading ? (
+        {isLoading ? (
+          <>
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            <span className="text-sm text-muted-foreground">Cargando...</span>
+          </>
+        ) : isUploading ? (
           <>
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             <span className="text-sm text-muted-foreground">Subiendo...</span>
