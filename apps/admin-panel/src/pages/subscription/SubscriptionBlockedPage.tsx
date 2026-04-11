@@ -4,12 +4,10 @@ import { authStore } from '@/stores/authStore';
 
 export function SubscriptionBlockedPage() {
   const { message, clearBlocked } = useSubscriptionStore();
-  const { logout } = authStore;
 
   const handleLogout = async () => {
     clearBlocked();
-    authStore.getState().clearState();
-    window.location.href = '/login';
+    authStore.getState().logout();
   };
 
   return (

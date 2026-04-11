@@ -28,14 +28,14 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { ImageUpload } from '@/components/ui/ImageUpload';
-import { productoFormSchema, type ProductoFormData, type CrearProductoFormData, type ActualizarProductoFormData } from '@/lib/schemas/producto.schema';
+import { productoFormSchema, type ProductoFormData } from '@/lib/schemas/producto.schema';
 import { useCategorias, canViewPrecioCompra } from '@/hooks';
 import { Loader2 } from 'lucide-react';
 
 export interface ProductoFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  producto?: (Omit<ActualizarProductoFormData, 'precioCompra'> & { id: number; precioCompra?: number | null }) | null;
+  producto?: ProductoFormData & { id: number } | null;
   onSubmit: (data: unknown) => void;
   isLoading?: boolean;
 }
@@ -51,10 +51,7 @@ export function ProductoForm({
   const canSeePrecioCompra = canViewPrecioCompra();
   
   // Get categorias for dropdown
-  const { data: categoriasData, isLoading: loadingCategorias } = useCategorias({
-    filters: { activo: true },
-    tamanoPagina: 100,
-  });
+  const { data: categoriasData, isLoading: loadingCategorias } = useCategorias();
   
   const categorias = categoriasData?.categorias ?? [];
 
@@ -75,15 +72,15 @@ export function ProductoForm({
       precioVenta: 0,
       stockActual: 0,
       stockMinimo: 0,
-      idCategoria: 0,
+      idCategoria: undefined,
       esServicio: false,
-      foto: undefined,
+      imagenURL: undefined,
     },
   });
 
   // Watch values for controlled inputs
   const watchIdCategoria = watch('idCategoria');
-  const watchFoto = watch('foto');
+  const watchImagenURL = watch('imagenURL');
 
   // Reset form when product changes or dialog opens
   React.useEffect(() => {
@@ -97,9 +94,9 @@ export function ProductoForm({
           precioVenta: producto.precioVenta ?? 0,
           stockActual: producto.stockActual ?? 0,
           stockMinimo: producto.stockMinimo ?? 0,
-          idCategoria: producto.idCategoria ?? 0,
+          idCategoria: producto.idCategoria ?? undefined,
           esServicio: producto.esServicio ?? false,
-          foto: producto.foto ?? undefined,
+          imagenURL: producto.imagenURL ?? undefined,
         });
       } else {
         reset({
@@ -110,25 +107,20 @@ export function ProductoForm({
           precioVenta: 0,
           stockActual: 0,
           stockMinimo: 0,
-          idCategoria: 0,
+          idCategoria: undefined,
           esServicio: false,
-          foto: undefined,
+          imagenURL: undefined,
         });
       }
     }
   }, [open, producto, reset]);
 
-  const handleFotoChange = (url: string) => {
-    setValue('foto', url || undefined, { shouldValidate: true });
+  const handleImagenURLChange = (url: string) => {
+    setValue('imagenURL', url || undefined, { shouldValidate: true });
   };
 
   const handleFormSubmit = (data: ProductoFormData) => {
-    // For create: all fields required
-    // For edit: optional fields
-    const submitData = isEditing 
-      ? { ...data, precioCompra: data.precioCompra ?? null } as ActualizarProductoFormData
-      : data as CrearProductoFormData;
-    onSubmit(submitData);
+    onSubmit(data);
   };
 
   return (
@@ -269,7 +261,7 @@ export function ProductoForm({
           <div className="flex items-center gap-2">
             <Switch
               id="esServicio"
-              checked={watch('esServicio')}
+              checked={watch('esServicio') ?? false}
               onCheckedChange={(checked) => setValue('esServicio', checked)}
             />
             <Label htmlFor="esServicio" className="cursor-pointer">
@@ -281,8 +273,8 @@ export function ProductoForm({
           <div className="space-y-2">
             <Label>Imagen del producto</Label>
             <ImageUpload
-              value={watchFoto ?? null}
-              onChange={handleFotoChange}
+              value={watchImagenURL ?? null}
+              onChange={handleImagenURLChange}
               placeholder="Subir imagen"
             />
           </div>

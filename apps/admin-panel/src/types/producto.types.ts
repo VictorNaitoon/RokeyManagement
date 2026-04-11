@@ -16,30 +16,27 @@
 export interface Producto {
   id: number;
   nombre: string;
-  codigoBusqueda: string;
-  descripcion: string;
-  precioCompra: number | null;  // Only visible to Admin (Dueño, Gerente)
+  codigoBusqueda?: string;
+  descripcion?: string;
   precioVenta: number;
+  precioCompra?: number | null;  // Only visible to Admin (Dueño, Gerente)
   stockActual: number;
   stockMinimo: number;
-  foto: string | null;
+  stockBajo?: boolean;           // Computed: StockActual <= StockMinimo
+  imagenURL?: string;
   esServicio: boolean;
-  idCategoria: number;
-  categoriaNombre?: string;
   activo: boolean;
-  fechaCreacion: string;
-  fechaActualizacion: string;
+  idCategoria?: number;
+  nombreCategoria?: string;
 }
 
 /**
  * Response wrapper for GET /api/v1/productos
- * GET /api/v1/productos (list with pagination)
+ * GET /api/v1/productos
  */
 export interface ProductoListResponse {
   productos: Producto[];
   total: number;
-  pagina: number;
-  tamanoPagina: number;
 }
 
 /**

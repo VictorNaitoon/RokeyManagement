@@ -54,32 +54,18 @@ function canManageCategorias(): boolean {
 // ============================================
 
 /**
- * Hook for fetching paginated list of categories
+ * Hook for fetching list of categories
  * GET /api/v1/categorias
  */
 export interface UseCategoriasOptions {
   filters?: CategoriaFilters;
-  pagina?: number;
-  tamanoPagina?: number;
-  ordenarPor?: string;
-  orden?: 'asc' | 'desc';
 }
 
 export function useCategorias(options: UseCategoriasOptions = {}) {
-  const { filters = {}, pagina = 1, tamanoPagina = 50, ordenarPor = 'nombre', orden = 'asc' } = options;
-
   return useQuery({
-    queryKey: ['categorias', filters, pagina, tamanoPagina, ordenarPor, orden],
+    queryKey: ['categorias', options.filters],
     queryFn: async () => {
-      const response = await api.get<CategoriaListResponse>('/api/v1/categorias', {
-        params: {
-          ...filters,
-          pagina,
-          tamanoPagina,
-          ordenarPor,
-          orden,
-        },
-      });
+      const response = await api.get<CategoriaListResponse>('/api/v1/categorias');
       return response.data;
     },
     ...CATEGORIAS_QUERY_CONFIG,

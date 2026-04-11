@@ -70,30 +70,22 @@ function canManageEstadoProductos(): boolean {
 // ============================================
 
 /**
- * Hook for fetching paginated list of products
+ * Hook for fetching list of products
  * GET /api/v1/productos
  */
 export interface UseProductosOptions {
   filters?: ProductoFilters;
-  pagina?: number;
-  tamanoPagina?: number;
-  ordenarPor?: string;
-  orden?: 'asc' | 'desc';
 }
 
 export function useProductos(options: UseProductosOptions = {}) {
-  const { filters = {}, pagina = 1, tamanoPagina = 20, ordenarPor = 'nombre', orden = 'asc' } = options;
-
+  const { filters = {} } = options;
+  
   return useQuery({
-    queryKey: ['productos', filters, pagina, tamanoPagina, ordenarPor, orden],
+    queryKey: ['productos', filters],
     queryFn: async () => {
       const response = await api.get<ProductoListResponse>('/api/v1/productos', {
         params: {
-          ...filters,
-          pagina,
-          tamanoPagina,
-          ordenarPor,
-          orden,
+          busqueda: filters.busqueda || undefined,
         },
       });
       return response.data;

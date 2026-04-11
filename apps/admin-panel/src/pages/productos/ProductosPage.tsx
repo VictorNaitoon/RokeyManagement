@@ -37,13 +37,7 @@ export function ProductosPage() {
   const canSeePrice = canViewPrecioCompra();
 
   // Queries
-  const { data, isLoading } = useProductos({
-    filters: search ? { busqueda: search } : {},
-    pagina: pageIndex + 1,
-    tamanoPagina: pageSize,
-    ordenarPor: 'nombre',
-    orden: 'asc',
-  });
+  const { data, isLoading } = useProductos();
 
   // Mutations
   const createMutation = useCreateProducto();
@@ -51,10 +45,23 @@ export function ProductosPage() {
   const deleteMutation = useDeleteProducto();
   const activarMutation = useReactivarProducto();
 
-  // Data
-  const productos = data?.productos ?? [];
-  const total = data?.total ?? 0;
+  // Data - Filter client-side since backend doesn't support search
+  const allProductos = data?.productos ?? [];
+  const filteredProductos = React.useMemo(() => {
+    if (!search) return allProductos;
+    const searchLower = search.toLowerCase();
+    return allProductos.filter(p => 
+      p.nombre.toLowerCase().includes(searchLower) ||
+      (p.codigoBusqueda?.toLowerCase().includes(searchLower) ?? false)
+    );
+  }, [allProductos, search]);
+  
+  const total = filteredProductos.length;
   const pageCount = Math.ceil(total / pageSize);
+  const paginatedProductos = filteredProductos.slice(
+    pageIndex * pageSize,
+    (pageIndex + 1) * pageSize
+  );
 
   // Column definitions
   const columns: ColumnDef<Producto>[] = React.useMemo(() => [
@@ -63,9 +70,9 @@ export function ProductosPage() {
       header: 'Nombre',
       cell: ({ row }) => (
         <div className="flex items-center gap-2">
-          {row.original.foto ? (
+          {row.original.imagenURL ? (
             <img
-              src={row.original.foto}
+              src={row.original.imagenURL}
               alt={row.original.nombre}
               className="w-8 h-8 rounded object-cover"
             />
@@ -224,7 +231,7 @@ export function ProductosPage() {
       {/* Products Table */}
       <DataTable
         columns={columns}
-        data={productos}
+        data={paginatedProductos}
         pageCount={pageCount}
         pageIndex={pageIndex}
         pageSize={pageSize}

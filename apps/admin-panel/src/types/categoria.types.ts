@@ -18,22 +18,15 @@ export interface Categoria {
   nombre: string;
   descripcion: string | null;
   activo: boolean;
-  idNegocio: number;
-  idUsuario: number;
-  usuarioNombre?: string;
-  fechaCreacion: string;
-  fechaActualizacion: string;
 }
 
 /**
  * Response wrapper for GET /api/v1/categorias
- * GET /api/v1/categorias (list with pagination)
+ * GET /api/v1/categorias
  */
 export interface CategoriaListResponse {
   categorias: Categoria[];
   total: number;
-  pagina: number;
-  tamanoPagina: number;
 }
 
 // ============================================

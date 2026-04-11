@@ -43,23 +43,30 @@ export function CategoriasPage() {
   const [editingCategoria, setEditingCategoria] = React.useState<Categoria | null>(null);
 
   // Queries
-  const { data, isLoading } = useCategorias({
-    filters: search ? { busqueda: search } : {},
-    pagina: pageIndex + 1,
-    tamanoPagina: pageSize,
-    ordenarPor: 'nombre',
-    orden: 'asc',
-  });
+  const { data, isLoading } = useCategorias();
 
   // Mutations
   const createMutation = useCreateCategoria();
   const updateMutation = useUpdateCategoria();
   const deleteMutation = useDeleteCategoria();
 
-  // Data
-  const categorias = data?.categorias ?? [];
-  const total = data?.total ?? 0;
+  // Data - Filter client-side since backend doesn't support search
+  const allCategorias = data?.categorias ?? [];
+  const filteredCategorias = React.useMemo(() => {
+    if (!search) return allCategorias;
+    const searchLower = search.toLowerCase();
+    return allCategorias.filter(c => 
+      c.nombre.toLowerCase().includes(searchLower) ||
+      (c.descripcion?.toLowerCase().includes(searchLower) ?? false)
+    );
+  }, [allCategorias, search]);
+  
+  const total = filteredCategorias.length;
   const pageCount = Math.ceil(total / pageSize);
+  const paginatedCategorias = filteredCategorias.slice(
+    pageIndex * pageSize,
+    (pageIndex + 1) * pageSize
+  );
 
   // Column definitions
   const columns: ColumnDef<Categoria>[] = React.useMemo(() => [
@@ -190,7 +197,7 @@ export function CategoriasPage() {
       {/* Categories Table */}
       <DataTable
         columns={columns}
-        data={categorias}
+        data={paginatedCategorias}
         pageCount={pageCount}
         pageIndex={pageIndex}
         pageSize={pageSize}
