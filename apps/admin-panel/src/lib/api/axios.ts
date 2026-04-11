@@ -3,7 +3,7 @@ import { authStore } from '@/stores/authStore';
 import { useSubscriptionStore } from '@/stores/subscriptionStore';
 
 export const api = axios.create({
-  baseURL: '/api',
+  baseURL: '',
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
