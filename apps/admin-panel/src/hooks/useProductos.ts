@@ -11,7 +11,7 @@ import { authStore } from '@/stores/authStore';
 import type {
   Producto,
   ProductoListResponse,
-  ProductoAlertasResponse,
+  ProductoAlerta,
   CrearProductoRequest,
   ActualizarProductoRequest,
   ProductoFilters,
@@ -119,8 +119,9 @@ export function useAlertasStock() {
   return useQuery({
     queryKey: ['productos', 'alertas'],
     queryFn: async () => {
-      const response = await api.get<ProductoAlertasResponse>('/api/v1/Producto/alertas');
-      return response.data.productos ?? [];
+      // Backend returns List<ProductoAlertaResponse> directly (not wrapped)
+      const response = await api.get<ProductoAlerta[]>('/api/v1/Producto/alertas');
+      return response.data ?? [];
     },
     ...PRODUCTOS_QUERY_CONFIG,
   });

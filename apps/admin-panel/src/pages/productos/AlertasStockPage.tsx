@@ -30,7 +30,8 @@ export function AlertasStockPage() {
     return alertas?.filter(
       (a: ProductoAlerta) =>
         a.nombre.toLowerCase().includes(lower) ||
-        a.categoriaNombre?.toLowerCase().includes(lower)
+        a.categoriaNombre?.toLowerCase().includes(lower) ||
+        a.id.toString().includes(lower)
     ) ?? [];
   }, [alertas, search]);
 
