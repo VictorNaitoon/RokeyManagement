@@ -74,19 +74,17 @@ export function useVentas(options: UseVentasOptions = {}) {
           fechaHasta: filters.fechaHasta || undefined,
         },
       });
-      console.log('API response:', response.data);
-      // Map backend PascalCase to frontend camelCase
+      // Backend returns camelCase (id, totalVenta, nombreCliente, etc)
       const ventas = (response.data.items || []).map((item: any) => ({
-        id: item.Id ?? 0,
-        fecha: item.Fecha ?? new Date().toISOString(),
-        totalVenta: item.TotalVenta ?? 0,
-        estado: item.Estado ?? 'Activa',
-        idUsuario: item.IdUsuario,
-        usuarioNombre: item.NombreUsuario ?? '',
-        idCliente: item.IdCliente,
-        clienteNombre: item.NombreCliente ?? '',
+        id: item.id ?? 0,
+        fecha: item.fecha ?? new Date().toISOString(),
+        totalVenta: item.totalVenta ?? 0,
+        estado: item.estado ?? 'Activa',
+        idUsuario: item.idUsuario,
+        usuarioNombre: item.nombreUsuario ?? '',
+        idCliente: item.idCliente,
+        clienteNombre: item.nombreCliente ?? '',
       }));
-      console.log('Mapped ventas:', ventas);
       return {
         ventas,
         total: response.data.totalCount || 0,
