@@ -26,8 +26,8 @@ namespace API.DTO.Request.Presupuestos
                     .WithMessage("La cantidad debe ser mayor a cero.");
 
                 detalle.RuleFor(d => d.PrecioPactado)
-                    .GreaterThan(0)
-                    .WithMessage("El precio pactado debe ser mayor a cero.");
+                    .GreaterThanOrEqualTo(0)
+                    .WithMessage("El precio pactado no puede ser negativo.");
             });
         }
     }
