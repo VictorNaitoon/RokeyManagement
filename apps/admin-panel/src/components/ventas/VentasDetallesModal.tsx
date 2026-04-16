@@ -5,7 +5,6 @@
  * Phase 5: UI - Detalles Modal
  */
 
-import * as React from 'react';
 import {
   Dialog,
   DialogContent,

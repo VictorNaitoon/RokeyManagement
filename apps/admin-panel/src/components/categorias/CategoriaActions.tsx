@@ -60,14 +60,14 @@ export function CategoriaActions({
   return (
     <>
       <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <button
-            type="button"
-            className="inline-flex shrink-0 items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors hover:bg-accent hover:text-accent-foreground h-8 w-8"
+        <DropdownMenuTrigger>
+          <Button
+            variant="ghost"
+            size="icon"
             aria-label="Abrir menú de acciones"
           >
             <MoreHorizontal className="h-4 w-4" />
-          </button>
+          </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuItem onClick={() => onEdit(categoria)}>

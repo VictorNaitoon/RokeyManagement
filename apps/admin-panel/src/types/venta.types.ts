@@ -30,10 +30,13 @@ export interface Venta {
 
 /**
  * Response for GET /api/v1/ventas
+ * Backend returns VentaListResponse with Items array
  */
 export interface VentaListResponse {
-  ventas: Venta[];
-  total: number;
+  items: Venta[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
 }
 
 /**

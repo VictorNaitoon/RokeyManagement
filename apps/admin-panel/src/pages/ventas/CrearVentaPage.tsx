@@ -12,8 +12,6 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Plus, Trash2, ShoppingCart, DollarSign, Package } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Select,
@@ -50,7 +48,6 @@ export function CrearVentaPage() {
   
   // Form
   const {
-    register,
     handleSubmit,
     setValue,
     watch,
@@ -353,7 +350,7 @@ export function CrearVentaPage() {
               <div key={field.id} className="flex items-center gap-2">
                 <Select
                   value={pagos[index]?.metodoPago || 'Efectivo'}
-                  onValueChange={(value) => setValue(`pagos.${index}.metodoPago`, value as typeof pagos[index]['metodoPago'])}
+                  onValueChange={(value) => setValue(`pagos.${index}.metodoPago`, value as 'Efectivo' | 'TarjetaCredito' | 'TarjetaDebito' | 'Transferencia')}
                 >
                   <SelectTrigger className="w-[140px]">
                     <SelectValue />

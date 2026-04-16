@@ -75,7 +75,11 @@ export function useVentas(options: UseVentasOptions = {}) {
           fechaHasta: filters.fechaHasta || undefined,
         },
       });
-      return response.data;
+      // Map backend response (items) to frontend expected format (ventas)
+      return {
+        ventas: response.data.items || [],
+        total: response.data.totalCount || 0,
+      };
     },
     ...VENTAS_QUERY_CONFIG,
   });
@@ -136,6 +140,14 @@ export function useVentaPagos(idVenta: number | null) {
 // Mutation Hooks
 // ============================================
 
+// Map frontend string to backend number for MetodoPago
+const metodoPagoMap: Record<string, number> = {
+  'Efectivo': 1,
+  'TarjetaCredito': 2,
+  'TarjetaDebito': 3,
+  'Transferencia': 4,
+};
+
 /**
  * Hook for creating a new venta
  * POST /api/v1/ventas
@@ -145,7 +157,16 @@ export function useCreateVenta() {
 
   return useMutation({
     mutationFn: async (data: CrearVentaRequest) => {
-      const response = await api.post<Venta>('/api/v1/ventas', data);
+      // Transform frontend string metodoPago to backend number
+      const transformedData = {
+        ...data,
+        detalles: data.detalles,
+        pagos: data.pagos.map(p => ({
+          metodoPago: metodoPagoMap[p.metodoPago as string] || 1,
+          monto: p.monto,
+        })),
+      };
+      const response = await api.post<Venta>('/api/v1/ventas', transformedData);
       return response.data;
     },
     onSuccess: () => {
@@ -183,9 +204,3 @@ export function useAnularVenta() {
     },
   });
 }
-
-// ============================================
-// Utility Exports
-// ============================================
-
-export { canAnularVenta };

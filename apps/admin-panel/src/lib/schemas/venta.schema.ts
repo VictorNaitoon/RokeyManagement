@@ -11,10 +11,10 @@ const detalleVentaSchema = z.object({
   precioUnitario: z.number().positive('El precio debe ser mayor a cero'),
 });
 
+const metodoPagoEnum = z.enum(['Efectivo', 'TarjetaCredito', 'TarjetaDebito', 'Transferencia']);
+
 const pagoVentaSchema = z.object({
-  metodoPago: z.enum(['Efectivo', 'TarjetaCredito', 'TarjetaDebito', 'Transferencia'], {
-    errorMap: () => ({ message: 'Seleccione un método de pago válido' }),
-  }),
+  metodoPago: metodoPagoEnum,
   monto: z.number().positive('El monto debe ser mayor a cero'),
 });
 

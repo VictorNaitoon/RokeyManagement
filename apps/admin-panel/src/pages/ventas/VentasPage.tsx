@@ -8,7 +8,7 @@
 import * as React from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { ColumnDef } from '@tanstack/react-table';
-import { Eye, Ban, DollarSign, Plus } from 'lucide-react';
+import { Eye, Ban, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/DataTable';
@@ -164,29 +164,32 @@ export function VentasPage() {
     {
       id: 'acciones',
       header: '',
-      cell: ({ row }) => (
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => handleViewDetalles(row.original)}
-            title="Ver detalles"
-          >
-            <Eye className="h-4 w-4" />
-          </Button>
-          {canAnular && row.original.estado === 'Activa' && (
+      cell: ({ row }) => {
+        const venta = row.original;
+        return (
+          <div className="flex items-center gap-2">
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => setAnularVenta(row.original)}
-              title="Anular venta"
-              className="text-destructive hover:text-destructive"
+              onClick={() => handleViewDetalles(venta)}
+              title="Ver detalles"
             >
-              <Ban className="h-4 w-4" />
+              <Eye className="h-4 w-4" />
             </Button>
-          )}
-        </div>
-      );
+            {canAnular && venta.estado === 'Activa' && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setAnularVenta(venta)}
+                title="Anular venta"
+                className="text-destructive hover:text-destructive"
+              >
+                <Ban className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+        );
+      },
     },
   ], [canAnular]);
 
