@@ -388,6 +388,9 @@ namespace API.Services.Ventas
                 return null;
             }
 
+            _logger.LogInformation("ObtenerVentaPorIdAsync - VentaId: {VentaId}, IdCliente: {IdCliente}, ClienteNombre: {NombreCliente}", 
+                venta.Id, venta.IdCliente, venta.Cliente?.Nombre);
+
             return MapToVentaResponse(venta);
         }
 
@@ -433,6 +436,10 @@ namespace API.Services.Ventas
                     Estado = v.Anulada ? "Anulada" : "Activa"
                 })
                 .ToListAsync(ct);
+
+            // Log para debugging
+            _logger.LogInformation("ObtenerTodasLasVentasAsync - NegocioId: {NegocioId}, VentasCount: {Count}, PrimeraVenta: Id={Id}, NombreCliente={NombreCliente}", 
+                _currentUser.NegocioId, ventas.Count, ventas.FirstOrDefault()?.Id, ventas.FirstOrDefault()?.NombreCliente);
 
             return new VentaListResponse
             {
