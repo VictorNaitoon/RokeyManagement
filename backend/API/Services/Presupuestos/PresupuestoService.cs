@@ -92,7 +92,10 @@ namespace API.Services.Presupuestos
             }
 
             // 5. Fecha de vencimiento: usar la especificada o 30 días por defecto
-            var fechaVencimiento = request.FechaVencimiento ?? DateTime.UtcNow.AddDays(30);
+            // Nota: PostgreSQL requiere UTC para timestamp with time zone
+            var fechaVencimiento = request.FechaVencimiento.HasValue
+                ? DateTime.SpecifyKind(request.FechaVencimiento.Value, DateTimeKind.Utc)
+                : DateTime.UtcNow.AddDays(30);
 
             // 6. Crear el presupuesto
             var presupuesto = new Presupuesto
