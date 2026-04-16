@@ -23,6 +23,7 @@ import { Loader2, ArrowRight, X } from 'lucide-react';
 
 interface PresupuestoDetalleDialogProps {
   presupuesto: { id: number; estado: string } | null;
+  onOpenChange: (open: boolean) => void;
   onConvertir: (presupuesto: { id: number }) => void;
   onAnular: (presupuesto: { id: number }) => void;
   isConverting?: boolean;
@@ -39,6 +40,7 @@ const ESTADO_COLORS: Record<string, string> = {
 
 export function PresupuestoDetalleDialog({
   presupuesto,
+  onOpenChange,
   onConvertir,
   onAnular,
   isConverting = false,
@@ -49,7 +51,7 @@ export function PresupuestoDetalleDialog({
   if (!presupuesto) return null;
 
   return (
-    <Dialog open={!!presupuesto} onOpenChange={() => {}}>
+    <Dialog open={!!presupuesto} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Detalle del Presupuesto #{presupuesto.id}</DialogTitle>

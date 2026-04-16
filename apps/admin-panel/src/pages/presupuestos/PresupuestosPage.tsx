@@ -198,6 +198,12 @@ export function PresupuestosPage() {
     setSelectedPresupuesto({ id: presupuesto.id, estado: presupuesto.estado });
   };
 
+  const handleDetalleOpenChange = (open: boolean) => {
+    if (!open) {
+      setSelectedPresupuesto(null);
+    }
+  };
+
   const handleFormSubmit = async (data: unknown) => {
     try {
       await createMutation.mutateAsync(data as CrearPresupuestoRequest);
@@ -286,6 +292,7 @@ export function PresupuestosPage() {
       {/* Presupuesto Detalle Dialog */}
       <PresupuestoDetalleDialog
         presupuesto={selectedPresupuesto}
+        onOpenChange={handleDetalleOpenChange}
         onConvertir={handleConvertir}
         onAnular={handleConvertir}
         isConverting={convertirMutation.isPending}

@@ -6,7 +6,6 @@
  */
 
 import { MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -36,11 +35,9 @@ export function ClienteActions({
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-          <MoreHorizontal className="h-4 w-4" />
-          <span className="sr-only">Abrir menú</span>
-        </Button>
+      <DropdownMenuTrigger className="cursor-pointer rounded-md p-1.5 hover:bg-accent">
+        <MoreHorizontal className="h-4 w-4" />
+        <span className="sr-only">Abrir menú</span>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuItem onClick={() => onEdit(cliente)} disabled={isDeleting}>
