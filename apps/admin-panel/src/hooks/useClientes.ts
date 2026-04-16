@@ -11,10 +11,9 @@ import { authStore } from '@/stores/authStore';
 import type {
   Cliente,
   ClienteFilters,
+  SaldoCliente,
   CrearClienteRequest,
   ActualizarClienteRequest,
-  VentaCliente,
-  SaldoCliente,
 } from '@/types';
 import { toast } from 'sonner';
 
@@ -129,10 +128,23 @@ export function useClienteVentas(id: number | null, page = 1, pageSize = 10) {
     queryKey: ['cliente', id, 'ventas', page, pageSize],
     queryFn: async () => {
       if (!id) return null;
-      const response = await api.get<{ ventas: VentaCliente[]; total: number }>(`/api/v1/clientes/${id}/ventas`, {
+      const response = await api.get(`/api/v1/clientes/${id}/ventas`, {
         params: { page, pageSize },
       });
-      return response.data;
+      console.log('useClienteVentas raw response:', response.data);
+      // Transform PascalCase to camelCase
+      const items = (response.data.items || []).map((item: any) => ({
+        id: item.id ?? 0,
+        fecha: item.fechaVenta ?? new Date().toISOString(),
+        total: item.totalVenta ?? 0,
+        estado: item.estado ?? 'Activa',
+        cantidadItems: item.cantidadItems ?? 0,
+      }));
+      console.log('useClienteVentas mapped:', items);
+      return {
+        ventas: items,
+        total: response.data.totalCount || 0,
+      };
     },
     enabled: !!id,
     ...CLIENTES_QUERY_CONFIG,

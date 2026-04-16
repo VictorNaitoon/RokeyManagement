@@ -107,7 +107,7 @@ export function ClienteCtaCteDialog({
               <h3 className="text-lg font-semibold mb-4">Últimas Ventas</h3>
               {ventasData?.ventas && ventasData.ventas.length > 0 ? (
                 <div className="space-y-2">
-                  {ventasData.ventas.map((venta) => (
+                  {ventasData.ventas.map((venta: any) => (
                     <div
                       key={venta.id}
                       className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
