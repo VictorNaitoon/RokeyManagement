@@ -11,3 +11,6 @@ export * from './producto.types';
 
 // Categoria types
 export * from './categoria.types';
+
+// Venta types
+export * from './venta.types';

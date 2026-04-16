@@ -11,3 +11,6 @@ export { useAlertasStock as useAlertasStockProductos, useProductos, useProducto,
 
 // Categorías hooks
 export { useCategorias, useCategoria, useCreateCategoria, useUpdateCategoria, useDeleteCategoria, canManageCategorias } from './useCategorias';
+
+// Ventas hooks
+export { useVentas, useVenta, useVentaDetalles, useVentaPagos, useCreateVenta, useAnularVenta, canAnularVenta } from './useVentas';

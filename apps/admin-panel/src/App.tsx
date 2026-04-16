@@ -13,6 +13,8 @@ import { SubscriptionBlockedPage } from '@/pages/subscription/SubscriptionBlocke
 import { ProductosPage } from '@/pages/productos/ProductosPage';
 import { AlertasStockPage } from '@/pages/productos/AlertasStockPage';
 import { CategoriasPage } from '@/pages/categorias/CategoriasPage';
+import { VentasPage } from '@/pages/ventas/VentasPage';
+import { CrearVentaPage } from '@/pages/ventas/CrearVentaPage';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 
 /**
@@ -79,6 +81,8 @@ function App() {
             <Route path="productos" element={<ProductosPage />} />
             <Route path="productos/alertas" element={<AlertasStockPage />} />
             <Route path="categorias" element={<CategoriasPage />} />
+            <Route path="ventas" element={<VentasPage />} />
+            <Route path="ventas/nueva" element={<CrearVentaPage />} />
           </Route>
 
           {/* SuperAdmin routes */}
