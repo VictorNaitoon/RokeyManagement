@@ -27,6 +27,9 @@ namespace API.Services.Presupuestos
 
         public async Task<PresupuestoResponse> CreateAsync(CreatePresupuestoRequest request, CancellationToken ct)
         {
+            _logger.LogInformation("CreateAsync - Request recibido: IdCliente={IdCliente}, FechaVencimiento={FechaVencimiento}, DetallesCount={Count}", 
+                request.IdCliente, request.FechaVencimiento, request.Detalles.Count);
+            
             // 1. Validar que el negocio existe y está activo
             var negocio = await _context.Negocios.FindAsync(new object[] { _currentUser.NegocioId }, ct);
             if (negocio == null)
