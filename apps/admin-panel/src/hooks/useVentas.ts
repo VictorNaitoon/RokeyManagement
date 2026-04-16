@@ -74,6 +74,7 @@ export function useVentas(options: UseVentasOptions = {}) {
           fechaHasta: filters.fechaHasta || undefined,
         },
       });
+      console.log('API response:', response.data);
       // Map backend PascalCase to frontend camelCase
       const ventas = (response.data.items || []).map((item: any) => ({
         id: item.Id ?? 0,
@@ -85,6 +86,7 @@ export function useVentas(options: UseVentasOptions = {}) {
         idCliente: item.IdCliente,
         clienteNombre: item.NombreCliente ?? '',
       }));
+      console.log('Mapped ventas:', ventas);
       return {
         ventas,
         total: response.data.totalCount || 0,
