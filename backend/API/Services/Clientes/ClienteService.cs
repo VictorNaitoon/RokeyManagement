@@ -4,6 +4,7 @@ using API.DTO.Response.Clientes;
 using API.Models;
 using API.Services.Common;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace API.Services.Clientes
 {
@@ -14,11 +15,13 @@ namespace API.Services.Clientes
     {
         private readonly AppDbContext _context;
         private readonly ICurrentUserService _currentUser;
+        private readonly ILogger<ClienteService> _logger;
 
-        public ClienteService(AppDbContext context, ICurrentUserService currentUser)
+        public ClienteService(AppDbContext context, ICurrentUserService currentUser, ILogger<ClienteService> logger)
         {
             _context = context;
             _currentUser = currentUser;
+            _logger = logger;
         }
 
         /// <inheritdoc/>
@@ -184,6 +187,7 @@ namespace API.Services.Clientes
 
             if (cliente == null)
             {
+                _logger.LogWarning("GetVentasAsync - Cliente no encontrado: clienteId={ClienteId}, idNegocio={IdNegocio}", clienteId, idNegocio);
                 return new VentaClienteListResponse();
             }
 
@@ -193,6 +197,9 @@ namespace API.Services.Clientes
                 .Include(v => v.DetallesVenta)
                 .Include(v => v.Pagos)
                 .OrderByDescending(v => v.FechaVenta);
+
+            _logger.LogInformation("GetVentasAsync - clienteId={ClienteId}, idNegocio={IdNegocio}, ClienteNombre={ClienteNombre}, Count={Count}", 
+                clienteId, idNegocio, cliente.Nombre, await ventasQuery.CountAsync(ct));
 
             // Obtener total count
             var totalCount = await ventasQuery.CountAsync(ct);

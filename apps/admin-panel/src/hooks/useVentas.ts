@@ -10,7 +10,6 @@ import { api } from '@/lib/api/axios';
 import { authStore } from '@/stores/authStore';
 import type {
   Venta,
-  VentaListResponse,
   DetalleVenta,
   Pago,
   CrearVentaRequest,
@@ -69,15 +68,25 @@ export function useVentas(options: UseVentasOptions = {}) {
   return useQuery({
     queryKey: ['ventas', filters],
     queryFn: async () => {
-      const response = await api.get<VentaListResponse>('/api/v1/ventas', {
+      const response = await api.get<{items: any[], totalCount: number}>('/api/v1/ventas', {
         params: {
           fechaDesde: filters.fechaDesde || undefined,
           fechaHasta: filters.fechaHasta || undefined,
         },
       });
-      // Map backend response (items) to frontend expected format (ventas)
+      // Map backend PascalCase to frontend camelCase
+      const ventas = (response.data.items || []).map((item: any) => ({
+        id: item.Id,
+        fecha: item.Fecha,
+        totalVenta: item.TotalVenta,
+        estado: item.Estado,
+        idUsuario: item.IdUsuario,
+        usuarioNombre: item.NombreUsuario,
+        idCliente: item.IdCliente,
+        clienteNombre: item.NombreCliente,
+      }));
       return {
-        ventas: response.data.items || [],
+        ventas,
         total: response.data.totalCount || 0,
       };
     },
