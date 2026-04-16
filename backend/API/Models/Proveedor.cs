@@ -40,6 +40,10 @@ namespace API.Models
         /// Indica si el proveedor está activo o inactivo. Soft delete en lugar de eliminar.
         /// </summary>
         public bool Activo { get; set; } = true;
+        /// <summary>
+        /// Fecha de alta del proveedor en el sistema.
+        /// </summary>
+        public DateTime FechaAlta { get; set; } = DateTime.UtcNow;
 
         //Listas
         /// <summary>
