@@ -52,6 +52,8 @@ namespace API.Services.Presupuestos
 
             // 4. Si no hay cliente, usar "Consumidor Final"
             int idCliente;
+            _logger.LogInformation("CreateAsync - request.IdCliente: {IdCliente}", request.IdCliente);
+            
             if (request.IdCliente.HasValue && request.IdCliente.Value > 0)
             {
                 // Verificar que el cliente pertenece al negocio
@@ -63,6 +65,7 @@ namespace API.Services.Presupuestos
                     throw new InvalidOperationException("El cliente no existe o no pertenece al negocio");
                 }
                 idCliente = request.IdCliente.Value;
+                _logger.LogInformation("CreateAsync - Cliente encontrado: {ClienteId} - {ClienteNombre}", idCliente, cliente.Nombre);
             }
             else
             {
@@ -89,6 +92,7 @@ namespace API.Services.Presupuestos
                     _logger.LogInformation("Cliente 'Consumidor Final' creado para el negocio {NegocioId}", _currentUser.NegocioId);
                 }
                 idCliente = consumidorFinal.Id;
+                _logger.LogInformation("CreateAsync - Usando Consumidor Final: {ClienteId}", idCliente);
             }
 
             // 5. Fecha de vencimiento: usar la especificada o 30 días por defecto
@@ -348,12 +352,16 @@ namespace API.Services.Presupuestos
                 .Where(p => p.Id == id && p.Id_negocio == _currentUser.NegocioId)
                 .Include(p => p.DetallesPresupuesto)
                     .ThenInclude(d => d.Producto)
+                .Include(p => p.Cliente)
                 .FirstOrDefaultAsync(ct);
 
             if (presupuesto == null)
             {
                 throw new InvalidOperationException("Presupuesto no encontrado");
             }
+
+            _logger.LogInformation("ConvertirAVentaAsync - PresupuestoId: {PresupuestoId}, IdCliente: {IdCliente}, NombreCliente: {NombreCliente}", 
+                presupuesto.Id, presupuesto.IdCliente, presupuesto.Cliente?.Nombre);
 
             // 2. Validar que el presupuesto está Pendiente
             if (presupuesto.Estado != Enums.EstadoPresupuesto.Pendiente)
@@ -393,8 +401,12 @@ namespace API.Services.Presupuestos
                     TotalVenta = presupuesto.TotalPresupuesto
                 };
 
+                _logger.LogInformation("ConvertirAVentaAsync - Creando venta con IdCliente: {IdCliente}", venta.IdCliente);
+
                 _context.Ventas.Add(venta);
                 await _context.SaveChangesAsync(ct);
+                
+                _logger.LogInformation("ConvertirAVentaAsync - Venta creada con Id: {VentaId}, IdCliente: {IdCliente}", venta.Id, venta.IdCliente);
 
                 // 7. Crear detalles de venta y deducir stock
                 foreach (var detallePresupuesto in presupuesto.DetallesPresupuesto)
