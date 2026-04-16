@@ -116,7 +116,17 @@ export function useCreatePresupuesto() {
 
   return useMutation({
     mutationFn: async (data: CrearPresupuestoRequest) => {
-      const response = await api.post<Presupuesto>('/api/v1/presupuestos', data);
+      // Transform frontend camelCase to backend PascalCase
+      const transformedData = {
+        IdCliente: data.idCliente,
+        FechaVencimiento: data.fechaVencimiento,
+        Detalles: data.detalles.map(d => ({
+          IdProducto: d.idProducto,
+          Cantidad: d.cantidad,
+          PrecioPactado: d.precioPactado,
+        })),
+      };
+      const response = await api.post<Presupuesto>('/api/v1/presupuestos', transformedData);
       return response.data;
     },
     onSuccess: () => {
