@@ -15,6 +15,10 @@ import { AlertasStockPage } from '@/pages/productos/AlertasStockPage';
 import { CategoriasPage } from '@/pages/categorias/CategoriasPage';
 import { VentasPage } from '@/pages/ventas/VentasPage';
 import { CrearVentaPage } from '@/pages/ventas/CrearVentaPage';
+import { ClientesPage } from '@/pages/clientes/ClientesPage';
+import { ProveedoresPage } from '@/pages/proveedores/ProveedoresPage';
+import { PresupuestosPage } from '@/pages/presupuestos/PresupuestosPage';
+import { ComprasPage } from '@/pages/compras/ComprasPage';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 
 /**
@@ -83,6 +87,10 @@ function App() {
             <Route path="categorias" element={<CategoriasPage />} />
             <Route path="ventas" element={<VentasPage />} />
             <Route path="ventas/nueva" element={<CrearVentaPage />} />
+            <Route path="clientes" element={<ClientesPage />} />
+            <Route path="proveedores" element={<ProveedoresPage />} />
+            <Route path="presupuestos" element={<PresupuestosPage />} />
+            <Route path="compras" element={<ComprasPage />} />
           </Route>
 
           {/* SuperAdmin routes */}

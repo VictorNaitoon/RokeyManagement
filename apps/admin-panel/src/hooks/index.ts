@@ -14,3 +14,15 @@ export { useCategorias, useCategoria, useCreateCategoria, useUpdateCategoria, us
 
 // Ventas hooks
 export { useVentas, useVenta, useVentaDetalles, useVentaPagos, useCreateVenta, useAnularVenta, canAnularVenta } from './useVentas';
+
+// Clientes hooks (Phase 6)
+export { useClientes, useCliente, useClienteSaldo, useClienteVentas, useCreateCliente, useUpdateCliente, useDeleteCliente, canManageClientes, canViewClientes } from './useClientes';
+
+// Proveedores hooks (Phase 6)
+export { useProveedores, useProveedor, useCreateProveedor, useUpdateProveedor, useDeleteProveedor, canManageProveedores } from './useProveedores';
+
+// Presupuestos hooks (Phase 6)
+export { usePresupuestos, usePresupuesto, useCreatePresupuesto, useUpdatePresupuestoEstado, useAnularPresupuesto, useConvertirPresupuesto, canManagePresupuestos, canConvertirPresupuesto } from './usePresupuestos';
+
+// Compras hooks (Phase 6)
+export { useCompras, useCompra, useCreateCompra, useAnularCompra, canManageCompras } from './useCompras';

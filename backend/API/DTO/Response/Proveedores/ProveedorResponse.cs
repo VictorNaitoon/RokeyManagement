@@ -7,6 +7,7 @@ namespace API.DTO.Response.Proveedores
         public string? Telefono { get; set; }
         public string? Email { get; set; }
         public DateTime FechaAlta { get; set; }
+        public bool Activo { get; set; } = true;
     }
 
     public class ProveedorListResponse

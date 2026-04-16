@@ -36,6 +36,10 @@ namespace API.Models
         /// </summary>
         [MaxLength(100)]
         public string? Email { get; set; }
+        /// <summary>
+        /// Indica si el proveedor está activo o inactivo. Soft delete en lugar de eliminar.
+        /// </summary>
+        public bool Activo { get; set; } = true;
 
         //Listas
         /// <summary>

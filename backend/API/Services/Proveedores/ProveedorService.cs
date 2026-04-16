@@ -19,12 +19,12 @@ namespace API.Services.Proveedores
         }
 
         /// <summary>
-        /// Obtiene todos los proveedores del negocio actual
+        /// Obtiene todos los proveedores activos del negocio actual
         /// </summary>
         public async Task<ProveedorListResponse> GetAllAsync()
         {
             var proveedores = await _context.Proveedores
-                .Where(p => p.Id_negocio == _currentUser.NegocioId)
+                .Where(p => p.Id_negocio == _currentUser.NegocioId && p.Activo)
                 .OrderBy(p => p.Nombre)
                 .Select(p => new ProveedorResponse
                 {
@@ -32,7 +32,8 @@ namespace API.Services.Proveedores
                     Nombre = p.Nombre,
                     Telefono = p.Telefono,
                     Email = p.Email,
-                    FechaAlta = DateTime.UtcNow
+                    FechaAlta = p.FechaAlta,
+                    Activo = p.Activo
                 })
                 .ToListAsync();
 
@@ -59,7 +60,8 @@ namespace API.Services.Proveedores
                 Nombre = proveedor.Nombre,
                 Telefono = proveedor.Telefono,
                 Email = proveedor.Email,
-                FechaAlta = DateTime.UtcNow
+                FechaAlta = proveedor.FechaAlta,
+                Activo = proveedor.Activo
             };
         }
 
@@ -82,7 +84,9 @@ namespace API.Services.Proveedores
                 Id_negocio = _currentUser.NegocioId,
                 Nombre = request.Nombre,
                 Telefono = request.Telefono,
-                Email = request.Email
+                Email = request.Email,
+                FechaAlta = DateTime.UtcNow,
+                Activo = true
             };
 
             _context.Proveedores.Add(proveedor);
@@ -94,7 +98,8 @@ namespace API.Services.Proveedores
                 Nombre = proveedor.Nombre,
                 Telefono = proveedor.Telefono,
                 Email = proveedor.Email,
-                FechaAlta = DateTime.UtcNow
+                FechaAlta = proveedor.FechaAlta,
+                Activo = proveedor.Activo
             };
         }
 
@@ -129,12 +134,13 @@ namespace API.Services.Proveedores
                 Nombre = proveedor.Nombre,
                 Telefono = proveedor.Telefono,
                 Email = proveedor.Email,
-                FechaAlta = DateTime.UtcNow
+                FechaAlta = proveedor.FechaAlta,
+                Activo = proveedor.Activo
             };
         }
 
         /// <summary>
-        /// Elimina un proveedor (hard delete)
+        /// Elimina un proveedor (soft delete - marcar como inactivo)
         /// </summary>
         public async Task<bool> DeleteAsync(int id)
         {
@@ -143,7 +149,8 @@ namespace API.Services.Proveedores
 
             if (proveedor == null) return false;
 
-            _context.Proveedores.Remove(proveedor);
+            // Soft delete: marcar como inactivo en lugar de eliminar
+            proveedor.Activo = false;
             await _context.SaveChangesAsync();
 
             return true;
