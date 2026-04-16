@@ -171,7 +171,6 @@ export function useCreateVenta() {
           Monto: p.monto,
         })),
       };
-      console.log('[DEBUG] Enviando venta:', JSON.stringify(transformedData));
       const response = await api.post<Venta>('/api/v1/ventas', transformedData);
       return response.data;
     },
@@ -181,7 +180,6 @@ export function useCreateVenta() {
     },
     onError: (error: unknown) => {
       const err = error as { response?: { data?: { detail?: string, message?: string } } };
-      console.log('[DEBUG] Error:', err.response?.data);
       toast.error(err.response?.data?.detail || err.response?.data?.message || 'Error al registrar la venta');
     },
   });
