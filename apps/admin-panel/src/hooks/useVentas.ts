@@ -157,13 +157,18 @@ export function useCreateVenta() {
 
   return useMutation({
     mutationFn: async (data: CrearVentaRequest) => {
-      // Transform frontend string metodoPago to backend number
+      // Transform frontend camelCase to backend PascalCase
+      // Also convert metodoPago string to number
       const transformedData = {
-        ...data,
-        detalles: data.detalles,
+        idCliente: data.idCliente,
+        detalles: data.detalles.map(d => ({
+          IdProducto: d.idProducto,
+          Cantidad: d.cantidad,
+          PrecioUnitario: d.precioUnitario,
+        })),
         pagos: data.pagos.map(p => ({
-          metodoPago: metodoPagoMap[p.metodoPago as string] || 1,
-          monto: p.monto,
+          MetodoPago: metodoPagoMap[p.metodoPago as string] || 1,
+          Monto: p.monto,
         })),
       };
       const response = await api.post<Venta>('/api/v1/ventas', transformedData);
