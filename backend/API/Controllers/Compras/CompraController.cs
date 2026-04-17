@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace API.Controllers.Compras
 {
     [ApiController]
-    [Route("api/v1/[controller]")]
+    [Route("api/v1/compras")]
     [Authorize]
     public class CompraController : ControllerBase
     {

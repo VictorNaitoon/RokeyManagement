@@ -106,7 +106,17 @@ export function useCreateCompra() {
 
   return useMutation({
     mutationFn: async (data: CrearCompraRequest) => {
-      const response = await api.post<Compra>('/api/v1/compras', data);
+      // Transform camelCase to PascalCase for .NET backend
+      const transformedData = {
+        NumeroComprobante: data.numeroComprobante,
+        IdProveedor: data.idProveedor,
+        Detalles: data.detalles.map(d => ({
+          IdProducto: d.idProducto,
+          Cantidad: d.cantidad,
+          PrecioUnitario: d.precioUnitario,
+        })),
+      };
+      const response = await api.post<Compra>('/api/v1/compras', transformedData);
       return response.data;
     },
     onSuccess: () => {

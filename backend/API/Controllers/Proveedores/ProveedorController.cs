@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace API.Controllers.Proveedores
 {
     [ApiController]
-    [Route("api/v1/[controller]")]
+    [Route("api/v1/proveedores")]
     [Authorize]
     public class ProveedorController : ControllerBase
     {

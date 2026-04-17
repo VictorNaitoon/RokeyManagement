@@ -65,7 +65,7 @@ export function useProveedores(options: UseProveedoresOptions = {}) {
   return useQuery({
     queryKey: ['proveedores', filters],
     queryFn: async () => {
-      const response = await api.get<{ proveedores: Proveedor[]; total: number }>('/api/v1/proveedor');
+      const response = await api.get<{ proveedores: Proveedor[]; total: number }>('/api/v1/proveedores');
       return response.data;
     },
     ...PROVEEDORES_QUERY_CONFIG,
@@ -81,7 +81,7 @@ export function useProveedor(id: number | null) {
     queryKey: ['proveedor', id],
     queryFn: async () => {
       if (!id) return null;
-      const response = await api.get<Proveedor>(`/api/v1/proveedor/${id}`);
+      const response = await api.get<Proveedor>(`/api/v1/proveedores/${id}`);
       return response.data;
     },
     enabled: !!id,
@@ -102,7 +102,7 @@ export function useCreateProveedor() {
 
   return useMutation({
     mutationFn: async (data: CrearProveedorRequest) => {
-      const response = await api.post<Proveedor>('/api/v1/proveedor', data);
+      const response = await api.post<Proveedor>('/api/v1/proveedores', data);
       return response.data;
     },
     onSuccess: () => {
@@ -125,7 +125,7 @@ export function useUpdateProveedor() {
 
   return useMutation({
     mutationFn: async ({ id, data }: { id: number; data: ActualizarProveedorRequest }) => {
-      const response = await api.put<Proveedor>(`/api/v1/proveedor/${id}`, data);
+      const response = await api.put<Proveedor>(`/api/v1/proveedores/${id}`, data);
       return response.data;
     },
     onSuccess: () => {
@@ -149,7 +149,7 @@ export function useDeleteProveedor() {
 
   return useMutation({
     mutationFn: async (id: number) => {
-      await api.delete(`/api/v1/proveedor/${id}`);
+      await api.delete(`/api/v1/proveedores/${id}`);
     },
     onSuccess: () => {
       toast.success('Proveedor eliminado exitosamente');
