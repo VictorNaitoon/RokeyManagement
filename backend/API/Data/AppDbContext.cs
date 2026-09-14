@@ -252,10 +252,12 @@ namespace API.Data
                 .OnDelete(DeleteBehavior.Restrict);
 
             // Índice único parcial: solo una caja abierta por negocio
+            // Postgres requires double-quoted identifiers; SQL Server uses [Estado].
+            // Keep Postgres-compatible filter. If migrating from SQL Server, regenerate migration.
             modelBuilder.Entity<Caja>()
                 .HasIndex(c => new { c.Id_negocio, c.Estado })
                 .IsUnique()
-                .HasFilter("[Estado] = 'Abierta'");
+                .HasFilter("\"Estado\" = 'Abierta'");
 
             // MovimientoCaja -> Caja
             modelBuilder.Entity<MovimientoCaja>()

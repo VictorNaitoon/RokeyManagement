@@ -10,5 +10,6 @@ namespace API.DTO.Response.Caja
         public string? Descripcion { get; set; }
         public DateTime Fecha { get; set; }
         public int Id_usuario { get; set; }
+        public string? UsuarioNombre { get; set; }
     }
 }

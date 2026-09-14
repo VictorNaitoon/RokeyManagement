@@ -19,12 +19,9 @@ import { ClientesPage } from '@/pages/clientes/ClientesPage';
 import { ProveedoresPage } from '@/pages/proveedores/ProveedoresPage';
 import { PresupuestosPage } from '@/pages/presupuestos/PresupuestosPage';
 import { ComprasPage } from '@/pages/compras/ComprasPage';
+import { CajaPage } from '@/pages/caja/CajaPage';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 
-/**
- * Redirects to subscription blocked page when the store is activated.
- * Must be inside BrowserRouter to use useNavigate.
- */
 function SubscriptionRedirect() {
   const navigate = useNavigate();
   const isBlocked = useSubscriptionStore((state) => state.isBlocked);
@@ -40,8 +37,6 @@ function SubscriptionRedirect() {
 
 function App() {
   const { isAuthenticated, user } = authStore();
-
-  // Redirect authenticated users based on role
   const defaultRedirect = user?.rol === 'SuperAdmin' ? '/admin' : '/dashboard';
 
   return (
@@ -49,13 +44,10 @@ function App() {
       <BrowserRouter>
         <SubscriptionRedirect />
         <Routes>
-          {/* Subscription blocked page — always accessible */}
           <Route
             path="/suscripcion-bloqueada"
             element={<SubscriptionBlockedPage />}
           />
-
-          {/* Public routes */}
           <Route
             path="/login"
             element={
@@ -70,8 +62,6 @@ function App() {
               )
             }
           />
-
-          {/* Protected routes with DashboardLayout (business users) */}
           <Route
             path="/"
             element={
@@ -91,9 +81,8 @@ function App() {
             <Route path="proveedores" element={<ProveedoresPage />} />
             <Route path="presupuestos" element={<PresupuestosPage />} />
             <Route path="compras" element={<ComprasPage />} />
+            <Route path="caja" element={<CajaPage />} />
           </Route>
-
-          {/* SuperAdmin routes */}
           <Route
             path="/admin"
             element={
@@ -104,8 +93,6 @@ function App() {
           >
             <Route index element={<SuperAdminDashboardPage />} />
           </Route>
-
-          {/* Catch all */}
           <Route path="*" element={<Navigate to={isAuthenticated ? defaultRedirect : '/login'} replace />} />
         </Routes>
       </BrowserRouter>

@@ -52,6 +52,11 @@ namespace API.Services.Caja
         Task<IEnumerable<MovimientoCajaResponse>> ObtenerMovimientosAsync(int cajaId, CancellationToken ct = default);
 
         /// <summary>
+        /// Obtiene movimientos filtrados por negocio (tenant isolation)
+        /// </summary>
+        Task<IEnumerable<MovimientoCajaResponse>> ObtenerMovimientosAsync(int cajaId, int negocioId, CancellationToken ct = default);
+
+        /// <summary>
         /// Verifica si el negocio tiene una caja abierta
         /// </summary>
         /// <param name="negocioId">ID del negocio</param>

@@ -167,20 +167,51 @@ namespace API.Services.Caja
             _context.MovimientosCaja.Add(movimiento);
             await _context.SaveChangesAsync(ct);
 
-            return MapToMovimientoCajaResponse(movimiento);
+            var usuarioNombre = await _context.Usuarios
+                .Where(u => u.Id == userId)
+                .Select(u => u.Nombre + " " + u.Apellido)
+                .FirstOrDefaultAsync(ct);
+
+            return MapToMovimientoCajaResponse(movimiento, usuarioNombre);
         }
 
         /// <summary>
-        /// Obtiene todos los movimientos de una caja
+        /// Obtiene todos los movimientos de una caja (tenant-filtered)
         /// </summary>
         public async Task<IEnumerable<MovimientoCajaResponse>> ObtenerMovimientosAsync(int cajaId, CancellationToken ct = default)
         {
-            var movimientos = await _context.MovimientosCaja
-                .Where(m => m.Id_caja == cajaId)
-                .OrderByDescending(m => m.Fecha)
-                .ToListAsync(ct);
+            // Legacy overload kept for compat; delegates to tenant-filtered version using current user
+            return await ObtenerMovimientosAsync(cajaId, _currentUser.NegocioId, ct);
+        }
 
-            return movimientos.Select(MapToMovimientoCajaResponse);
+        /// <summary>
+        /// Obtiene todos los movimientos de una caja verificando pertenencia al negocio
+        /// </summary>
+        public async Task<IEnumerable<MovimientoCajaResponse>> ObtenerMovimientosAsync(int cajaId, int negocioId, CancellationToken ct = default)
+        {
+            // Verify caja belongs to negocio to enforce tenant isolation
+            var cajaPertenece = await _context.Cajas
+                .AnyAsync(c => c.Id == cajaId && c.Id_negocio == negocioId, ct);
+
+            if (!cajaPertenece)
+            {
+                throw new KeyNotFoundException($"Caja con id '{cajaId}' no encontrada para este negocio.");
+            }
+
+            var movimientosConUsuario = await (
+                from m in _context.MovimientosCaja
+                join u in _context.Usuarios on m.Id_usuario equals u.Id into gj
+                from u in gj.DefaultIfEmpty()
+                where m.Id_caja == cajaId && m.Id_negocio == negocioId
+                orderby m.Fecha descending
+                select new
+                {
+                    movimiento = m,
+                    usuarioNombre = u != null ? u.Nombre + " " + u.Apellido : null
+                }
+            ).ToListAsync(ct);
+
+            return movimientosConUsuario.Select(x => MapToMovimientoCajaResponse(x.movimiento, x.usuarioNombre));
         }
 
         /// <summary>
@@ -208,7 +239,7 @@ namespace API.Services.Caja
             };
         }
 
-        private static MovimientoCajaResponse MapToMovimientoCajaResponse(MovimientoCaja movimiento)
+        private static MovimientoCajaResponse MapToMovimientoCajaResponse(MovimientoCaja movimiento, string? usuarioNombre = null)
         {
             return new MovimientoCajaResponse
             {
@@ -219,7 +250,8 @@ namespace API.Services.Caja
                 Monto = movimiento.Monto,
                 Descripcion = movimiento.Descripcion,
                 Fecha = movimiento.Fecha,
-                Id_usuario = movimiento.Id_usuario
+                Id_usuario = movimiento.Id_usuario,
+                UsuarioNombre = usuarioNombre
             };
         }
     }

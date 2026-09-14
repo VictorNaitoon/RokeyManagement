@@ -131,7 +131,7 @@ namespace API.Controllers.Caja
                 return StatusCode(403, new { message = "El super administrador no puede gestionar cajas de un negocio" });
             }
 
-            if (!_currentUser.IsAdmin && !_currentUser.IsManager && !_currentUser.IsVendedor)
+            if (!_currentUser.IsAdmin && !_currentUser.IsManager && !_currentUser.IsEmpleado)
             {
                 return StatusCode(403, new { message = "Solo el dueño, gerente o empleado pueden registrar movimientos de caja" });
             }
@@ -170,7 +170,7 @@ namespace API.Controllers.Caja
                 return StatusCode(403, new { message = "El super administrador no puede gestionar cajas de un negocio" });
             }
 
-            var result = await _cajaService.ObtenerMovimientosAsync(id);
+            var result = await _cajaService.ObtenerMovimientosAsync(id, _currentUser.NegocioId);
 
             return Ok(result);
         }

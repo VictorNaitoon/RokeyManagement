@@ -36,6 +36,11 @@ namespace API.Services.Common
         /// Verifica si el usuario es Empleado
         /// </summary>
         bool IsVendedor => Rol == "Empleado";
+
+        /// <summary>
+        /// Alias semántico para Empleado (reemplaza IsVendedor, mantiene compatibilidad)
+        /// </summary>
+        bool IsEmpleado => Rol == "Empleado";
     }
 
     public class CurrentUserService : ICurrentUserService

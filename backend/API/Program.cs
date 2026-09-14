@@ -170,6 +170,11 @@ builder.Services.AddFluentValidation(fv => fv.RegisterValidatorsFromAssemblyCont
 builder.Services.AddFluentValidation(fv => fv.RegisterValidatorsFromAssemblyContaining<API.DTO.Request.Facturas.CrearFacturaValidator>());
 builder.Services.AddFluentValidation(fv => fv.RegisterValidatorsFromAssemblyContaining<API.DTO.Request.Facturas.NotaCreditoValidator>());
 
+// Caja validators - audit server-side (FechaApertura/FechaCierre set via UtcNow in CajaService, not from client)
+builder.Services.AddFluentValidation(fv => fv.RegisterValidatorsFromAssemblyContaining<API.DTO.Request.Caja.MovimientoCajaValidator>());
+builder.Services.AddFluentValidation(fv => fv.RegisterValidatorsFromAssemblyContaining<API.DTO.Request.Caja.AperturaCajaValidator>());
+builder.Services.AddFluentValidation(fv => fv.RegisterValidatorsFromAssemblyContaining<API.DTO.Request.Caja.CierreCajaValidator>());
+
 // CarritoInterno Validators
 builder.Services.AddFluentValidation(fv => fv.RegisterValidatorsFromAssemblyContaining<API.DTO.Request.CarritoInterno.CreateCarritoInternoRequestValidator>());
 builder.Services.AddFluentValidation(fv => fv.RegisterValidatorsFromAssemblyContaining<API.DTO.Request.CarritoInterno.AgregarItemRequestValidator>());
