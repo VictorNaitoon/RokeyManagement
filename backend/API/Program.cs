@@ -192,8 +192,9 @@ builder.Services.AddFluentValidation(fv => fv.RegisterValidatorsFromAssemblyCont
 builder.Services.AddFluentValidation(fv => fv.RegisterValidatorsFromAssemblyContaining<API.DTO.Request.CarritoInterno.UpdateItemRequestValidator>());
 builder.Services.AddFluentValidation(fv => fv.RegisterValidatorsFromAssemblyContaining<API.DTO.Request.CarritoInterno.ConvertirCarritoRequestValidator>());
 
-// Informes Export Validators
+// Informes Validators (export + JSON)
 builder.Services.AddFluentValidation(fv => fv.RegisterValidatorsFromAssemblyContaining<API.DTO.Request.Informes.ExportInformesQueryValidator>());
+builder.Services.AddFluentValidation(fv => fv.RegisterValidatorsFromAssemblyContaining<API.DTO.Request.Informes.InformesQueryValidator>());
 
 var app = builder.Build();
 

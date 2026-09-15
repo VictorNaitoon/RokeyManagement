@@ -1,8 +1,10 @@
 /**
  * Dashboard Data Hooks - React Query hooks for fetching dashboard data
  * RoKey MANAGEMENT - Multi-tenant SaaS ERP/POS for locksmiths
- * 
+ *
  * Phase 2: Data Layer - Parallel fetching with role-based access control
+ * FIXED (R07): Now sends preset/cantidad/fechaDesde/fechaHasta matching InformesController;
+ * legacy fecha/limite params removed. Prefer useInformes() for /informes; this remains for /dashboard.
  */
 
 import { useQuery } from '@tanstack/react-query';
@@ -63,15 +65,16 @@ function canAccessAdminData(): boolean {
 
 /**
  * Hook for daily sales summary (Admin/Gerente only - backend restriction)
+ * FIXED: sends preset instead of legacy fecha (R07)
  */
-export function useVentasResumen(fecha: string = 'hoy') {
+export function useVentasResumen(preset: string = 'hoy') {
   const isAdmin = canAccessAdminData();
-  
+
   return useQuery({
-    queryKey: ['dashboard', 'ventas-resumen', fecha],
+    queryKey: ['dashboard', 'ventas-resumen', preset],
     queryFn: async () => {
       const response = await api.get<VentasResumen>('/api/v1/informes/ventas-resumen', {
-        params: { fecha },
+        params: { preset },
       });
       return response.data ?? { totalVentas: 0, cantidadVentas: 0, ticketPromedio: 0 };
     },
@@ -82,15 +85,16 @@ export function useVentasResumen(fecha: string = 'hoy') {
 
 /**
  * Hook for income vs expenses (Admin/Gerente only)
+ * FIXED: sends preset instead of legacy fecha
  */
-export function useIngresosGastos(fecha: string = 'mes') {
+export function useIngresosGastos(preset: string = 'mes') {
   const isAdmin = canAccessAdminData();
-  
+
   return useQuery({
-    queryKey: ['dashboard', 'ingresos-gastos', fecha],
+    queryKey: ['dashboard', 'ingresos-gastos', preset],
     queryFn: async () => {
       const response = await api.get<IngresosGastos>('/api/v1/informes/ingresos-gastos', {
-        params: { fecha },
+        params: { preset },
       });
       return response.data ?? { totalVentas: 0, totalCompras: 0, gananciaBruta: 0, margen: 0 };
     },
@@ -118,15 +122,16 @@ export function useAlertasStock() {
 
 /**
  * Hook for top selling products (Admin/Gerente only - backend restriction)
+ * FIXED: sends cantidad instead of legacy limite
  */
-export function useProductosTop(limite: number = 10) {
+export function useProductosTop(cantidad: number = 10) {
   const isAdmin = canAccessAdminData();
-  
+
   return useQuery({
-    queryKey: ['dashboard', 'productos-top', limite],
+    queryKey: ['dashboard', 'productos-top', cantidad],
     queryFn: async () => {
       const response = await api.get<ProductosTopResponse>('/api/v1/informes/productos-top', {
-        params: { limite },
+        params: { cantidad },
       });
       return response.data?.productos ?? [];
     },
@@ -154,15 +159,16 @@ export function useVentasPorPago() {
 
 /**
  * Hook for cash flow summary (Admin/Gerente only - backend restriction)
+ * FIXED: sends preset instead of legacy fecha
  */
-export function useFlujoCaja(fecha: string = 'mes') {
+export function useFlujoCaja(preset: string = 'mes') {
   const isAdmin = canAccessAdminData();
-  
+
   return useQuery({
-    queryKey: ['dashboard', 'flujo-caja', fecha],
+    queryKey: ['dashboard', 'flujo-caja', preset],
     queryFn: async () => {
       const response = await api.get<FlujoCaja>('/api/v1/informes/flujo-caja', {
-        params: { fecha },
+        params: { preset },
       });
       return response.data ?? { ingresos: 0, egresos: 0, balance: 0 };
     },

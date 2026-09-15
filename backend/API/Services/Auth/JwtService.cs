@@ -141,8 +141,8 @@ namespace API.Services.Auth
             // Determinar tiempo de expiración según el rol
             var expirationHours = rol switch
             {
-                "Empleado" => 24,
-                _ => 8 // Dueño, Gerente, SuperAdmin
+                "Cliente" => 24,
+                _ => 8 // Dueño, Gerente, Empleado, SuperAdmin
             };
 
             var claims = new[]

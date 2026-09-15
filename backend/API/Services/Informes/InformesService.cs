@@ -39,6 +39,15 @@ namespace API.Services.Informes
             }
             else
             {
+                // Validate preset before defaulting — invalid preset must return 400, not silent default
+                if (preset != null && preset.ToLowerInvariant() is not ("hoy" or "semana" or "mes"))
+                {
+                    throw new ValidationException(new[]
+                    {
+                        new ValidationFailure("preset", "Preset debe ser hoy, semana o mes.")
+                    });
+                }
+
                 // Use preset or default to "mes"
                 var presetNormalizado = (preset ?? "mes").ToLowerInvariant();
 
@@ -65,6 +74,15 @@ namespace API.Services.Informes
                         hasta = ahora;
                         break;
                 }
+            }
+
+            // Validate inverted range (from custom dates) — must be 400 not silent
+            if (desde > hasta)
+            {
+                throw new ValidationException(new[]
+                {
+                    new ValidationFailure("fechaDesde", "fechaDesde no puede ser posterior a fechaHasta.")
+                });
             }
 
             // Validate date range doesn't exceed 12 months -> 400
@@ -106,8 +124,16 @@ namespace API.Services.Informes
 
         public async Task<ProductosTopResponse> GetProductosTopAsync(int cantidad, DateTime? fechaDesde, DateTime? fechaHasta, string? preset, CancellationToken ct)
         {
-            // Default to 10 if not provided
-            var limite = cantidad > 0 ? Math.Min(cantidad, 50) : 10;
+            // Validate cantidad 1..50 — must be 400 for OOR, not silent clamp
+            if (cantidad < 1 || cantidad > 50)
+            {
+                throw new ValidationException(new[]
+                {
+                    new ValidationFailure("cantidad", "cantidad debe estar entre 1 y 50.")
+                });
+            }
+
+            var limite = cantidad;
 
             var (desde, hasta) = ResolveDateRange(fechaDesde, fechaHasta, preset);
             var negocioId = _currentUser.NegocioId;

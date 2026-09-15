@@ -16,13 +16,15 @@ namespace API.Controllers.Informes
         private readonly IInformesService _informesService;
         private readonly IInformesExportService _exportService;
         private readonly IValidator<ExportInformesQuery> _exportValidator;
+        private readonly IValidator<InformesQuery> _informesValidator;
         private readonly ICurrentUserService _currentUser;
 
-        public InformesController(IInformesService informesService, IInformesExportService exportService, IValidator<ExportInformesQuery> exportValidator, ICurrentUserService currentUser)
+        public InformesController(IInformesService informesService, IInformesExportService exportService, IValidator<ExportInformesQuery> exportValidator, IValidator<InformesQuery> informesValidator, ICurrentUserService currentUser)
         {
             _informesService = informesService;
             _exportService = exportService;
             _exportValidator = exportValidator;
+            _informesValidator = informesValidator;
             _currentUser = currentUser;
         }
 
@@ -52,6 +54,8 @@ namespace API.Controllers.Informes
             {
                 return StatusCode(403, new { message = "Solo los administradores y gerentes pueden acceder a informes" });
             }
+
+            await _informesValidator.ValidateAndThrowAsync(new InformesQuery(preset, fechaDesde, fechaHasta, null), ct);
 
             var result = await _informesService.GetVentasResumenAsync(fechaDesde, fechaHasta, preset, ct);
             return Ok(result);
@@ -86,6 +90,8 @@ namespace API.Controllers.Informes
                 return StatusCode(403, new { message = "Solo los administradores y gerentes pueden acceder a informes" });
             }
 
+            await _informesValidator.ValidateAndThrowAsync(new InformesQuery(preset, fechaDesde, fechaHasta, cantidad), ct);
+
             var result = await _informesService.GetProductosTopAsync(cantidad, fechaDesde, fechaHasta, preset, ct);
             return Ok(result);
         }
@@ -118,6 +124,8 @@ namespace API.Controllers.Informes
                 return StatusCode(403, new { message = "Solo los administradores y gerentes pueden acceder a informes" });
             }
 
+            await _informesValidator.ValidateAndThrowAsync(new InformesQuery(preset, fechaDesde, fechaHasta, null), ct);
+
             var result = await _informesService.GetFlujoCajaAsync(fechaDesde, fechaHasta, preset, ct);
             return Ok(result);
         }
@@ -149,6 +157,8 @@ namespace API.Controllers.Informes
             {
                 return StatusCode(403, new { message = "Solo los administradores y gerentes pueden acceder a informes" });
             }
+
+            await _informesValidator.ValidateAndThrowAsync(new InformesQuery(preset, fechaDesde, fechaHasta, null), ct);
 
             var result = await _informesService.GetIngresosGastosAsync(fechaDesde, fechaHasta, preset, ct);
             return Ok(result);
@@ -205,6 +215,8 @@ namespace API.Controllers.Informes
                 return StatusCode(403, new { message = "Solo los administradores y gerentes pueden acceder a informes" });
             }
 
+            await _informesValidator.ValidateAndThrowAsync(new InformesQuery(preset, fechaDesde, fechaHasta, null), ct);
+
             var result = await _informesService.GetVentasPorPagoAsync(fechaDesde, fechaHasta, preset, ct);
             return Ok(result);
         }
@@ -236,6 +248,8 @@ namespace API.Controllers.Informes
             {
                 return StatusCode(403, new { message = "Solo los administradores y gerentes pueden acceder a informes" });
             }
+
+            await _informesValidator.ValidateAndThrowAsync(new InformesQuery(preset, fechaDesde, fechaHasta, null), ct);
 
             var result = await _informesService.GetVentasPorVendedorAsync(fechaDesde, fechaHasta, preset, ct);
             return Ok(result);
