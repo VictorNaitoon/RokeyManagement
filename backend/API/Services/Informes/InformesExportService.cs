@@ -57,31 +57,43 @@ public class InformesExportService : IInformesExportService
         _logger.LogInformation("Export informes tipo={Tipo} formato={Formato} periodo={Periodo} negocioId={NegocioId} userId={UserId}",
             tipo, formato, periodo, negocioId, _currentUser.UserId);
 
-        // Fetch DTO reusing tenant-scoped service
-        object dto = tipo switch
+        try
         {
-            "ventas-resumen" => await _informesService.GetVentasResumenAsync(query.FechaDesde, query.FechaHasta, query.Preset, ct),
-            "productos-top" => await _informesService.GetProductosTopAsync(cantidad, query.FechaDesde, query.FechaHasta, query.Preset, ct),
-            "flujo-caja" => await _informesService.GetFlujoCajaAsync(query.FechaDesde, query.FechaHasta, query.Preset, ct),
-            "ingresos-gastos" => await _informesService.GetIngresosGastosAsync(query.FechaDesde, query.FechaHasta, query.Preset, ct),
-            "alertas-stock" => await _informesService.GetAlertasStockAsync(ct),
-            "ventas-por-pago" => await _informesService.GetVentasPorPagoAsync(query.FechaDesde, query.FechaHasta, query.Preset, ct),
-            "ventas-por-vendedor" => await _informesService.GetVentasPorVendedorAsync(query.FechaDesde, query.FechaHasta, query.Preset, ct),
-            _ => throw new FluentValidation.ValidationException(new[]
+            // Fetch DTO reusing tenant-scoped service
+            object dto = tipo switch
             {
-                new FluentValidation.Results.ValidationFailure("tipo", $"Tipo debe ser uno de: ventas-resumen, productos-top, flujo-caja, ingresos-gastos, alertas-stock, ventas-por-pago, ventas-por-vendedor")
-            })
-        };
+                "ventas-resumen" => await _informesService.GetVentasResumenAsync(query.FechaDesde, query.FechaHasta, query.Preset, ct),
+                "productos-top" => await _informesService.GetProductosTopAsync(cantidad, query.FechaDesde, query.FechaHasta, query.Preset, ct),
+                "flujo-caja" => await _informesService.GetFlujoCajaAsync(query.FechaDesde, query.FechaHasta, query.Preset, ct),
+                "ingresos-gastos" => await _informesService.GetIngresosGastosAsync(query.FechaDesde, query.FechaHasta, query.Preset, ct),
+                "alertas-stock" => await _informesService.GetAlertasStockAsync(ct),
+                "ventas-por-pago" => await _informesService.GetVentasPorPagoAsync(query.FechaDesde, query.FechaHasta, query.Preset, ct),
+                "ventas-por-vendedor" => await _informesService.GetVentasPorVendedorAsync(query.FechaDesde, query.FechaHasta, query.Preset, ct),
+                _ => throw new FluentValidation.ValidationException(new[]
+                {
+                    new FluentValidation.Results.ValidationFailure("tipo", $"Tipo debe ser uno de: ventas-resumen, productos-top, flujo-caja, ingresos-gastos, alertas-stock, ventas-por-pago, ventas-por-vendedor")
+                })
+            };
 
-        return formato switch
-        {
-            "csv" => await _csvFormatter.FormatAsync(tipo, dto, periodo, negocio, ct),
-            "pdf" => await _pdfFormatter.FormatAsync(tipo, dto, periodo, negocio, ct),
-            "docx" => await _docxFormatter.FormatAsync(tipo, dto, periodo, negocio, ct),
-            _ => throw new FluentValidation.ValidationException(new[]
+            return formato switch
             {
-                new FluentValidation.Results.ValidationFailure("formato", "Formato debe ser csv, pdf o docx.")
-            })
-        };
+                "csv" => await _csvFormatter.FormatAsync(tipo, dto, periodo, negocio, ct),
+                "pdf" => await _pdfFormatter.FormatAsync(tipo, dto, periodo, negocio, ct),
+                "docx" => await _docxFormatter.FormatAsync(tipo, dto, periodo, negocio, ct),
+                _ => throw new FluentValidation.ValidationException(new[]
+                {
+                    new FluentValidation.Results.ValidationFailure("formato", "Formato debe ser csv, pdf o docx.")
+                })
+            };
+        }
+        catch (FluentValidation.ValidationException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Export failed tipo={Tipo} formato={Formato} periodo={Periodo} negocioId={NegocioId}", tipo, formato, periodo, negocioId);
+            throw;
+        }
     }
 }

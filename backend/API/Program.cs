@@ -29,8 +29,12 @@ using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using QuestPDF.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// QuestPDF Community license must be set once at startup to avoid InvalidOperationException at runtime
+QuestPDF.Settings.License = LicenseType.Community;
 
 
 // Add services to the container.
@@ -195,6 +199,9 @@ builder.Services.AddFluentValidation(fv => fv.RegisterValidatorsFromAssemblyCont
 // Informes Validators (export + JSON)
 builder.Services.AddFluentValidation(fv => fv.RegisterValidatorsFromAssemblyContaining<API.DTO.Request.Informes.ExportInformesQueryValidator>());
 builder.Services.AddFluentValidation(fv => fv.RegisterValidatorsFromAssemblyContaining<API.DTO.Request.Informes.InformesQueryValidator>());
+
+// Suscripcion Validators
+builder.Services.AddFluentValidation(fv => fv.RegisterValidatorsFromAssemblyContaining<API.DTO.Request.Suscripcion.SuscripcionRequestValidator>());
 
 var app = builder.Build();
 

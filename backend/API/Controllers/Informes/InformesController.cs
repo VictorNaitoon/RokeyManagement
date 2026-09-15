@@ -18,14 +18,16 @@ namespace API.Controllers.Informes
         private readonly IValidator<ExportInformesQuery> _exportValidator;
         private readonly IValidator<InformesQuery> _informesValidator;
         private readonly ICurrentUserService _currentUser;
+        private readonly ILogger<InformesController> _logger;
 
-        public InformesController(IInformesService informesService, IInformesExportService exportService, IValidator<ExportInformesQuery> exportValidator, IValidator<InformesQuery> informesValidator, ICurrentUserService currentUser)
+        public InformesController(IInformesService informesService, IInformesExportService exportService, IValidator<ExportInformesQuery> exportValidator, IValidator<InformesQuery> informesValidator, ICurrentUserService currentUser, ILogger<InformesController> logger)
         {
             _informesService = informesService;
             _exportService = exportService;
             _exportValidator = exportValidator;
             _informesValidator = informesValidator;
             _currentUser = currentUser;
+            _logger = logger;
         }
 
         /// <summary>
@@ -280,8 +282,22 @@ namespace API.Controllers.Informes
             var query = new ExportInformesQuery(tipo, formato, preset, fechaDesde, fechaHasta, cantidad);
             await _exportValidator.ValidateAndThrowAsync(query, ct);
 
-            var result = await _exportService.ExportAsync(query, ct);
-            return File(result.Bytes, result.ContentType, result.FileName);
+            try
+            {
+                var result = await _exportService.ExportAsync(query, ct);
+                // Use FileContentResult with byte[] — no MemoryStream lifecycle, no ObjectDisposedException.
+                // enableRangeProcessing:false avoids range-header handling that can confuse PDF viewers.
+                return File(result.Bytes, result.ContentType, result.FileName, enableRangeProcessing: false);
+            }
+            catch (ValidationException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Export endpoint failed tipo={Tipo} formato={Formato} preset={Preset}", tipo, formato, preset);
+                throw;
+            }
         }
     }
 }

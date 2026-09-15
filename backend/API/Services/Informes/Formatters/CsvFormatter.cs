@@ -1,5 +1,4 @@
 using System.Text;
-using API.Data;
 using API.DTO.Response.Informes;
 using API.Models;
 
@@ -78,8 +77,30 @@ public class CsvFormatter
 
     private static void WriteIngresosGastos(IngresosGastosResponse dto, StreamWriter w)
     {
+        // Summary (GananciaBruta / Margen preserved)
         WriteRow(w, ["VentasTotales", "ComprasTotales", "GananciaBruta", "MargenPorcentaje"]);
         WriteRow(w, [FormatDecimal(dto.VentasTotales), FormatDecimal(dto.ComprasTotales), FormatDecimal(dto.GananciaBruta), dto.MargenPorcentaje.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)]);
+        w.WriteLine();
+
+        // Detail Ventas
+        var detalleVentas = dto.DetalleVentas ?? new List<DetalleVentaInforme>();
+        WriteRow(w, ["Detalle Ventas"]);
+        WriteRow(w, ["Producto", "Cantidad", "PrecioUnitario", "Subtotal"]);
+        foreach (var d in detalleVentas.Take(TakeCap))
+            WriteRow(w, [d.Producto, d.Cantidad.ToString(), FormatDecimal(d.PrecioUnitario), FormatDecimal(d.Subtotal)]);
+        WriteRow(w, ["TOTAL", detalleVentas.Sum(x => x.Cantidad).ToString(), "", FormatDecimal(dto.VentasTotales)]);
+        w.WriteLine();
+
+        // Detail Compras
+        var detalleCompras = dto.DetalleCompras ?? new List<DetalleCompraInforme>();
+        WriteRow(w, ["Detalle Compras"]);
+        WriteRow(w, ["Producto", "Cantidad", "CostoUnitario", "Subtotal"]);
+        foreach (var d in detalleCompras.Take(TakeCap))
+            WriteRow(w, [d.Producto, d.Cantidad.ToString(), FormatDecimal(d.CostoUnitario), FormatDecimal(d.Subtotal)]);
+        WriteRow(w, ["TOTAL", detalleCompras.Sum(x => x.Cantidad).ToString(), "", FormatDecimal(dto.ComprasTotales)]);
+
+        if ((detalleVentas.Count >= TakeCap) || (detalleCompras.Count >= TakeCap))
+            WriteRow(w, ["Mostrando primeros 5000 registros."]);
     }
 
     private static void WriteAlertasStock(AlertasStockResponse dto, StreamWriter w)

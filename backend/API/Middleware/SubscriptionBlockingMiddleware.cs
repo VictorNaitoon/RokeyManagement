@@ -51,6 +51,17 @@ namespace API.Middleware
                     return;
                 }
 
+                // 2b. Bypass para endpoints de reactivación/consulta de suscripción del propio negocio
+                // Permite a un Dueño con suscripción Vencida llamar a PUT /api/v1/suscripcion para reactivar
+                // incluso si está fuera del período de gracia de 7 días y CanNegocioOperarAsync retornaría false.
+                var path = context.Request.Path.Value ?? string.Empty;
+                if (path.StartsWith("/api/v1/suscripcion", StringComparison.OrdinalIgnoreCase))
+                {
+                    _logger.LogDebug("Bypass subscription check for suscripcion endpoint: {Path}", path);
+                    await _next(context);
+                    return;
+                }
+
                 // 3. Obtener negocioId del claim
                 var negocioIdClaim = context.User.FindFirst("negocioId")?.Value;
                 if (!int.TryParse(negocioIdClaim, out var negocioId) || negocioId <= 0)

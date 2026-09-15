@@ -37,13 +37,36 @@ namespace API.DTO.Response.Informes
     );
 
     /// <summary>
-    /// Response DTO for revenue vs expenses (ingresos-gastos)
+    /// Line item for sales detail (used inside ingresos-gastos)
+    /// </summary>
+    public record DetalleVentaInforme(
+        string Producto,
+        int Cantidad,
+        decimal PrecioUnitario,
+        decimal Subtotal
+    );
+
+    /// <summary>
+    /// Line item for purchase detail (used inside ingresos-gastos)
+    /// </summary>
+    public record DetalleCompraInforme(
+        string Producto,
+        int Cantidad,
+        decimal CostoUnitario,
+        decimal Subtotal
+    );
+
+    /// <summary>
+    /// Response DTO for revenue vs expenses (ingresos-gastos).
+    /// Enriched with itemised detail for ventas and compras — totals remain, detail is additive.
     /// </summary>
     public record IngresosGastosResponse(
         decimal VentasTotales,
         decimal ComprasTotales,
         decimal GananciaBruta,
-        decimal MargenPorcentaje
+        decimal MargenPorcentaje,
+        List<DetalleVentaInforme>? DetalleVentas = null,
+        List<DetalleCompraInforme>? DetalleCompras = null
     );
 
     /// <summary>

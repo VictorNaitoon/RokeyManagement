@@ -4,6 +4,8 @@ using API.DTO.Response.Suscripcion;
 using API.Models;
 using static API.Models.Enums;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 using SuscripcionModel = API.Models.Suscripcion;
 
 namespace API.Services.Suscripcion
@@ -15,11 +17,15 @@ namespace API.Services.Suscripcion
     {
         private readonly AppDbContext _context;
         private readonly IMetricaUsoService _metricaUsoService;
+        private readonly IMemoryCache _cache;
+        private readonly ILogger<SuscripcionService> _logger;
 
-        public SuscripcionService(AppDbContext context, IMetricaUsoService metricaUsoService)
+        public SuscripcionService(AppDbContext context, IMetricaUsoService metricaUsoService, IMemoryCache cache, ILogger<SuscripcionService> logger)
         {
             _context = context;
             _metricaUsoService = metricaUsoService;
+            _cache = cache;
+            _logger = logger;
         }
 
         public async Task<SuscripcionResponse?> GetSuscripcionByNegocioAsync(int idNegocio, CancellationToken ct = default)
@@ -95,6 +101,7 @@ namespace API.Services.Suscripcion
             var suscripcion = await _context.Suscripciones
                 .Where(s => s.Id_negocio == idNegocio)
                 .Include(s => s.Plan)
+                .OrderByDescending(s => s.FechaInicio)
                 .FirstOrDefaultAsync(ct);
 
             if (suscripcion == null)
@@ -102,8 +109,17 @@ namespace API.Services.Suscripcion
                 throw new InvalidOperationException("No se encontró una suscripción para este negocio");
             }
 
-            // Validar estado para permitir actualización
-            if (suscripcion.Estado != EstadoSuscripcion.Activa && suscripcion.Estado != EstadoSuscripcion.PendientePago)
+            // Permitir reactivación de Vencida y Suspendida además de Activa/PendientePago
+            // Cancelada sigue bloqueada (requiere crear nueva suscripción manualmente)
+            var estadosPermitidos = new[]
+            {
+                EstadoSuscripcion.Activa,
+                EstadoSuscripcion.PendientePago,
+                EstadoSuscripcion.Vencida,
+                EstadoSuscripcion.Suspendida
+            };
+
+            if (!estadosPermitidos.Contains(suscripcion.Estado))
             {
                 throw new InvalidOperationException($"No se puede actualizar una suscripción en estado {suscripcion.Estado}");
             }
@@ -117,9 +133,29 @@ namespace API.Services.Suscripcion
                 throw new InvalidOperationException($"El plan con ID {request.IdPlan} no existe o no está activo");
             }
 
-            // Si cambia el tipo de facturación, recalcular fechas
-            if (suscripcion.TipoFacturacion != request.TipoFacturacion)
+            var esReactivacion = suscripcion.Estado == EstadoSuscripcion.Vencida
+                || suscripcion.Estado == EstadoSuscripcion.Suspendida;
+
+            if (esReactivacion)
             {
+                // Reactivación: recalcular ciclo completo desde ahora, igual que CreateSuscripcion
+                var ahora = DateTime.UtcNow;
+                suscripcion.FechaInicio = ahora;
+                suscripcion.FechaFin = request.TipoFacturacion == TipoFacturacion.Anual
+                    ? ahora.AddYears(1)
+                    : ahora.AddMonths(1);
+                suscripcion.FechaProximoPago = suscripcion.FechaFin;
+                suscripcion.FechaCancelacion = null;
+                suscripcion.MotivoCancelacion = null;
+                suscripcion.Estado = EstadoSuscripcion.Activa;
+
+                _logger.LogInformation(
+                    "Reactivando suscripción {SuscripcionId} del negocio {NegocioId} desde estado {EstadoPrevio} a Activa (plan {PlanId}, {Tipo})",
+                    suscripcion.Id, idNegocio, suscripcion.Estado, request.IdPlan, request.TipoFacturacion);
+            }
+            else if (suscripcion.TipoFacturacion != request.TipoFacturacion)
+            {
+                // Cambio de ciclo en suscripción no vencida: recalcular fin/próximo pago
                 var fechaActual = DateTime.UtcNow;
                 suscripcion.FechaFin = request.TipoFacturacion == TipoFacturacion.Anual
                     ? fechaActual.AddYears(1)
@@ -139,7 +175,39 @@ namespace API.Services.Suscripcion
                 suscripcion.Estado = EstadoSuscripcion.Activa;
             }
 
+            // Sincronizar Negocio.Estado -> Activo si estaba Inactivo/Suspendido
+            var negocio = await _context.Negocios.FirstOrDefaultAsync(n => n.Id == idNegocio, ct);
+            if (negocio != null && negocio.Estado != EstadoNegocio.Activo)
+            {
+                _logger.LogInformation(
+                    "Reactivando negocio {NegocioId} de {EstadoPrevio} a Activo por reactivación de suscripción",
+                    idNegocio, negocio.Estado);
+                negocio.Estado = EstadoNegocio.Activo;
+            }
+
+            // Crear PagoSuscripcion de reactivación (opcional, audit)
+            if (esReactivacion)
+            {
+                var monto = request.TipoFacturacion == TipoFacturacion.Anual
+                    ? nuevoPlan.PrecioAnual
+                    : nuevoPlan.PrecioMensual;
+
+                var pago = new PagoSuscripcion
+                {
+                    IdSuscripcion = suscripcion.Id,
+                    Monto = monto,
+                    FechaPago = DateTime.UtcNow,
+                    Metodo = MetodoPagoSuscripcion.Transferencia,
+                    Estado = EstadoPago.Exitoso,
+                    Detalles = "Reactivación automática vía API (Vencida/Suspendida -> Activa)"
+                };
+                _context.PagosSuscripcion.Add(pago);
+            }
+
             await _context.SaveChangesAsync(ct);
+
+            // Invalidar cache de bloqueo para que el negocio pueda operar inmediatamente
+            _cache.Remove($"suscripcion_bloqueada_{idNegocio}");
 
             // Recargar con el nuevo plan
             suscripcion = await _context.Suscripciones

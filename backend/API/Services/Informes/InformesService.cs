@@ -103,6 +103,7 @@ namespace API.Services.Informes
             var negocioId = _currentUser.NegocioId;
 
             var ventas = await _context.Ventas
+                .AsNoTracking()
                 .Where(v => v.Id_negocio == negocioId && v.FechaVenta >= desde && v.FechaVenta <= hasta)
                 .ToListAsync(ct);
 
@@ -141,9 +142,11 @@ namespace API.Services.Informes
             // Get top products by revenue, excluding services
             // Materialize first to avoid EF Core GroupBy + Include translation issue
             var detalles = await _context.DetallesVenta
+                .AsNoTracking()
                 .Include(d => d.Venta)
                 .Include(d => d.Producto)
-                .Where(d => d.Venta.Id_negocio == negocioId
+                .Where(d => d.Venta != null && d.Producto != null
+                            && d.Venta.Id_negocio == negocioId
                             && d.Venta.FechaVenta >= desde
                             && d.Venta.FechaVenta <= hasta
                             && !d.Venta.Anulada
@@ -172,11 +175,12 @@ namespace API.Services.Informes
 
             // Get movimientos de caja within date range, only closed caja
             var movimientos = await _context.MovimientosCaja
+                .AsNoTracking()
                 .Include(m => m.Caja)
                 .Where(m => m.Id_negocio == negocioId
                             && m.Fecha >= desde
                             && m.Fecha <= hasta
-                            && m.Caja.Estado == "Cerrada")  // Only closed caja
+                            && m.Caja != null && m.Caja.Estado == "Cerrada")  // Only closed caja, null-safe
                 .ToListAsync(ct);
 
             var ingresos = movimientos.Where(m => m.Tipo == "Ingreso").ToList();
@@ -217,11 +221,65 @@ namespace API.Services.Informes
                 ? Math.Round((gananciaBruta / ventasTotales) * 100, 2)
                 : 0;
 
+            // Enriched detail: itemised ventas and compras for export/reporting
+            // Keep aggregates intact; detail is additive and capped at 5000 rows to protect export.
+            // Minimal query: no Include, no string.Format/interpolation inside SQL; fallback client-side.
+            const int detailCap = 5000;
+            var detalleVentasRaw = await _context.DetallesVenta
+                .AsNoTracking()
+                .Where(d => d.Venta.Id_negocio == negocioId
+                            && d.Venta.FechaVenta >= desde
+                            && d.Venta.FechaVenta <= hasta
+                            && !d.Venta.Anulada)
+                .Select(d => new
+                {
+                    Nombre = d.Producto.Nombre,
+                    d.Cantidad,
+                    d.PrecioUnitario
+                })
+                .ToListAsync(ct);
+
+            var detalleVentas = detalleVentasRaw
+                .OrderBy(x => x.Nombre ?? "Producto eliminado")
+                .Take(detailCap)
+                .Select(x => new DetalleVentaInforme(
+                    x.Nombre ?? "Producto eliminado",
+                    x.Cantidad,
+                    x.PrecioUnitario,
+                    x.Cantidad * x.PrecioUnitario))
+                .ToList();
+
+            var detalleComprasRaw = await _context.DetallesCompra
+                .AsNoTracking()
+                .Where(d => d.Compra.Id_negocio == negocioId
+                            && d.Compra.FechaCompra >= desde
+                            && d.Compra.FechaCompra <= hasta
+                            && !d.Compra.Anulada)
+                .Select(d => new
+                {
+                    Nombre = d.Producto.Nombre,
+                    d.Cantidad,
+                    d.PrecioUnitario
+                })
+                .ToListAsync(ct);
+
+            var detalleCompras = detalleComprasRaw
+                .OrderBy(x => x.Nombre ?? "Producto eliminado")
+                .Take(detailCap)
+                .Select(x => new DetalleCompraInforme(
+                    x.Nombre ?? "Producto eliminado",
+                    x.Cantidad,
+                    x.PrecioUnitario,
+                    x.Cantidad * x.PrecioUnitario))
+                .ToList();
+
             return new IngresosGastosResponse(
                 VentasTotales: ventasTotales,
                 ComprasTotales: comprasTotales,
                 GananciaBruta: gananciaBruta,
-                MargenPorcentaje: margenPorcentaje
+                MargenPorcentaje: margenPorcentaje,
+                DetalleVentas: detalleVentas,
+                DetalleCompras: detalleCompras
             );
         }
 
@@ -231,6 +289,7 @@ namespace API.Services.Informes
 
             // Get products below minimum stock, only products (not services), only active
             var productos = await _context.Productos
+                .AsNoTracking()
                 .Where(p => p.Id_negocio == negocioId
                             && p.Activo
                             && !p.EsServicio  // Only products, not services
@@ -255,8 +314,10 @@ namespace API.Services.Informes
 
             // Get all pagos for non-cancelled ventas within date range
             var pagos = await _context.Pagos
+                .AsNoTracking()
                 .Include(p => p.Venta)
-                .Where(p => p.Venta.Id_negocio == negocioId
+                .Where(p => p.Venta != null
+                            && p.Venta.Id_negocio == negocioId
                             && p.Venta.FechaVenta >= desde
                             && p.Venta.FechaVenta <= hasta
                             && !p.Venta.Anulada)
@@ -286,6 +347,7 @@ namespace API.Services.Informes
             // Get ventas grouped by user
             // Materialize first to avoid EF Core GroupBy + Include translation issue
             var ventas = await _context.Ventas
+                .AsNoTracking()
                 .Include(v => v.Usuario)
                 .Where(v => v.Id_negocio == negocioId
                             && v.FechaVenta >= desde
@@ -294,10 +356,11 @@ namespace API.Services.Informes
                 .ToListAsync(ct);
 
             var ventasPorVendedor = ventas
-                .GroupBy(v => new { v.IdUsuario, v.Usuario.Nombre, v.Usuario.Apellido })
+                .Where(v => v.Usuario != null)
+                .GroupBy(v => new { v.IdUsuario, Nombre = v.Usuario!.Nombre ?? $"Usuario #{v.IdUsuario}", Apellido = v.Usuario!.Apellido ?? "" })
                 .Select(g => new VendedorResponse(
                     g.Key.IdUsuario,
-                    g.Key.Nombre + " " + g.Key.Apellido,
+                    (g.Key.Nombre + " " + g.Key.Apellido).Trim(),
                     g.Count(),
                     g.Sum(v => v.TotalVenta)
                 ))

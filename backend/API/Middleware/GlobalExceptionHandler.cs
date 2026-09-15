@@ -15,9 +15,25 @@ public class GlobalExceptionHandler : IExceptionHandler
 
     public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
     {
+        // If response already started, cannot write ProblemDetails — let pipeline handle it
+        if (httpContext.Response.HasStarted)
+        {
+            _logger.LogError(exception, "Unhandled exception after response started TraceId={TraceId} Path={Path}", httpContext.TraceIdentifier, httpContext.Request.Path);
+            return false;
+        }
+
+        // Cancellation is not an error — just log and return 499 equivalent
+        if (exception is OperationCanceledException or TaskCanceledException)
+        {
+            _logger.LogWarning("Request cancelled TraceId={TraceId} Path={Path}", httpContext.TraceIdentifier, httpContext.Request.Path);
+            return false;
+        }
+
         var traceId = httpContext.TraceIdentifier;
 
-        if (exception is ValidationException validationEx)
+        try
+        {
+            if (exception is ValidationException validationEx)
         {
             _logger.LogWarning(validationEx, "Validation failed TraceId={TraceId}", traceId);
 
@@ -97,5 +113,30 @@ public class GlobalExceptionHandler : IExceptionHandler
         httpContext.Response.ContentType = "application/problem+json";
         await httpContext.Response.WriteAsJsonAsync(fallback, cancellationToken);
         return true;
+        }
+        catch (Exception handlerEx)
+        {
+            _logger.LogError(handlerEx, "Exception handler failed TraceId={TraceId}", traceId);
+            if (!httpContext.Response.HasStarted)
+            {
+                try
+                {
+                    httpContext.Response.StatusCode = StatusCodes.Status500InternalServerError;
+                    httpContext.Response.ContentType = "application/problem+json";
+                    await httpContext.Response.WriteAsJsonAsync(new ProblemDetails
+                    {
+                        Type = "https://httpstatuses.com/500",
+                        Title = "Internal Server Error",
+                        Status = StatusCodes.Status500InternalServerError,
+                        Detail = "An unexpected error occurred.",
+                        Instance = httpContext.Request.Path,
+                        Extensions = { ["traceId"] = traceId }
+                    }, cancellationToken);
+                    return true;
+                }
+                catch { /* last resort */ }
+            }
+            return false;
+        }
     }
 }

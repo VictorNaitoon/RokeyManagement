@@ -1,4 +1,3 @@
-using API.Data;
 using API.DTO.Response.Informes;
 using API.Models;
 using DocumentFormat.OpenXml;
@@ -10,6 +9,15 @@ namespace API.Services.Informes.Formatters;
 public class DocxFormatter
 {
     private const int TakeCap = 5000;
+    private readonly ILogger<DocxFormatter> _logger;
+
+    public DocxFormatter(ILogger<DocxFormatter> logger)
+    {
+        _logger = logger;
+    }
+
+    // Fallback for tests / manual instantiation
+    public DocxFormatter() : this(LoggerFactory.Create(b => { }).CreateLogger<DocxFormatter>()) { }
 
     public Task<ExportResult> FormatAsync(string tipo, object dto, string periodo, Negocio negocio, CancellationToken ct)
     {
@@ -17,39 +25,77 @@ public class DocxFormatter
         var contentType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
         var titulo = GetTitulo(tipo);
 
-        using var ms = new MemoryStream();
-        using (var doc = WordprocessingDocument.Create(ms, WordprocessingDocumentType.Document, true))
+        try
         {
-            var mainPart = doc.AddMainDocumentPart();
-            mainPart.Document = new Document();
-            var body = mainPart.Document.AppendChild(new Body());
+            using var ms = new MemoryStream();
+            using (var doc = WordprocessingDocument.Create(ms, WordprocessingDocumentType.Document, true))
+            {
+                var mainPart = doc.AddMainDocumentPart();
+                mainPart.Document = new Document();
+                var body = mainPart.Document.AppendChild(new Body());
 
-            // Title Heading1
-            var titlePara = new Paragraph(
-                new ParagraphProperties(new ParagraphStyleId() { Val = "Heading1" }),
-                new Run(new Text(titulo) { Space = SpaceProcessingModeValues.Preserve })
-            );
-            body.Append(titlePara);
+                // Title Heading1
+                var titlePara = new Paragraph(
+                    new ParagraphProperties(new ParagraphStyleId() { Val = "Heading1" }),
+                    new Run(new Text(titulo) { Space = SpaceProcessingModeValues.Preserve })
+                );
+                body.Append(titlePara);
 
-            // Business header
-            body.Append(new Paragraph(new Run(new Text($"{negocio.Nombre} — CUIT {negocio.CUIT}"))));
-            if (!string.IsNullOrWhiteSpace(negocio.Direccion))
-                body.Append(new Paragraph(new Run(new Text(negocio.Direccion))));
-            body.Append(new Paragraph(new Run(new Text($"Periodo: {periodo}"))));
-            body.Append(new Paragraph(new Run(new Text($"Generado: {DateTime.UtcNow:yyyy-MM-dd HH:mm} UTC")) { }));
+                // Business header
+                body.Append(new Paragraph(new Run(new Text($"{negocio.Nombre} — CUIT {negocio.CUIT}"))));
+                if (!string.IsNullOrWhiteSpace(negocio.Direccion))
+                    body.Append(new Paragraph(new Run(new Text(negocio.Direccion))));
+                body.Append(new Paragraph(new Run(new Text($"Periodo: {periodo}"))));
+                body.Append(new Paragraph(new Run(new Text($"Generado: {DateTime.UtcNow:yyyy-MM-dd HH:mm} UTC")) { }));
 
-            // Table
-            var table = BuildTable(tipo.ToLowerInvariant(), dto);
-            body.Append(table);
+                // Content: ingresos-gastos needs multiple tables
+                if (tipo.ToLowerInvariant() == "ingresos-gastos")
+                {
+                    AppendIngresosGastosContent(body, (IngresosGastosResponse)dto);
+                }
+                else
+                {
+                    var table = BuildTable(tipo.ToLowerInvariant(), dto);
+                    body.Append(table);
+                }
 
-            if (IsCapped(tipo.ToLowerInvariant(), dto))
-                body.Append(new Paragraph(new Run(new Text("Mostrando primeros 5000 registros.")) { }));
+                if (IsCapped(tipo.ToLowerInvariant(), dto))
+                    body.Append(new Paragraph(new Run(new Text("Mostrando primeros 5000 registros.")) { }));
 
-            mainPart.Document.Save();
+                mainPart.Document.Save();
+            }
+
+            var bytes = ms.ToArray();
+            return Task.FromResult(new ExportResult(bytes, contentType, filename));
         }
-
-        var bytes = ms.ToArray();
-        return Task.FromResult(new ExportResult(bytes, contentType, filename));
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "DOCX generation failed tipo={Tipo} periodo={Periodo}", tipo, periodo);
+            // Fallback: never crash the host — return a valid DOCX with the error message
+            try
+            {
+                using var ms = new MemoryStream();
+                using (var doc = WordprocessingDocument.Create(ms, WordprocessingDocumentType.Document, true))
+                {
+                    var mainPart = doc.AddMainDocumentPart();
+                    mainPart.Document = new Document();
+                    var body = mainPart.Document.AppendChild(new Body());
+                    body.Append(new Paragraph(new Run(new Text($"Error al generar informe: {titulo}"))));
+                    body.Append(new Paragraph(new Run(new Text($"Periodo: {periodo}"))));
+                    body.Append(new Paragraph(new Run(new Text($"Detalle tecnico: {ex.Message}"))));
+                    body.Append(new Paragraph(new Run(new Text("No se pudo generar el contenido solicitado. Intente nuevamente o contacte soporte."))));
+                    mainPart.Document.Save();
+                }
+                var errorBytes = ms.ToArray();
+                return Task.FromResult(new ExportResult(errorBytes, contentType, filename));
+            }
+            catch (Exception fallbackEx)
+            {
+                _logger.LogError(fallbackEx, "DOCX fallback generation also failed");
+                var fallbackBytes = System.Text.Encoding.UTF8.GetBytes($"Error generando DOCX: {ex.Message}");
+                return Task.FromResult(new ExportResult(fallbackBytes, contentType, filename));
+            }
+        }
     }
 
     private static string GetTitulo(string tipo) => tipo.ToLowerInvariant() switch
@@ -70,6 +116,8 @@ public class DocxFormatter
         "alertas-stock" => ((AlertasStockResponse)dto).Productos.Count >= TakeCap,
         "ventas-por-pago" => ((VentasPorPagoResponse)dto).Metodos.Count >= TakeCap,
         "ventas-por-vendedor" => ((VentasPorVendedorResponse)dto).Vendedores.Count >= TakeCap,
+        "ingresos-gastos" => (((IngresosGastosResponse)dto).DetalleVentas?.Count ?? 0) >= TakeCap
+                           || (((IngresosGastosResponse)dto).DetalleCompras?.Count ?? 0) >= TakeCap,
         _ => false
     };
 
@@ -78,7 +126,7 @@ public class DocxFormatter
         "ventas-resumen" => BuildVentasResumen((VentasResumenResponse)dto),
         "productos-top" => BuildProductosTop((ProductosTopResponse)dto),
         "flujo-caja" => BuildFlujoCaja((FlujoCajaResponse)dto),
-        "ingresos-gastos" => BuildIngresosGastos((IngresosGastosResponse)dto),
+        "ingresos-gastos" => BuildIngresosGastosSummary((IngresosGastosResponse)dto),
         "alertas-stock" => BuildAlertasStock((AlertasStockResponse)dto),
         "ventas-por-pago" => BuildVentasPorPago((VentasPorPagoResponse)dto),
         "ventas-por-vendedor" => BuildVentasPorVendedor((VentasPorVendedorResponse)dto),
@@ -113,7 +161,92 @@ public class DocxFormatter
         return table;
     }
 
-    private static TableCell Cell(string text) => new(new Paragraph(new Run(new Text(text) { Space = SpaceProcessingModeValues.Preserve })));
+    private static TableCell Cell(string text) => new(new Paragraph(new Run(new Text(text ?? string.Empty) { Space = SpaceProcessingModeValues.Preserve })));
+
+    private static void AppendIngresosGastosContent(Body body, IngresosGastosResponse dto)
+    {
+        // Summary (GananciaBruta / Margen untouched)
+        body.Append(BuildIngresosGastosSummary(dto));
+
+        // Detalle Ventas
+        var detalleVentas = dto.DetalleVentas ?? new List<DetalleVentaInforme>();
+        body.Append(new Paragraph(
+            new ParagraphProperties(new ParagraphStyleId() { Val = "Heading2" }),
+            new Run(new Text("Detalle de Ventas") { Space = SpaceProcessingModeValues.Preserve })
+        ));
+        if (detalleVentas.Count == 0)
+        {
+            body.Append(new Paragraph(new Run(new Text("Sin movimientos de venta en el periodo."))));
+        }
+        else
+        {
+            var tVentas = CreateTable("Producto", "Cant.", "P. Unit.", "Subtotal");
+            foreach (var d in detalleVentas.Take(TakeCap))
+            {
+                var row = new TableRow();
+                row.Append(Cell(d.Producto));
+                row.Append(Cell(d.Cantidad.ToString()));
+                row.Append(Cell(FormatCurrency(d.PrecioUnitario)));
+                row.Append(Cell(FormatCurrency(d.Subtotal)));
+                tVentas.Append(row);
+            }
+            // Total row with shading
+            var totalRowV = new TableRow();
+            var totalCellLabel = Cell("TOTAL");
+            totalCellLabel.TableCellProperties = new TableCellProperties(new Shading { Val = ShadingPatternValues.Clear, Color = "auto", Fill = "E8E8E8" });
+            totalRowV.Append(totalCellLabel);
+            var totalCantCell = Cell(detalleVentas.Sum(x => x.Cantidad).ToString());
+            totalCantCell.TableCellProperties = new TableCellProperties(new Shading { Val = ShadingPatternValues.Clear, Color = "auto", Fill = "E8E8E8" });
+            totalRowV.Append(totalCantCell);
+            var emptyCell = Cell("");
+            emptyCell.TableCellProperties = new TableCellProperties(new Shading { Val = ShadingPatternValues.Clear, Color = "auto", Fill = "E8E8E8" });
+            totalRowV.Append(emptyCell);
+            var totalMontoCell = Cell(FormatCurrency(dto.VentasTotales));
+            totalMontoCell.TableCellProperties = new TableCellProperties(new Shading { Val = ShadingPatternValues.Clear, Color = "auto", Fill = "E8E8E8" });
+            totalRowV.Append(totalMontoCell);
+            tVentas.Append(totalRowV);
+            body.Append(tVentas);
+        }
+
+        // Detalle Compras
+        var detalleCompras = dto.DetalleCompras ?? new List<DetalleCompraInforme>();
+        body.Append(new Paragraph(
+            new ParagraphProperties(new ParagraphStyleId() { Val = "Heading2" }),
+            new Run(new Text("Detalle de Compras") { Space = SpaceProcessingModeValues.Preserve })
+        ));
+        if (detalleCompras.Count == 0)
+        {
+            body.Append(new Paragraph(new Run(new Text("Sin movimientos de compra en el periodo."))));
+        }
+        else
+        {
+            var tCompras = CreateTable("Producto", "Cant.", "Costo Unit.", "Subtotal");
+            foreach (var d in detalleCompras.Take(TakeCap))
+            {
+                var row = new TableRow();
+                row.Append(Cell(d.Producto));
+                row.Append(Cell(d.Cantidad.ToString()));
+                row.Append(Cell(FormatCurrency(d.CostoUnitario)));
+                row.Append(Cell(FormatCurrency(d.Subtotal)));
+                tCompras.Append(row);
+            }
+            var totalRowC = new TableRow();
+            var totalCellLabelC = Cell("TOTAL");
+            totalCellLabelC.TableCellProperties = new TableCellProperties(new Shading { Val = ShadingPatternValues.Clear, Color = "auto", Fill = "E8E8E8" });
+            totalRowC.Append(totalCellLabelC);
+            var totalCantCellC = Cell(detalleCompras.Sum(x => x.Cantidad).ToString());
+            totalCantCellC.TableCellProperties = new TableCellProperties(new Shading { Val = ShadingPatternValues.Clear, Color = "auto", Fill = "E8E8E8" });
+            totalRowC.Append(totalCantCellC);
+            var emptyCellC = Cell("");
+            emptyCellC.TableCellProperties = new TableCellProperties(new Shading { Val = ShadingPatternValues.Clear, Color = "auto", Fill = "E8E8E8" });
+            totalRowC.Append(emptyCellC);
+            var totalMontoCellC = Cell(FormatCurrency(dto.ComprasTotales));
+            totalMontoCellC.TableCellProperties = new TableCellProperties(new Shading { Val = ShadingPatternValues.Clear, Color = "auto", Fill = "E8E8E8" });
+            totalRowC.Append(totalMontoCellC);
+            tCompras.Append(totalRowC);
+            body.Append(tCompras);
+        }
+    }
 
     private static Table BuildVentasResumen(VentasResumenResponse dto)
     {
@@ -155,7 +288,7 @@ public class DocxFormatter
         return t;
     }
 
-    private static Table BuildIngresosGastos(IngresosGastosResponse dto)
+    private static Table BuildIngresosGastosSummary(IngresosGastosResponse dto)
     {
         var t = CreateTable("Ventas Totales", "Compras Totales", "Ganancia Bruta", "Margen %");
         var row = new TableRow();
