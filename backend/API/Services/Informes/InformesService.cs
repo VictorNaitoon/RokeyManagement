@@ -2,6 +2,8 @@ using API.Data;
 using API.DTO.Response.Informes;
 using API.Models;
 using API.Services.Common;
+using FluentValidation;
+using FluentValidation.Results;
 using Microsoft.EntityFrameworkCore;
 
 namespace API.Services.Informes
@@ -27,11 +29,13 @@ namespace API.Services.Informes
             DateTime desde;
             DateTime hasta;
 
-            // If explicit dates provided, use them (ensure UTC)
+            // If explicit dates provided, use them (normalize to UTC 00:00 / 23:59:59.999)
             if (fechaDesde.HasValue && fechaHasta.HasValue)
             {
-                desde = fechaDesde.Value.ToUniversalTime();
-                hasta = fechaHasta.Value.ToUniversalTime();
+                var desdeDate = fechaDesde.Value.Date;
+                var hastaDate = fechaHasta.Value.Date;
+                desde = new DateTime(desdeDate.Year, desdeDate.Month, desdeDate.Day, 0, 0, 0, DateTimeKind.Utc);
+                hasta = new DateTime(hastaDate.Year, hastaDate.Month, hastaDate.Day, 23, 59, 59, 999, DateTimeKind.Utc);
             }
             else
             {
@@ -63,10 +67,13 @@ namespace API.Services.Informes
                 }
             }
 
-            // Validate date range doesn't exceed 12 months
+            // Validate date range doesn't exceed 12 months -> 400
             if ((hasta - desde).TotalDays > 365)
             {
-                throw new InvalidOperationException("El rango de fechas no puede exceder 12 meses.");
+                throw new ValidationException(new[]
+                {
+                    new ValidationFailure("fechaHasta", "El rango no puede exceder 12 meses.")
+                });
             }
 
             return (desde, hasta);
@@ -97,12 +104,12 @@ namespace API.Services.Informes
             );
         }
 
-        public async Task<ProductosTopResponse> GetProductosTopAsync(int cantidad, DateTime? fechaDesde, DateTime? fechaHasta, CancellationToken ct)
+        public async Task<ProductosTopResponse> GetProductosTopAsync(int cantidad, DateTime? fechaDesde, DateTime? fechaHasta, string? preset, CancellationToken ct)
         {
             // Default to 10 if not provided
             var limite = cantidad > 0 ? Math.Min(cantidad, 50) : 10;
 
-            var (desde, hasta) = ResolveDateRange(fechaDesde, fechaHasta, null);
+            var (desde, hasta) = ResolveDateRange(fechaDesde, fechaHasta, preset);
             var negocioId = _currentUser.NegocioId;
 
             // Get top products by revenue, excluding services
@@ -132,9 +139,9 @@ namespace API.Services.Informes
             return new ProductosTopResponse(Productos: productosTop);
         }
 
-        public async Task<FlujoCajaResponse> GetFlujoCajaAsync(DateTime? fechaDesde, DateTime? fechaHasta, CancellationToken ct)
+        public async Task<FlujoCajaResponse> GetFlujoCajaAsync(DateTime? fechaDesde, DateTime? fechaHasta, string? preset, CancellationToken ct)
         {
-            var (desde, hasta) = ResolveDateRange(fechaDesde, fechaHasta, null);
+            var (desde, hasta) = ResolveDateRange(fechaDesde, fechaHasta, preset);
             var negocioId = _currentUser.NegocioId;
 
             // Get movimientos de caja within date range, only closed caja
@@ -158,9 +165,9 @@ namespace API.Services.Informes
             );
         }
 
-        public async Task<IngresosGastosResponse> GetIngresosGastosAsync(DateTime? fechaDesde, DateTime? fechaHasta, CancellationToken ct)
+        public async Task<IngresosGastosResponse> GetIngresosGastosAsync(DateTime? fechaDesde, DateTime? fechaHasta, string? preset, CancellationToken ct)
         {
-            var (desde, hasta) = ResolveDateRange(fechaDesde, fechaHasta, null);
+            var (desde, hasta) = ResolveDateRange(fechaDesde, fechaHasta, preset);
             var negocioId = _currentUser.NegocioId;
 
             // Get total ventas (excluding cancelled)
@@ -215,9 +222,9 @@ namespace API.Services.Informes
             return new AlertasStockResponse(Productos: productos);
         }
 
-        public async Task<VentasPorPagoResponse> GetVentasPorPagoAsync(DateTime? fechaDesde, DateTime? fechaHasta, CancellationToken ct)
+        public async Task<VentasPorPagoResponse> GetVentasPorPagoAsync(DateTime? fechaDesde, DateTime? fechaHasta, string? preset, CancellationToken ct)
         {
-            var (desde, hasta) = ResolveDateRange(fechaDesde, fechaHasta, null);
+            var (desde, hasta) = ResolveDateRange(fechaDesde, fechaHasta, preset);
             var negocioId = _currentUser.NegocioId;
 
             // Get all pagos for non-cancelled ventas within date range
@@ -245,9 +252,9 @@ namespace API.Services.Informes
             return new VentasPorPagoResponse(Metodos: grouped);
         }
 
-        public async Task<VentasPorVendedorResponse> GetVentasPorVendedorAsync(DateTime? fechaDesde, DateTime? fechaHasta, CancellationToken ct)
+        public async Task<VentasPorVendedorResponse> GetVentasPorVendedorAsync(DateTime? fechaDesde, DateTime? fechaHasta, string? preset, CancellationToken ct)
         {
-            var (desde, hasta) = ResolveDateRange(fechaDesde, fechaHasta, null);
+            var (desde, hasta) = ResolveDateRange(fechaDesde, fechaHasta, preset);
             var negocioId = _currentUser.NegocioId;
 
             // Get ventas grouped by user

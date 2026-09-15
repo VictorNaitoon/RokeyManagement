@@ -35,7 +35,14 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
-builder.Services.AddControllers();
+builder.Services.AddProblemDetails();
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+builder.Services.AddControllers()
+    .AddJsonOptions(opt =>
+    {
+        opt.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+        opt.JsonSerializerOptions.DictionaryKeyPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+    });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -135,6 +142,10 @@ builder.Services.AddScoped<IAuditoriaService, AuditoriaService>();
 
 // Informes Services
 builder.Services.AddScoped<IInformesService, InformesService>();
+builder.Services.AddScoped<IInformesExportService, InformesExportService>();
+builder.Services.AddScoped<API.Services.Informes.Formatters.CsvFormatter>();
+builder.Services.AddScoped<API.Services.Informes.Formatters.PdfFormatter>();
+builder.Services.AddScoped<API.Services.Informes.Formatters.DocxFormatter>();
 
 // CarritoInterno Services
 builder.Services.AddScoped<ICarritoInternoService, CarritoInternoService>();
@@ -181,20 +192,15 @@ builder.Services.AddFluentValidation(fv => fv.RegisterValidatorsFromAssemblyCont
 builder.Services.AddFluentValidation(fv => fv.RegisterValidatorsFromAssemblyContaining<API.DTO.Request.CarritoInterno.UpdateItemRequestValidator>());
 builder.Services.AddFluentValidation(fv => fv.RegisterValidatorsFromAssemblyContaining<API.DTO.Request.CarritoInterno.ConvertirCarritoRequestValidator>());
 
+// Informes Export Validators
+builder.Services.AddFluentValidation(fv => fv.RegisterValidatorsFromAssemblyContaining<API.DTO.Request.Informes.ExportInformesQueryValidator>());
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 
-// 1. Manejo global de excepciones
-app.UseExceptionHandler(errorApp =>
-{
-    errorApp.Run(async context =>
-    {
-        context.Response.StatusCode = 500;
-        context.Response.ContentType = "application/json";
-        await context.Response.WriteAsync("{\"error\":\"Error interno del servidor\"}");
-    });
-});
+// 1. Manejo global de excepciones (IExceptionHandler + ProblemDetails, ValidationException -> 400 con traceId)
+app.UseExceptionHandler();
 
 if (app.Environment.IsDevelopment())
 {
