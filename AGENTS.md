@@ -136,24 +136,24 @@ Fecha, Cantidad, Tipo_movimiento
 - If Negocio.Estado == Inactivo -> block authentication with a 403 and a clear message.
 - Verify business status in the authentication middleware, not in each endpoint.
 ### 5.3 Roles and Permissions by Module
-| Module / Action | Admin (Owner) | Seller |
-| :---: | :---: | :---: |
-| View performance reports | YES	| NO |
-| View product purchase price | YES | NO |
-| Cancel sales / purchases | YES | NO |
-| Manage users | YES | NO |
-| Open and close the cash register | YES | NO |
-| Bulk price update | YES | NO |
-| Manage suppliers | YES | NO |
-| Register/list customers | YES | VIEW ONLY |
-| Delete/modify products | YES | NO |
-| Register products | YES | YES |
-| Record sales | YES | YES |
-| Record purchases | YES | YES |
-| Manage quotes | YES | YES |
-| Issue invoices | YES | YES |
-| Receive stock alerts | YES | YES |
-| View audit (StockMovement) | YES | NO |
+| Module / Action | Admin (Owner) | Manager (Gerente) | Seller |
+| :---: | :---: | :---: | :---: |
+| View performance reports | YES | YES | NO |
+| View product purchase price | YES | NO | NO |
+| Cancel sales / purchases | YES | NO | NO |
+| Manage users | YES | NO | NO |
+| Open and close the cash register | YES | NO | NO |
+| Bulk price update | YES | NO | NO |
+| Manage suppliers | YES | NO | NO |
+| Register/list customers | YES | YES | VIEW ONLY |
+| Delete/modify products | YES | NO | NO |
+| Register products | YES | YES | YES |
+| Record sales | YES | YES | YES |
+| Record purchases | YES | YES | YES |
+| Manage quotes | YES | YES | YES |
+| Issue invoices | YES | YES | YES |
+| Receive stock alerts | YES | YES | YES |
+| View audit (StockMovement) | YES | NO | NO |
 ### 5.4 Stock
 - Stock is ALWAYS updated automatically when recording/canceling a sale or purchase.
 - If esServicio == true, DO NOT deduct stock when selling.
@@ -228,7 +228,7 @@ Fecha, Cantidad, Tipo_movimiento
 | CU-016 | Finalizar Pedido WhatsApp | Cliente (requiere carrito) |
 | CU-017 | Gestionar Clientes / Cta Cte | Admin (full), Vendedor (solo ver) |
 | CU-018 | Auditoría | Admin |
-| CU-019 | Visualizar Informes | Admin (Dueño) únicamente |
+| CU-019 | Visualizar Informes | Admin (Dueño), Gerente |
 
 ## 7. REST API Conventions
 **Routes**

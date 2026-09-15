@@ -20,6 +20,7 @@ import { ProveedoresPage } from '@/pages/proveedores/ProveedoresPage';
 import { PresupuestosPage } from '@/pages/presupuestos/PresupuestosPage';
 import { ComprasPage } from '@/pages/compras/ComprasPage';
 import { CajaPage } from '@/pages/caja/CajaPage';
+import { InformesPage } from '@/pages/informes/InformesPage';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 
 function SubscriptionRedirect() {
@@ -82,6 +83,14 @@ function App() {
             <Route path="presupuestos" element={<PresupuestosPage />} />
             <Route path="compras" element={<ComprasPage />} />
             <Route path="caja" element={<CajaPage />} />
+            <Route
+              path="informes"
+              element={
+                <ProtectedRoute roles={['Dueño', 'Gerente']}>
+                  <InformesPage />
+                </ProtectedRoute>
+              }
+            />
           </Route>
           <Route
             path="/admin"

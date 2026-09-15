@@ -14,7 +14,7 @@ const navigation = [
   { name: 'Clientes', href: '/clientes', icon: UsersIcon },
   { name: 'Proveedores', href: '/proveedores', icon: BuildingIcon },
   { name: 'Caja', href: '/caja', icon: WalletIcon },
-  { name: 'Informes', href: '/informes', icon: BarChartIcon },
+  { name: 'Informes', href: '/informes', icon: BarChartIcon, roles: ['Dueño', 'Gerente'] },
 ];
 
 // Simple SVG icons as components
