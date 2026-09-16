@@ -36,24 +36,28 @@ namespace API.Services.Productos
                     p.CodigoBusqueda.Contains(busqueda));
             }
 
-            var productos = await query
-                .Select(p => new ProductoResponse
-                {
-                    Id = p.Id,
-                    Nombre = p.Nombre,
-                    CodigoBusqueda = p.CodigoBusqueda,
-                    Descripcion = p.Descripcion,
-                    PrecioCompra = p.PrecioCompra,
-                    PrecioVenta = p.PrecioVenta,
-                    StockActual = p.StockActual,
-                    StockMinimo = p.StockMinimo,
-                    ImagenURL = p.ImagenURL,
-                    EsServicio = p.EsServicio,
-                    Activo = p.Activo,
-                    IdCategoria = p.IdCategoria,
-                    NombreCategoria = p.Categoria != null ? p.Categoria.Nombre : null
-                })
-                .ToListAsync();
+            // Post-ToList gating para evitar traducción EF Core bool ternaria (PC-01)
+            // Traemos entidades completas, luego proyectamos con filtro por rol
+            var entities = await query.ToListAsync();
+
+            // PC-01: Dueño||Gerente see cost, Empleado null; tenant already filtered above
+            var isEmpleado = _currentUser.IsEmpleado;
+            var productos = entities.Select(p => new ProductoResponse
+            {
+                Id = p.Id,
+                Nombre = p.Nombre,
+                CodigoBusqueda = p.CodigoBusqueda,
+                Descripcion = p.Descripcion,
+                PrecioCompra = isEmpleado ? null : p.PrecioCompra,
+                PrecioVenta = p.PrecioVenta,
+                StockActual = p.StockActual,
+                StockMinimo = p.StockMinimo,
+                ImagenURL = p.ImagenURL,
+                EsServicio = p.EsServicio,
+                Activo = p.Activo,
+                IdCategoria = p.IdCategoria,
+                NombreCategoria = p.Categoria != null ? p.Categoria.Nombre : null
+            }).ToList();
 
             return new ProductoListResponse
             {
@@ -77,7 +81,7 @@ namespace API.Services.Productos
                 Nombre = producto.Nombre,
                 CodigoBusqueda = producto.CodigoBusqueda,
                 Descripcion = producto.Descripcion,
-                PrecioCompra = _currentUser.IsAdmin ? producto.PrecioCompra : null,
+                PrecioCompra = _currentUser.IsEmpleado ? null : producto.PrecioCompra,
                 PrecioVenta = producto.PrecioVenta,
                 StockActual = producto.StockActual,
                 StockMinimo = producto.StockMinimo,
@@ -434,7 +438,64 @@ namespace API.Services.Productos
                 })
                 .ToListAsync(ct);
             
-            return movimientos;
+return movimientos;
+        }
+
+        /// <summary>
+        /// Ajusta el stock de un producto con creación de MovimientoStock AjusteManual (auditable)
+        /// </summary>
+        public async Task<ProductoResponse?> AjustarStockAsync(int id, AjusteStockRequest request, CancellationToken ct = default)
+        {
+            var producto = await _context.Productos
+                .FirstOrDefaultAsync(p => p.Id == id && p.Id_negocio == _currentUser.NegocioId, ct);
+
+            if (producto == null) return null;
+
+            var stockAnterior = producto.StockActual;
+            var stockNuevo = stockAnterior + request.CantidadDelta;
+
+            if (stockNuevo < 0)
+            {
+                return null; // 422 will be mapped by caller
+            }
+
+            using var dbTransaction = await _context.Database.BeginTransactionAsync(ct);
+
+            try
+            {
+                // Registrar MovimientoStock AjusteManual (insert-only)
+                var movimientoStock = new MovimientoStock
+                {
+                    IdProducto = producto.Id,
+                    IdUsuario = _currentUser.UserId,
+                    Id_negocio = _currentUser.NegocioId,
+                    FechaMovimiento = DateTime.UtcNow,
+                    Cantidad = request.CantidadDelta,
+                    TipoMovimiento = Models.Enums.TipoMovimiento.AjusteManual,
+                    StockAnterior = stockAnterior,
+                    StockNuevo = stockNuevo,
+                    Motivo = request.Motivo
+                };
+
+                _context.MovimientosStock.Add(movimientoStock);
+
+                // Actualizar stock actual del producto
+                producto.StockActual = stockNuevo;
+                producto.IdUsuarioModificador = _currentUser.UserId;
+
+                await _context.SaveChangesAsync();
+
+                // Confirmar transacción
+                await dbTransaction.CommitAsync(ct);
+
+                // Devolver producto actualizado
+                return await GetByIdAsync(producto.Id);
+            }
+            catch
+            {
+                await dbTransaction.RollbackAsync(ct);
+                throw;
+            }
         }
 
         /// <summary>
