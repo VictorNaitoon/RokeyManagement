@@ -149,41 +149,7 @@ namespace API.Controllers.Productos
         /// </summary>
         /// <param name="id">ID del producto a actualizar</param>
         /// <param name="request">Datos actualizados del producto</param>
-        /// <returns>Producto actualizado</returns>
-        [HttpPut("{id}")]
-        [ProducesResponseType(typeof(ProductoResponse), 200)]
-        [ProducesResponseType(400)]
-        [ProducesResponseType(401)]
-        [ProducesResponseType(403)]
-        [ProducesResponseType(404)]
-        public async Task<IActionResult> Update(int id, [FromBody] ActualizarProductoRequest request)
-        {
-            if (_currentUser.IsSuperAdmin)
-            {
-                return StatusCode(403, new { message = "El super administrador no puede gestionar productos de un negocio" });
-            }
-
-            if (!_currentUser.IsAdmin)
-            {
-                return StatusCode(403, new { message = "Solo el administrador puede actualizar productos" });
-            }
-
-            try
-            {
-                var result = await _productoService.UpdateAsync(id, request);
-                
-                if (result == null)
-                {
-                    return NotFound(new { message = "Producto no encontrado" });
-                }
-
-                return Ok(result);
-            }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
-        }
+        /// <returns>Producto actualizado
 
         /// <summary>
         /// Elimina (soft delete) un producto existente
@@ -293,6 +259,106 @@ namespace API.Controllers.Productos
             {
                 var result = await _productoService.DuplicateAsync(id, nuevoNombre.Trim());
                 return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Ajusta el stock de un producto con auditoría via MovimientoStock AjusteManual
+        /// </summary>
+        /// <param name="id">ID del producto</param>
+        /// <param name="request">Delta de stock y motivo</param>
+        /// <returns>Producto actualizado</returns>
+        [HttpPost("{id}/ajuste-stock")]
+        [ProducesResponseType(typeof(ProductoResponse), 200)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(401)]
+        [ProducesResponseType(403)]
+        [ProducesResponseType(404)]
+        public async Task<IActionResult> AjusteStock(int id, [FromBody] AjusteStockRequest request)
+        {
+            if (_currentUser.IsSuperAdmin)
+            {
+                return StatusCode(403, new { message = "El super administrador no puede gestionar productos de un negocio" });
+            }
+
+            if (!_currentUser.IsAdmin && !_currentUser.IsManager)
+            {
+                return StatusCode(403, new { message = "Solo Dueño y Gerente pueden ajustar stock" });
+            }
+
+            try
+            {
+                var result = await _productoService.AjustarStockAsync(id, request);
+                
+                if (result == null)
+                {
+                    return NotFound(new { message = "Producto no encontrado" });
+                }
+
+                if (result.StockActual < 0) // This is a simplification; actual validation happens in service
+                {
+                    return StatusCode(422, new { message = "No se puede tener stock negativo" });
+                }
+
+                return Ok(result);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Actualiza un producto existente
+        /// </summary>
+        /// <param name="id">ID del producto a actualizar</param>
+        /// <param name="request">Datos actualizados del producto</param>
+        /// <returns>Producto actualizado</returns>
+        [HttpPut("{id}")]
+        [ProducesResponseType(typeof(ProductoResponse), 200)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(401)]
+        [ProducesResponseType(403)]
+        [ProducesResponseType(404)]
+        public async Task<IActionResult> Update(int id, [FromBody] ActualizarProductoRequest request)
+        {
+            if (_currentUser.IsSuperAdmin)
+            {
+                return StatusCode(403, new { message = "El super administrador no puede gestionar productos de un negocio" });
+            }
+
+            if (!_currentUser.IsAdmin)
+            {
+                return StatusCode(403, new { message = "Solo el administrador puede actualizar productos" });
+            }
+
+            try
+            {
+                // RB-011: Bloquear cambio directo de StockActual sin usar ajuste-stock
+                // El PUT solo permite actualizar metadatos, no stock. Los cambios de stock
+                // deben hacerse mediante POST {id}/ajuste-stock con motivo.
+                var productoActual = await _productoService.GetByIdAsync(id);
+                if (productoActual != null && productoActual.StockActual != request.StockActual)
+                {
+                    return BadRequest(new { 
+                        message = "No se puede modificar StockActual directamente",
+                        hint = "Use POST {id}/ajuste-stock with Motivo",
+                        errors = new { StockActual = new[] { "Use POST {id}/ajuste-stock with Motivo" } }
+                    });
+                }
+
+                var result = await _productoService.UpdateAsync(id, request);
+                
+                if (result == null)
+                {
+                    return NotFound(new { message = "Producto no encontrado" });
+                }
+
+                return Ok(result);
             }
             catch (InvalidOperationException ex)
             {
