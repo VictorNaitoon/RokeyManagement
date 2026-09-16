@@ -7,7 +7,7 @@
 export { useDashboardData, useVentasResumen, useIngresosGastos, useAlertasStock as useAlertasStockDashboard, useProductosTop, useVentasPorPago, useFlujoCaja, useVentasPorVendedor } from './useDashboardData';
 
 // Productos hooks (renamed to avoid conflict)
-export { useAlertasStock as useAlertasStockProductos, useProductos, useProducto, useCreateProducto, useUpdateProducto, useDeleteProducto, useReactivarProducto, canViewPrecioCompra, canManageProductos, canManageEstadoProductos, canViewHistorial, useMovimientosStock, useAjusteStock } from './useProductos';
+export { useAlertasStock as useAlertasStockProductos, useProductos, useProducto, useCreateProducto, useUpdateProducto, useDeleteProducto, useReactivarProducto, canViewPrecioCompra, canManageProductos, canManageEstadoProductos, canViewHistorial, useMovimientosStock, useAjusteStock, useImportCsv } from './useProductos';
 
 // Categorías hooks
 export { useCategorias, useCategoria, useCreateCategoria, useUpdateCategoria, useDeleteCategoria, canManageCategorias } from './useCategorias';

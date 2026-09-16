@@ -7,13 +7,14 @@
 
 import * as React from 'react';
 import type { ColumnDef } from '@tanstack/react-table';
-import { Plus, Package, AlertTriangle, History } from 'lucide-react';
+import { Plus, Package, AlertTriangle, History, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/DataTable';
 import { ProductoForm } from '@/components/productos/ProductoForm';
 import { ProductoActions } from '@/components/productos/ProductoActions';
 import { MovimientosStockDrawer } from '@/components/productos/MovimientosStockDrawer';
+import { ProductoImportDialog } from '@/components/productos/ProductoImportDialog';
 import {
   useProductos,
   useCreateProducto,
@@ -34,6 +35,7 @@ export function ProductosPage() {
   const [showForm, setShowForm] = React.useState(false);
   const [editingProducto, setEditingProducto] = React.useState<Producto | null>(null);
   const [historialProducto, setHistorialProducto] = React.useState<Producto | null>(null);
+  const [showImport, setShowImport] = React.useState(false);
 
   // Permissions
   const canManage = canManageProductos();
@@ -231,12 +233,20 @@ export function ProductosPage() {
           </p>
         </div>
         
-        {canManage && (
-          <Button onClick={handleCreate} className="gap-2">
-            <Plus className="h-4 w-4" />
-            Nuevo Producto
-          </Button>
-        )}
+        <div className="flex gap-2">
+          {canHistorial && (
+            <Button variant="outline" onClick={() => setShowImport(true)} className="gap-2">
+              <Upload className="h-4 w-4" />
+              Importar CSV
+            </Button>
+          )}
+          {canManage && (
+            <Button onClick={handleCreate} className="gap-2">
+              <Plus className="h-4 w-4" />
+              Nuevo Producto
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Products Table */}
@@ -272,6 +282,9 @@ export function ProductosPage() {
         productoId={historialProducto?.id ?? null}
         productoNombre={historialProducto?.nombre}
       />
+
+      {/* Import CSV Dialog — CI-01/02/03 gated Dueño||Gerente */}
+      <ProductoImportDialog open={showImport} onOpenChange={setShowImport} />
     </div>
   );
 }

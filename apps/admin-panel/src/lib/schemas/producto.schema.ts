@@ -35,3 +35,13 @@ export const productoFiltersSchema = z.object({
 });
 
 export type ProductoFiltersFormData = z.infer<typeof productoFiltersSchema>;
+
+/**
+ * Schema for stock adjustment — SA-01
+ */
+export const ajusteStockSchema = z.object({
+  cantidadDelta: z.number().int().refine((v) => v !== 0, { message: 'Delta must be non-zero' }),
+  motivo: z.string().trim().min(5, 'Motivo min 5').max(500, 'Motivo max 500'),
+});
+
+export type AjusteStockFormData = z.infer<typeof ajusteStockSchema>;

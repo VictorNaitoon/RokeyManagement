@@ -285,6 +285,37 @@ export function useReactivarProducto() {
 }
 
 // ============================================
+// CSV Import — CI-01/02/03
+// ============================================
+
+export function useImportCsv() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (file: File) => {
+      const form = new FormData();
+      form.append('file', file);
+      const res = await api.post('/api/v1/Producto/import/csv', form, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      return res.data as import('@/types').ImportCsvResponse;
+    },
+    onSuccess: (data) => {
+      const d = data as unknown as Record<string, unknown>;
+      const created = (d.created ?? d.Created ?? 0) as number;
+      const skipped = (d.skipped ?? d.Skipped ?? 0) as number;
+      if (skipped === 0) toast.success(`${created} productos importados`);
+      else toast.warning(`${created} creados, ${skipped} omitidos — revisar errores`);
+      queryClient.invalidateQueries({ queryKey: ['productos'] });
+    },
+    onError: (error: unknown) => {
+      const err = error as { response?: { status?: number; data?: { message?: string; detail?: string } } };
+      if (err.response?.status === 413) toast.error('Archivo excede 5MB');
+      else toast.error(err.response?.data?.message || err.response?.data?.detail || 'Error al importar CSV');
+    },
+  });
+}
+
+// ============================================
 // Utility Exports
 // ============================================
 

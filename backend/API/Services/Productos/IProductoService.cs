@@ -21,6 +21,9 @@ namespace API.Services.Productos
         // Ajuste de stock con auditoría (slice stock-mvp-hardening)
         Task<ProductoResponse?> AjustarStockAsync(int id, AjusteStockRequest request, CancellationToken ct = default);
 
+        // CSV Import streaming (CI-01/02/03)
+        Task<ImportCsvResponse> ImportarCsvAsync(IFormFile file, CancellationToken ct = default);
+
         // Actualización Masiva de Precios (CU-010)
         Task<ActualizacionMasivaPreciosResponse> ActualizarPreciosPorCategoriaAsync(ActualizacionMasivaPreciosCategoriaRequest request);
         Task<ActualizacionMasivaPreciosResponse> ActualizarPreciosPorProductosAsync(ActualizacionMasivaPreciosProductosRequest request);

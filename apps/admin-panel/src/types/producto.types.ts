@@ -127,6 +127,30 @@ export interface ActualizarProductoRequest {
 }
 
 // ============================================
+// CSV Import types — CI-01/02/03
+// ============================================
+
+export interface ImportError {
+  row: number;
+  column: string;
+  message: string;
+  Row?: number;
+  Column?: string;
+  Message?: string;
+}
+
+export interface ImportCsvResponse {
+  totalRows: number;
+  created: number;
+  skipped: number;
+  errors: ImportError[];
+  TotalRows?: number;
+  Created?: number;
+  Skipped?: number;
+  Errors?: ImportError[];
+}
+
+// ============================================
 // Utility Types
 // ============================================
 

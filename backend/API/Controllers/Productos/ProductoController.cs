@@ -392,6 +392,48 @@ namespace API.Controllers.Productos
         }
 
         /// <summary>
+        /// Import CSV streaming — CI-01/02/03. Dueño||Gerente only (403 Empleado/SuperAdmin), tenant-isolated, 5MB/1000 caps, auto ,; BOM, injection escape.
+        /// Returns 200 when skipped==0 else 207 partial; 400/413 for guards before parsing.
+        /// </summary>
+        [HttpPost("import/csv")]
+        [ProducesResponseType(typeof(ImportCsvResponse), 200)]
+        [ProducesResponseType(typeof(ImportCsvResponse), 207)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(401)]
+        [ProducesResponseType(403)]
+        [ProducesResponseType(413)]
+        public async Task<IActionResult> ImportCsv(IFormFile? file, CancellationToken ct)
+        {
+            if (_currentUser.IsSuperAdmin)
+                return StatusCode(403, new { message = "El super administrador no puede importar productos" });
+            if (!_currentUser.IsAdmin && !_currentUser.IsManager)
+                return StatusCode(403, new { message = "Solo Dueño y Gerente pueden importar productos" });
+            if (file == null || file.Length == 0)
+                return BadRequest(new { message = "File is required" });
+            const long maxBytes = 5L * 1024 * 1024;
+            if (file.Length > maxBytes)
+                return StatusCode(413, new { message = "Size exceeds 5MB" });
+            try
+            {
+                var result = await _productoService.ImportarCsvAsync(file, ct);
+                if (result.Skipped == 0) return Ok(result);
+                return StatusCode(207, result);
+            }
+            catch (InvalidOperationException ex) when (ex.Message.Contains("Row limit"))
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (InvalidOperationException ex) when (ex.Message.Contains("Size exceeds"))
+            {
+                return StatusCode(413, new { message = ex.Message });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        /// <summary>
         /// Actualización masiva de precios de productos por categoría (Admin, Administrador, Dueño, Gerente)
         /// </summary>
         [HttpPost("actualizar-precios/categoria")]
