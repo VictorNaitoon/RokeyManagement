@@ -354,32 +354,40 @@ namespace API.Controllers.Productos
         }
 
         /// <summary>
-        /// Historial de movimientos de stock de un producto (Solo Admin)
+        /// Historial paginado de movimientos de stock — IA-01/IA-02
+        /// Roles: Dueño || Gerente (403 Empleado/SuperAdmin). Tenant filtered inside service (strict Id_negocio==NegocioId, drop null). Max pageSize 100.
+        /// Returns MovimientoStockListResponse { Movimientos, Total, Page, PageSize } ordered FechaMovimiento DESC.
         /// </summary>
         [HttpGet("{id}/movimientos")]
-        [ProducesResponseType(typeof(List<MovimientoStockResponse>), 200)]
+        [ProducesResponseType(typeof(MovimientoStockListResponse), 200)]
+        [ProducesResponseType(400)]
         [ProducesResponseType(401)]
         [ProducesResponseType(403)]
         [ProducesResponseType(404)]
-        public async Task<IActionResult> GetMovimientos(int id, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+        public async Task<IActionResult> GetMovimientos(int id, [FromQuery] int page = 1, [FromQuery] int pageSize = 20, CancellationToken ct = default)
         {
             if (_currentUser.IsSuperAdmin)
             {
                 return StatusCode(403, new { message = "El super administrador no puede gestionar productos de un negocio" });
             }
 
-            if (!_currentUser.IsAdmin)
-                return StatusCode(403, new { message = "Solo el administrador puede ver auditoría de stock" });
+            if (!_currentUser.IsAdmin && !_currentUser.IsManager)
+                return StatusCode(403, new { message = "Solo Dueño y Gerente pueden ver auditoría de stock" });
 
             if (_currentUser.NegocioId <= 0)
                 return StatusCode(403, new { message = "Debe pertenecer a un negocio" });
 
-            // Verify product exists
+            if (page < 1)
+                return BadRequest(new { message = "page must be >= 1" });
+            if (pageSize < 1 || pageSize > 100)
+                return BadRequest(new { message = "pageSize must be between 1 and 100" });
+
+            // Verify product exists and belongs to caller tenant — 404 tenant isolation (not 403 leak)
             var producto = await _productoService.GetByIdAsync(id);
             if (producto == null)
                 return NotFound(new { message = "Producto no encontrado" });
 
-            var movimientos = await _productoService.GetMovimientosStockAsync(id, _currentUser.NegocioId, page, pageSize);
+            var movimientos = await _productoService.GetMovimientosStockAsync(id, _currentUser.NegocioId, page, pageSize, ct);
             return Ok(movimientos);
         }
 

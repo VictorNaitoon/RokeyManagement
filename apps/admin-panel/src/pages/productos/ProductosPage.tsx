@@ -7,12 +7,13 @@
 
 import * as React from 'react';
 import type { ColumnDef } from '@tanstack/react-table';
-import { Plus, Package, AlertTriangle } from 'lucide-react';
+import { Plus, Package, AlertTriangle, History } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/DataTable';
 import { ProductoForm } from '@/components/productos/ProductoForm';
 import { ProductoActions } from '@/components/productos/ProductoActions';
+import { MovimientosStockDrawer } from '@/components/productos/MovimientosStockDrawer';
 import {
   useProductos,
   useCreateProducto,
@@ -21,6 +22,7 @@ import {
   useReactivarProducto,
   canViewPrecioCompra,
   canManageProductos,
+  canViewHistorial,
 } from '@/hooks';
 import type { Producto, CrearProductoRequest, ActualizarProductoRequest } from '@/types';
 
@@ -31,10 +33,12 @@ export function ProductosPage() {
   const [pageSize, setPageSize] = React.useState(20);
   const [showForm, setShowForm] = React.useState(false);
   const [editingProducto, setEditingProducto] = React.useState<Producto | null>(null);
+  const [historialProducto, setHistorialProducto] = React.useState<Producto | null>(null);
 
   // Permissions
   const canManage = canManageProductos();
   const canSeePrice = canViewPrecioCompra();
+  const canHistorial = canViewHistorial();
 
   // Queries
   const { data, isLoading } = useProductos();
@@ -152,17 +156,24 @@ export function ProductosPage() {
       id: 'acciones',
       header: '',
       cell: ({ row }) => (
-        <ProductoActions
-          producto={row.original}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-          onActivar={handleActivar}
-          isDeleting={deleteMutation.isPending}
-          isActivating={activarMutation.isPending}
-        />
+        <div className="flex items-center gap-1">
+          {canHistorial && (
+            <Button variant="ghost" size="icon" title="Historial" onClick={() => setHistorialProducto(row.original)}>
+              <History className="h-4 w-4" />
+            </Button>
+          )}
+          <ProductoActions
+            producto={row.original}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            onActivar={handleActivar}
+            isDeleting={deleteMutation.isPending}
+            isActivating={activarMutation.isPending}
+          />
+        </div>
       ),
     },
-  ], [canSeePrice]);
+  ], [canSeePrice, canHistorial]);
 
   // Handlers
   const handleSearch = (value: string) => {
@@ -252,6 +263,14 @@ export function ProductosPage() {
         producto={editingProducto}
         onSubmit={handleFormSubmit}
         isLoading={createMutation.isPending || updateMutation.isPending}
+      />
+
+      {/* Historial Drawer — IA-02 gated Dueño||Gerente */}
+      <MovimientosStockDrawer
+        open={!!historialProducto}
+        onOpenChange={(open) => !open && setHistorialProducto(null)}
+        productoId={historialProducto?.id ?? null}
+        productoNombre={historialProducto?.nombre}
       />
     </div>
   );

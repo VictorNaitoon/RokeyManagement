@@ -57,18 +57,35 @@ export interface ProductoAlertasResponse {
 
 /**
  * Movimiento de stock - inventory movement audit
- * GET /api/v1/productos/{id}/movimientos
+ * GET /api/v1/Producto/{id}/movimientos?page&pageSize — IA-01/IA-02
+ * Paginated wrapper MovimientoStockListResponse { movimientos, total, page, pageSize }
  */
 export interface MovimientoStock {
   id: number;
-  idProducto: number;
-  idUsuario: number;
-  usuarioNombre?: string;
-  idVenta: number | null;
-  idCompra: number | null;
-  fecha: string;
-  cantidad: number;
+  fechaMovimiento: string;
   tipoMovimiento: 'VentaSalida' | 'VentaAnulacion' | 'CompraEntrada' | 'CompraAnulacion' | 'AjusteManual';
+  cantidad: number;
+  stockAnterior: number;
+  stockNuevo: number;
+  motivo?: string | null;
+  idUsuario: number;
+}
+
+/**
+ * Paginated wrapper for movimientos — IA-01
+ * Backend: MovimientoStockListResponse { Movimientos, Total, Page, PageSize }
+ * Frontend consumes as { movimientos, total, page, pageSize } (axios lowercases) or PascalCase.
+ */
+export interface MovimientoStockListResponse {
+  movimientos: MovimientoStock[];
+  total: number;
+  page: number;
+  pageSize: number;
+  // PascalCase aliases for direct backend shape
+  Movimientos?: MovimientoStock[];
+  Total?: number;
+  Page?: number;
+  PageSize?: number;
 }
 
 // ============================================

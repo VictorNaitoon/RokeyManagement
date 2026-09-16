@@ -65,6 +65,14 @@ function canManageEstadoProductos(): boolean {
   return role === 'Dueño' || role === 'Gerente';
 }
 
+/**
+ * Check if user can view audit history (Dueño or Gerente) — IA-02
+ */
+function canViewHistorial(): boolean {
+  const role = getUserRole();
+  return role === 'Dueño' || role === 'Gerente';
+}
+
 // ============================================
 // Query Hooks
 // ============================================
@@ -124,6 +132,59 @@ export function useAlertasStock() {
       return response.data ?? [];
     },
     ...PRODUCTOS_QUERY_CONFIG,
+  });
+}
+
+/**
+ * Hook for fetching paginated stock movements — IA-01/IA-02
+ * GET /api/v1/Producto/{id}/movimientos?page&pageSize
+ * Enabled only for Dueño || Gerente; disabled for Empleado (hook never fires).
+ */
+export function useMovimientosStock(
+  productoId: number | null,
+  page: number,
+  pageSize: number
+) {
+  const enabled = !!productoId && canViewHistorial();
+  return useQuery({
+    queryKey: ['movimientos', productoId, page, pageSize],
+    queryFn: async () => {
+      const response = await api.get(`/api/v1/Producto/${productoId}/movimientos`, {
+        params: { page, pageSize },
+      });
+      // Normalize PascalCase vs camelCase from backend
+      const data = response.data as Record<string, unknown>;
+      const movimientos = (data.movimientos ?? data.Movimientos ?? []) as import('@/types').MovimientoStock[];
+      const total = (data.total ?? data.Total ?? 0) as number;
+      const p = (data.page ?? data.Page ?? page) as number;
+      const ps = (data.pageSize ?? data.PageSize ?? pageSize) as number;
+      return { movimientos, total, page: p, pageSize: ps };
+    },
+    enabled,
+    ...PRODUCTOS_QUERY_CONFIG,
+  });
+}
+
+/**
+ * Hook for adjusting stock — SA-01 (placeholder for wiring, POST ajuste-stock)
+ * Kept here for PR3 task 3.1 completeness; actual dialog in AjusteStockDialog.
+ */
+export function useAjusteStock() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, cantidadDelta, motivo }: { id: number; cantidadDelta: number; motivo: string }) => {
+      const response = await api.post(`/api/v1/Producto/${id}/ajuste-stock`, { cantidadDelta, motivo });
+      return response.data;
+    },
+    onSuccess: () => {
+      toast.success('Stock ajustado correctamente');
+      queryClient.invalidateQueries({ queryKey: ['productos'] });
+      queryClient.invalidateQueries({ queryKey: ['movimientos'] });
+    },
+    onError: (error: unknown) => {
+      const err = error as { response?: { data?: { detail?: string; message?: string } } };
+      toast.error(err.response?.data?.detail || err.response?.data?.message || 'Error al ajustar stock');
+    },
   });
 }
 
@@ -227,4 +288,4 @@ export function useReactivarProducto() {
 // Utility Exports
 // ============================================
 
-export { canViewPrecioCompra, canManageProductos, canManageEstadoProductos };
+export { canViewPrecioCompra, canManageProductos, canManageEstadoProductos, canViewHistorial, getUserRole };

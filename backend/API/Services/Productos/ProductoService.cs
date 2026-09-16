@@ -417,12 +417,23 @@ namespace API.Services.Productos
         }
 
         /// <summary>
-        /// Obtiene el historial de movimientos de stock de un producto
+        /// Obtiene el historial paginado de movimientos de stock — IA-01
+        /// Strict tenant filter Id_negocio==NegocioId (drop legacy null), page/pageSize validated, PageSize max 100.
+        /// Returns MovimientoStockListResponse { Movimientos, Total, Page, PageSize } ordered FechaMovimiento DESC.
         /// </summary>
-        public async Task<List<MovimientoStockResponse>> GetMovimientosStockAsync(int productoId, int idNegocio, int page, int pageSize, CancellationToken ct = default)
+        public async Task<MovimientoStockListResponse> GetMovimientosStockAsync(int productoId, int idNegocio, int page, int pageSize, CancellationToken ct = default)
         {
-            var movimientos = await _context.MovimientosStock
-                .Where(m => m.IdProducto == productoId && (m.Id_negocio == idNegocio || m.Id_negocio == null))
+            // Validate and clamp — spec IA-01 Max pageSize 100
+            if (page < 1) page = 1;
+            if (pageSize < 1) pageSize = 20;
+            if (pageSize > 100) pageSize = 100;
+
+            var baseQuery = _context.MovimientosStock
+                .Where(m => m.IdProducto == productoId && m.Id_negocio == idNegocio);
+
+            var total = await baseQuery.CountAsync(ct);
+
+            var movimientos = await baseQuery
                 .OrderByDescending(m => m.FechaMovimiento)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
@@ -438,8 +449,14 @@ namespace API.Services.Productos
                     IdUsuario = m.IdUsuario
                 })
                 .ToListAsync(ct);
-            
-return movimientos;
+
+            return new MovimientoStockListResponse
+            {
+                Movimientos = movimientos,
+                Total = total,
+                Page = page,
+                PageSize = pageSize
+            };
         }
 
         /// <summary>

@@ -16,7 +16,7 @@ namespace API.Services.Productos
         // Stock Alerts
         Task<List<ProductoAlertaResponse>> GetProductosConStockBajoAsync(int idNegocio, CancellationToken ct = default);
         Task<int> GetContadorStockBajoAsync(int idNegocio, CancellationToken ct = default);
-        Task<List<MovimientoStockResponse>> GetMovimientosStockAsync(int productoId, int idNegocio, int page, int pageSize, CancellationToken ct = default);
+        Task<MovimientoStockListResponse> GetMovimientosStockAsync(int productoId, int idNegocio, int page, int pageSize, CancellationToken ct = default);
 
         // Ajuste de stock con auditoría (slice stock-mvp-hardening)
         Task<ProductoResponse?> AjustarStockAsync(int id, AjusteStockRequest request, CancellationToken ct = default);
