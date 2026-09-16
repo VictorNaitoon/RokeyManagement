@@ -24,6 +24,7 @@ import {
   canViewPrecioCompra,
   canManageProductos,
   canViewHistorial,
+  getUserRole,
 } from '@/hooks';
 import type { Producto, CrearProductoRequest, ActualizarProductoRequest } from '@/types';
 
@@ -205,7 +206,19 @@ export function ProductosPage() {
       if (sanitizedData.precioCompra === null) {
         delete sanitizedData.precioCompra;
       }
-      delete sanitizedData.stockActual;
+      // FIX RB-011 (Bug A): Dueño can edit stock via PUT with audit; Gerente still blocked via ajuste-stock
+      const isDueño = getUserRole() === 'Dueño';
+      if (!isDueño) {
+        sanitizedData.stockActual = editingProducto.stockActual; // Gerente must use POST ajuste-stock
+      } // if isDueño, keep form value (updateData.stockActual) for direct edit
+      // Preserve fallbacks if form sends undefined/null (avoid nulling existing values)
+      if (sanitizedData.stockMinimo == null) sanitizedData.stockMinimo = editingProducto.stockMinimo;
+      if ((sanitizedData as unknown as Record<string, unknown>).activo == null) {
+        (sanitizedData as unknown as Record<string, unknown>).activo = editingProducto.activo;
+      }
+      if (sanitizedData.imagenURL == null && (sanitizedData as unknown as Record<string, unknown>).foto == null) {
+        sanitizedData.imagenURL = editingProducto.imagenURL ?? undefined;
+      }
       await updateMutation.mutateAsync({ id: editingProducto.id, data: sanitizedData });
     } else {
       await createMutation.mutateAsync(data as CrearProductoRequest);

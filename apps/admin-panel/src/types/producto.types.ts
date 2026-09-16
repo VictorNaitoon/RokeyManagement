@@ -106,6 +106,9 @@ export interface CrearProductoRequest {
   stockMinimo: number;
   idCategoria: number;
   esServicio: boolean;
+  imagenURL?: string | null;
+  activo?: boolean;
+  // @deprecated alias kept for backwards compat — use imagenURL
   foto?: string;
 }
 
@@ -123,6 +126,9 @@ export interface ActualizarProductoRequest {
   stockMinimo?: number;
   idCategoria?: number;
   esServicio?: boolean;
+  imagenURL?: string | null;
+  activo?: boolean;
+  // @deprecated alias kept for backwards compat — use imagenURL
   foto?: string;
 }
 

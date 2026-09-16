@@ -325,11 +325,11 @@ namespace API.Controllers.Productos
 
             try
             {
-                // RB-011: Bloquear cambio directo de StockActual sin usar ajuste-stock
-                // El PUT solo permite actualizar metadatos, no stock. Los cambios de stock
-                // deben hacerse mediante POST {id}/ajuste-stock con motivo.
+                // RB-011: Block direct StockActual change via PUT only for non-Admin (Gerente).
+                // Dueño (IsAdmin) can edit stock directly via PUT with audit in service; Gerente already blocked by 403 above,
+                // but guard stays for defense-in-depth.
                 var productoActual = await _productoService.GetByIdAsync(id);
-                if (productoActual != null && productoActual.StockActual != request.StockActual)
+                if (productoActual != null && productoActual.StockActual != request.StockActual && !_currentUser.IsAdmin)
                 {
                     return BadRequest(new { 
                         message = "No se puede modificar StockActual directamente",

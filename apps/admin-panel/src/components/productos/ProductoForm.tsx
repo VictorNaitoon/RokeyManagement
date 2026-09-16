@@ -29,7 +29,7 @@ import {
 } from '@/components/ui/dialog';
 import { ImageUpload } from '@/components/ui/ImageUpload';
 import { productoFormSchema, type ProductoFormData } from '@/lib/schemas/producto.schema';
-import { useCategorias, canViewPrecioCompra } from '@/hooks';
+import { useCategorias, canViewPrecioCompra, getUserRole } from '@/hooks';
 import { Loader2 } from 'lucide-react';
 
 export interface ProductoFormProps {
@@ -49,6 +49,7 @@ export function ProductoForm({
 }: ProductoFormProps) {
   const isEditing = !!producto?.id;
   const canSeePrecioCompra = canViewPrecioCompra();
+  const isDueño = getUserRole() === 'Dueño';
   
   // Get categorias for dropdown
   const { data: categoriasData, isLoading: loadingCategorias } = useCategorias();
@@ -203,18 +204,24 @@ export function ProductoForm({
             </div>
           )}
 
-          {/* Stock actual */}
+          {/* Stock actual — Dueño can edit directly; Gerente uses ajuste-stock */}
           <div className="space-y-2">
-            <Label htmlFor="stockActual">Stock actual</Label>
+            <Label htmlFor="stockActual">Stock actual {isEditing && !isDueño && <span className="text-xs text-muted-foreground font-normal">(usar ajuste-stock)</span>}</Label>
             <Input
               id="stockActual"
               type="number"
               min="0"
+              disabled={isEditing && !isDueño}
+              readOnly={isEditing && !isDueño}
+              title={isEditing && !isDueño ? 'Usar ajuste-stock para modificar stock' : undefined}
               {...register('stockActual', { valueAsNumber: true })}
               placeholder="0"
             />
             {errors.stockActual && (
               <p className="text-xs text-destructive">{errors.stockActual.message}</p>
+            )}
+            {isEditing && !isDueño && (
+              <p className="text-xs text-muted-foreground">El stock se ajusta via POST ajuste-stock con motivo.</p>
             )}
           </div>
 

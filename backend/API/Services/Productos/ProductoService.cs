@@ -235,13 +235,43 @@ namespace API.Services.Productos
             }
             
             producto.PrecioVenta = request.PrecioVenta;
+
+            // Bug A: Dueño can edit StockActual directly via PUT with audit (Gerente blocked at controller)
+            if (producto.StockActual != request.StockActual)
+            {
+                if (!_currentUser.IsAdmin)
+                    throw new DomainException("No se puede modificar StockActual directamente. Use POST {id}/ajuste-stock con motivo.");
+
+                if (request.StockActual < 0)
+                    throw new DomainException("El stock no puede ser negativo");
+
+                var stockAnterior = producto.StockActual;
+                var stockNuevo = request.StockActual;
+                var delta = stockNuevo - stockAnterior;
+
+                var movimiento = new MovimientoStock
+                {
+                    IdProducto = producto.Id,
+                    IdUsuario = _currentUser.UserId,
+                    Id_negocio = _currentUser.NegocioId,
+                    FechaMovimiento = DateTime.UtcNow,
+                    Cantidad = delta,
+                    TipoMovimiento = Models.Enums.TipoMovimiento.AjusteManual,
+                    StockAnterior = stockAnterior,
+                    StockNuevo = stockNuevo,
+                    Motivo = "Edicion directa Dueno (PUT)"
+                };
+                _context.MovimientosStock.Add(movimiento);
+                producto.StockActual = stockNuevo;
+            }
+
             producto.StockMinimo = request.StockMinimo;
             producto.ImagenURL = request.ImagenURL;
             producto.EsServicio = request.EsServicio;
             producto.Activo = request.Activo;
             producto.IdCategoria = request.IdCategoria;
 
-            // Asignar usuario modificador
+            // Assign modifier user
             producto.IdUsuarioModificador = _currentUser.UserId;
 
             await _context.SaveChangesAsync();

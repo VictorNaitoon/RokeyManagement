@@ -50,19 +50,19 @@ function canViewPrecioCompra(): boolean {
 }
 
 /**
- * Check if user can create/edit/delete products (Dueño or Gerente)
+ * Check if user can create/edit/delete products — Solo Dueño (Gerente solo ajuste-stock via AjusteStockDialog)
  */
 function canManageProductos(): boolean {
   const role = getUserRole();
-  return role === 'Dueño' || role === 'Gerente';
+  return role === 'Dueño';
 }
 
 /**
- * Check if user can deactivate/reactivate products (Dueño or Gerente)
+ * Check if user can deactivate/reactivate products — Solo Dueño (Gerente solo ajuste-stock via AjusteStockDialog)
  */
 function canManageEstadoProductos(): boolean {
   const role = getUserRole();
-  return role === 'Dueño' || role === 'Gerente';
+  return role === 'Dueño';
 }
 
 /**
