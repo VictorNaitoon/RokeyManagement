@@ -235,7 +235,6 @@ namespace API.Services.Productos
             }
             
             producto.PrecioVenta = request.PrecioVenta;
-            producto.StockActual = request.StockActual;
             producto.StockMinimo = request.StockMinimo;
             producto.ImagenURL = request.ImagenURL;
             producto.EsServicio = request.EsServicio;

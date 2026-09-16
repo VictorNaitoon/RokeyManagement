@@ -201,11 +201,11 @@ export function ProductosPage() {
   const handleFormSubmit = async (data: unknown) => {
     if (editingProducto?.id) {
       const updateData = data as ActualizarProductoRequest;
-      // Create a clean object without precioCompra if it's null, since Zod schema doesn't accept null
       const sanitizedData: Partial<ActualizarProductoRequest> = { ...updateData };
       if (sanitizedData.precioCompra === null) {
         delete sanitizedData.precioCompra;
       }
+      delete sanitizedData.stockActual;
       await updateMutation.mutateAsync({ id: editingProducto.id, data: sanitizedData });
     } else {
       await createMutation.mutateAsync(data as CrearProductoRequest);
