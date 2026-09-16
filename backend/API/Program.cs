@@ -200,6 +200,9 @@ builder.Services.AddFluentValidation(fv => fv.RegisterValidatorsFromAssemblyCont
 builder.Services.AddFluentValidation(fv => fv.RegisterValidatorsFromAssemblyContaining<API.DTO.Request.Informes.ExportInformesQueryValidator>());
 builder.Services.AddFluentValidation(fv => fv.RegisterValidatorsFromAssemblyContaining<API.DTO.Request.Informes.InformesQueryValidator>());
 
+// Productos — AjusteStock SA-01 (Delta!=0, Motivo 5..500) — ensures auto 400 before tx
+builder.Services.AddFluentValidation(fv => fv.RegisterValidatorsFromAssemblyContaining<API.DTO.Request.Productos.AjusteStockRequestValidator>());
+
 // Suscripcion Validators
 builder.Services.AddFluentValidation(fv => fv.RegisterValidatorsFromAssemblyContaining<API.DTO.Request.Suscripcion.SuscripcionRequestValidator>());
 

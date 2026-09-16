@@ -1,3 +1,4 @@
+using API.Exceptions;
 using FluentValidation;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
@@ -81,6 +82,24 @@ public class GlobalExceptionHandler : IExceptionHandler
             return true;
         }
 
+        if (exception is NotFoundException notFoundEx)
+        {
+            _logger.LogWarning(notFoundEx, "Not found TraceId={TraceId}", traceId);
+            var problem = new ProblemDetails
+            {
+                Type = "https://httpstatuses.com/404",
+                Title = "Not Found",
+                Status = StatusCodes.Status404NotFound,
+                Detail = notFoundEx.Message,
+                Instance = httpContext.Request.Path
+            };
+            problem.Extensions["traceId"] = traceId;
+            httpContext.Response.StatusCode = StatusCodes.Status404NotFound;
+            httpContext.Response.ContentType = "application/problem+json";
+            await httpContext.Response.WriteAsJsonAsync(problem, cancellationToken);
+            return true;
+        }
+
         if (exception is KeyNotFoundException)
         {
             _logger.LogWarning(exception, "Not found TraceId={TraceId}", traceId);
@@ -94,6 +113,28 @@ public class GlobalExceptionHandler : IExceptionHandler
             };
             problem.Extensions["traceId"] = traceId;
             httpContext.Response.StatusCode = StatusCodes.Status404NotFound;
+            httpContext.Response.ContentType = "application/problem+json";
+            await httpContext.Response.WriteAsJsonAsync(problem, cancellationToken);
+            return true;
+        }
+
+        if (exception is DomainException domainEx)
+        {
+            _logger.LogWarning(domainEx, "Domain violation TraceId={TraceId}", traceId);
+            var problem = new ProblemDetails
+            {
+                Type = "https://httpstatuses.com/422",
+                Title = "Unprocessable Entity",
+                Status = StatusCodes.Status422UnprocessableEntity,
+                Detail = domainEx.Message,
+                Instance = httpContext.Request.Path
+            };
+            problem.Extensions["traceId"] = traceId;
+            problem.Extensions["errors"] = new Dictionary<string, string[]>
+            {
+                ["StockActual"] = new[] { domainEx.Message }
+            };
+            httpContext.Response.StatusCode = StatusCodes.Status422UnprocessableEntity;
             httpContext.Response.ContentType = "application/problem+json";
             await httpContext.Response.WriteAsJsonAsync(problem, cancellationToken);
             return true;

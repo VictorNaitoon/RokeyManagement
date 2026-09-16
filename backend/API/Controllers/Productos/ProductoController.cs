@@ -267,7 +267,8 @@ namespace API.Controllers.Productos
         }
 
         /// <summary>
-        /// Ajusta el stock de un producto con auditoría via MovimientoStock AjusteManual
+        /// Ajusta el stock de un producto con auditoría via MovimientoStock AjusteManual — SA-01/SA-02
+        /// Roles: Dueño || Gerente (403 Empleado/SuperAdmin). Tenant isolated 404, 422 for StockNuevo&lt;0 no mutation.
         /// </summary>
         /// <param name="id">ID del producto</param>
         /// <param name="request">Delta de stock y motivo</param>
@@ -278,7 +279,8 @@ namespace API.Controllers.Productos
         [ProducesResponseType(401)]
         [ProducesResponseType(403)]
         [ProducesResponseType(404)]
-        public async Task<IActionResult> AjusteStock(int id, [FromBody] AjusteStockRequest request)
+        [ProducesResponseType(422)]
+        public async Task<IActionResult> AjusteStock(int id, [FromBody] AjusteStockRequest request, CancellationToken ct)
         {
             if (_currentUser.IsSuperAdmin)
             {
@@ -290,26 +292,11 @@ namespace API.Controllers.Productos
                 return StatusCode(403, new { message = "Solo Dueño y Gerente pueden ajustar stock" });
             }
 
-            try
-            {
-                var result = await _productoService.AjustarStockAsync(id, request);
-                
-                if (result == null)
-                {
-                    return NotFound(new { message = "Producto no encontrado" });
-                }
-
-                if (result.StockActual < 0) // This is a simplification; actual validation happens in service
-                {
-                    return StatusCode(422, new { message = "No se puede tener stock negativo" });
-                }
-
-                return Ok(result);
-            }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
+            // FluentValidation (AjusteStockRequestValidator: Delta!=0, Motivo 5..500) runs before handler →400.
+            // Service throws NotFoundException→404 (tenant isolation) and DomainException/StockInsuficiente→422 (no mutation).
+            // Both are mapped by GlobalExceptionHandler to ProblemDetails with traceId; no conflated null branch.
+            var result = await _productoService.AjustarStockAsync(id, request, ct);
+            return Ok(result);
         }
 
         /// <summary>

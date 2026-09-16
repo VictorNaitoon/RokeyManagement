@@ -1,6 +1,7 @@
 using API.Data;
 using API.DTO.Request.Productos;
 using API.DTO.Response.Productos;
+using API.Exceptions;
 using API.Models;
 using API.Services.Auditoria;
 using API.Services.Common;
@@ -442,28 +443,33 @@ return movimientos;
         }
 
         /// <summary>
-        /// Ajusta el stock de un producto con creación de MovimientoStock AjusteManual (auditable)
+        /// Ajusta el stock de un producto con creación de MovimientoStock AjusteManual (auditable) — SA-01/SA-02.
+        /// Distinct errors: NotFoundException (404 tenant isolation) vs DomainException/StockInsuficiente (422 no mutation).
         /// </summary>
         public async Task<ProductoResponse?> AjustarStockAsync(int id, AjusteStockRequest request, CancellationToken ct = default)
         {
+            // Tenant-isolated load — Id_negocio from JWT, never from body
             var producto = await _context.Productos
                 .FirstOrDefaultAsync(p => p.Id == id && p.Id_negocio == _currentUser.NegocioId, ct);
 
-            if (producto == null) return null;
+            if (producto == null)
+                throw new NotFoundException("Producto", id);
 
             var stockAnterior = producto.StockActual;
             var stockNuevo = stockAnterior + request.CantidadDelta;
 
+            // 422 — no mutation, no MovimientoStock, no SaveChanges
             if (stockNuevo < 0)
-            {
-                return null; // 422 will be mapped by caller
-            }
+                throw new StockInsuficienteException(stockAnterior, request.CantidadDelta, stockNuevo);
+
+            // Motivo trimmed 5..500 (validated by FluentValidation Delta!=0 + Motivo length; trim here for persistence)
+            var motivoTrimmed = (request.Motivo ?? string.Empty).Trim();
 
             using var dbTransaction = await _context.Database.BeginTransactionAsync(ct);
 
             try
             {
-                // Registrar MovimientoStock AjusteManual (insert-only)
+                // Insert-only MovimientoStock AjusteManual (AGENTS 4.16 insert-only)
                 var movimientoStock = new MovimientoStock
                 {
                     IdProducto = producto.Id,
@@ -474,22 +480,22 @@ return movimientos;
                     TipoMovimiento = Models.Enums.TipoMovimiento.AjusteManual,
                     StockAnterior = stockAnterior,
                     StockNuevo = stockNuevo,
-                    Motivo = request.Motivo
+                    Motivo = motivoTrimmed
                 };
 
                 _context.MovimientosStock.Add(movimientoStock);
 
-                // Actualizar stock actual del producto
+                // Update stock + audit user
                 producto.StockActual = stockNuevo;
                 producto.IdUsuarioModificador = _currentUser.UserId;
 
-                await _context.SaveChangesAsync();
+                await _context.SaveChangesAsync(ct);
 
-                // Confirmar transacción
                 await dbTransaction.CommitAsync(ct);
 
-                // Devolver producto actualizado
-                return await GetByIdAsync(producto.Id);
+                // Return updated ProductoResponse with gated PrecioCompra (Dueño||Gerente vs Empleado)
+                var updated = await GetByIdAsync(producto.Id);
+                return updated ?? throw new NotFoundException("Producto", id);
             }
             catch
             {
