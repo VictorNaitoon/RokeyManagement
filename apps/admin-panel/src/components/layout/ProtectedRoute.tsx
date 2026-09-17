@@ -8,7 +8,15 @@ interface ProtectedRouteProps {
 
 export function ProtectedRoute({ children, roles }: ProtectedRouteProps) {
   const location = useLocation();
-  const { isAuthenticated, user } = authStore();
+  const { isAuthenticated, isLoading, user } = authStore();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="size-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      </div>
+    );
+  }
 
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />;

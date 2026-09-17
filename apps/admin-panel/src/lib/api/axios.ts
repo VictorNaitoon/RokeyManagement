@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { authStore } from '@/stores/authStore';
 import { useSubscriptionStore } from '@/stores/subscriptionStore';
+import { decodeUserFromToken } from '@/lib/auth/decodeJwt';
 
 export const api = axios.create({
   baseURL: '',
@@ -77,12 +78,15 @@ api.interceptors.response.use(
         // Extract new token from response and update authStore
         const newToken = response.data.accessToken;
         const currentUser = authStore.getState().user;
-        
-        if (newToken && currentUser) {
-          authStore.getState().setAuth(newToken, currentUser);
-        } else if (newToken) {
-          // If no user in store, at least update the token
-          authStore.getState().setAuth(newToken, authStore.getState().user!);
+
+        if (newToken) {
+          // currentUser puede ser null tras F5 (store solo en memoria)
+          // Decodifica el JWT para reconstruir el user
+          const decodedUser = decodeUserFromToken(newToken);
+          const userToSet = currentUser ?? decodedUser;
+          if (userToSet) {
+            authStore.getState().setAuth(newToken, userToSet);
+          }
         }
         
         // Update Authorization header with new token

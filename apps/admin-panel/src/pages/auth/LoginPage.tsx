@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
@@ -33,23 +33,43 @@ export function LoginPage() {
   const {
     register,
     handleSubmit,
+    setFocus,
     formState: { errors },
   } = useForm<LoginFormData>({
-    resolver: zodResolver(loginSchema),
+    resolver: zodResolver(loginSchema) as unknown as never,
+    defaultValues: {
+      email: localStorage.getItem('rememberedEmail') || '',
+      password: '',
+      rememberMe: !!localStorage.getItem('rememberedEmail'),
+    },
   });
+
+  useEffect(() => {
+    if (localStorage.getItem('rememberedEmail')) {
+      setFocus('password');
+    }
+  }, [setFocus]);
 
   const from = (location.state as { from?: Location })?.from?.pathname || '/dashboard';
 
   const loginMutation = useMutation({
-    mutationFn: async (data: { email: string; password: string }) => {
+    mutationFn: async (data: LoginFormData) => {
+      // rememberMe no va al backend, solo email/password
+      const payload = { email: data.email, password: data.password };
       if (isSuperAdmin) {
-        const response = await api.post<SuperAdminLoginResponse>('/api/v1/auth/super-admin/login', data);
-        return { type: 'superadmin' as const, data: response.data };
+        const response = await api.post<SuperAdminLoginResponse>('/api/v1/auth/super-admin/login', payload);
+        return { type: 'superadmin' as const, data: response.data, formData: data };
       }
-      const response = await api.post<LoginResponse>('/api/v1/auth/login', data);
-      return { type: 'user' as const, data: response.data };
+      const response = await api.post<LoginResponse>('/api/v1/auth/login', payload);
+      return { type: 'user' as const, data: response.data, formData: data };
     },
     onSuccess: (result) => {
+      // Recordar email solo si rememberMe está tildado (nunca password)
+      if (result.formData.rememberMe) {
+        localStorage.setItem('rememberedEmail', result.formData.email);
+      } else {
+        localStorage.removeItem('rememberedEmail');
+      }
       toast.success('Bienvenido');
       if (result.type === 'superadmin') {
         const sa = result.data.superAdmin;
@@ -158,6 +178,19 @@ export function LoginPage() {
             {errors.password && (
               <p className="text-sm text-error">{errors.password.message}</p>
             )}
+          </div>
+
+          <div className="flex items-center gap-2">
+            <input
+              id="rememberMe"
+              type="checkbox"
+              {...register('rememberMe')}
+              disabled={loginMutation.isPending}
+              className="size-4 rounded border-input accent-primary"
+            />
+            <label htmlFor="rememberMe" className="text-sm font-medium cursor-pointer select-none">
+              Recordar email
+            </label>
           </div>
 
           <button

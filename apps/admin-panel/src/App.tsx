@@ -37,8 +37,21 @@ function SubscriptionRedirect() {
 }
 
 function App() {
-  const { isAuthenticated, user } = authStore();
+  const { isAuthenticated, isLoading, user, initializeAuth } = authStore();
   const defaultRedirect = user?.rol === 'SuperAdmin' ? '/admin' : '/dashboard';
+
+  useEffect(() => {
+    initializeAuth();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="size-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      </div>
+    );
+  }
 
   return (
     <QueryClientProvider client={queryClient}>
