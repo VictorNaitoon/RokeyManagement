@@ -162,9 +162,10 @@ export function DashboardLayout() {
             {user && (
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white text-sm font-medium">
-                  {user.nombre.charAt(0)}{user.apellido.charAt(0)}
+                  {(user.nombre?.charAt(0) || user.email.charAt(0).toUpperCase())}
+                  {user.apellido?.charAt(0) || ''}
                 </div>
-                <span className="text-sm font-medium">{user.nombre}</span>
+                <span className="text-sm font-medium">{user.nombre || user.email}</span>
               </div>
             )}
             <button

@@ -25,14 +25,7 @@ export function DashboardPage() {
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [secondsAgo, setSecondsAgo] = useState(0);
   
-  const {
-    isLoading,
-    isFetching,
-    error,
-    allFailed,
-    refetch,
-    canViewAdminData,
-  } = useDashboardData();
+  const { isLoading, isFetching, error, refetch, canViewAdminData } = useDashboardData();
 
   // Track last update time
   useEffect(() => {
@@ -67,11 +60,6 @@ export function DashboardPage() {
     return hours === 1 ? '1 hora' : `${hours} horas`;
   };
 
-  // Debug: log state changes
-  useEffect(() => {
-    console.log('Dashboard state:', { isLoading, isFetching, error: error?.message, allFailed });
-  }, [isLoading, isFetching, error, allFailed]);
-
   // Error state - show when there's an error
   if (error) {
     return (
@@ -82,7 +70,7 @@ export function DashboardPage() {
             No se pudo conectar con el servidor
           </h2>
           <p className="text-muted-foreground max-w-md">
-            Verifica que el backend esté corriendo en https://localhost:7096
+            Verifica que el backend esté corriendo en http://localhost:5147
           </p>
         </div>
         <Button 

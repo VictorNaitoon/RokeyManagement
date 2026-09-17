@@ -131,7 +131,6 @@ export function useClienteVentas(id: number | null, page = 1, pageSize = 10) {
       const response = await api.get(`/api/v1/clientes/${id}/ventas`, {
         params: { page, pageSize },
       });
-      console.log('useClienteVentas raw response:', response.data);
       // Transform PascalCase to camelCase
       const items = (response.data.items || []).map((item: any) => ({
         id: item.id ?? 0,
@@ -140,7 +139,6 @@ export function useClienteVentas(id: number | null, page = 1, pageSize = 10) {
         estado: item.estado ?? 'Activa',
         cantidadItems: item.cantidadItems ?? 0,
       }));
-      console.log('useClienteVentas mapped:', items);
       return {
         ventas: items,
         total: response.data.totalCount || 0,

@@ -77,14 +77,26 @@ api.interceptors.response.use(
         
         // Extract new token from response and update authStore
         const newToken = response.data.accessToken;
-        const currentUser = authStore.getState().user;
 
         if (newToken) {
-          // currentUser puede ser null tras F5 (store solo en memoria)
-          // Decodifica el JWT para reconstruir el user
           const decodedUser = decodeUserFromToken(newToken);
-          const userToSet = currentUser ?? decodedUser;
-          if (userToSet) {
+          if (decodedUser) {
+            // Preferir usuario persistido en localStorage (preserva nombre/apellido tras F5)
+            let userToSet = authStore.getState().user ?? null;
+            if (!userToSet) {
+              try {
+                const raw = localStorage.getItem('auth_user');
+                if (raw) {
+                  const stored = JSON.parse(raw) as import('@/stores/authStore').User;
+                  if (String(stored.id) === String(decodedUser.id) && stored.rol === decodedUser.rol) {
+                    userToSet = stored;
+                  }
+                }
+              } catch {
+                // ignore
+              }
+            }
+            userToSet = userToSet ?? decodedUser;
             authStore.getState().setAuth(newToken, userToSet);
           }
         }

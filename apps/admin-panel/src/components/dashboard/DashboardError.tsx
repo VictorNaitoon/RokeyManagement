@@ -28,11 +28,10 @@ export function DashboardError({
           Error de conexión
         </h3>
         <p className="text-muted-foreground mb-6 max-w-sm">{message}</p>
-        <Button 
+        <Button
           onClick={() => {
-            console.log('Retry button clicked');
             onRetry?.();
-          }} 
+          }}
           variant="default"
           size="lg"
         >

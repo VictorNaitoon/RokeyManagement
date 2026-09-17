@@ -8,8 +8,13 @@ export function decodeJwtPayload(token: string): Record<string, unknown> | null 
   try {
     const base64Url = token.split('.')[1];
     if (!base64Url) return null;
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-    const json = atob(base64);
+    let base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    // Pad base64 to multiple of 4
+    base64 = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), '=');
+    const binary = atob(base64);
+    // UTF-8 safe decode: binary -> Uint8Array -> TextDecoder
+    const bytes = Uint8Array.from(binary, (c) => c.charCodeAt(0));
+    const json = new TextDecoder().decode(bytes);
     return JSON.parse(json) as Record<string, unknown>;
   } catch {
     return null;
@@ -24,8 +29,15 @@ export function decodeJwtPayload(token: string): Record<string, unknown> | null 
 export function userFromJwtPayload(payload: Record<string, unknown>): User | null {
   const sub = payload['sub'] as string | undefined;
   const email = payload['email'] as string | undefined;
-  const rol = (payload['rol'] as string | undefined) ?? (payload['role'] as string | undefined);
-  const negocioIdRaw = payload['negocioId'] as string | number | undefined;
+  // rol puede venir como 'rol', 'role' o claim largo de Microsoft
+  const rol =
+    (payload['rol'] as string | undefined) ??
+    (payload['role'] as string | undefined) ??
+    (payload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] as string | undefined);
+  const negocioIdRaw =
+    (payload['negocioId'] as string | number | undefined) ??
+    (payload['negocio_id'] as string | number | undefined) ??
+    (payload['id_negocio'] as string | number | undefined);
 
   if (!sub || !email || !rol) return null;
 
