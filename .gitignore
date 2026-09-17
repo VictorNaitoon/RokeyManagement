@@ -750,7 +750,13 @@ buck-out/
 .atl/
 
 # Documentos de desarrollo local - NO subir a GitHub
+AGENTS.md
+PRD.md
 PRD2-A.md
 PRD2-B.md
 APRENDIZAJE-FRONTEND.md
 TEST.md*.md
+cookies.txt
+apps/admin-panel/README.md
+apps/admin-panel/TEST-AUTH.md
+apps/client-portal/README.md
