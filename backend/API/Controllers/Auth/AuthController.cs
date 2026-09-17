@@ -30,11 +30,13 @@ namespace API.Controllers.Auth
         /// </summary>
         private CookieOptions GetRefreshTokenCookieOptions()
         {
+            // En Development usamos http://localhost, Secure=true bloquearía el envío de la cookie.
+            var isSecure = !HttpContext.RequestServices.GetRequiredService<IWebHostEnvironment>().IsDevelopment();
             return new CookieOptions
             {
                 HttpOnly = true,
-                Secure = true,
-                SameSite = SameSiteMode.Strict,
+                Secure = isSecure,
+                SameSite = isSecure ? SameSiteMode.Strict : SameSiteMode.Lax,
                 Path = "/",
                 Expires = DateTimeOffset.UtcNow.AddDays(30)
             };
@@ -45,11 +47,12 @@ namespace API.Controllers.Auth
         /// </summary>
         private void ClearRefreshTokenCookie()
         {
+            var isSecure = HttpContext.RequestServices.GetRequiredService<IWebHostEnvironment>().IsDevelopment() == false;
             Response.Cookies.Delete("refreshToken", new CookieOptions
             {
                 HttpOnly = true,
-                Secure = true,
-                SameSite = SameSiteMode.Strict,
+                Secure = isSecure,
+                SameSite = isSecure ? SameSiteMode.Strict : SameSiteMode.Lax,
                 Path = "/"
             });
         }

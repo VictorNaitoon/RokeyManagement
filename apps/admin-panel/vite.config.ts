@@ -24,7 +24,6 @@ export default defineConfig({
         target: 'http://localhost:5147',
         changeOrigin: true,
         secure: false,
-        // Rewrite Set-Cookie headers for dev environment
         cookieDomainRewrite: 'localhost',
         cookiePathRewrite: '/',
       },

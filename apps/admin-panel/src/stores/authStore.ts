@@ -111,45 +111,13 @@ export const authStore = create<AuthState>((set, get) => ({
             }
             set({ token: newToken, user: userToSet, isAuthenticated: true });
           } else {
-            // Sin stored válido: intenta hidratar desde backend (/api/v1/auth/me o /api/v1/usuarios/me)
-            let hydrated: User | null = null;
-            for (const path of ['/api/v1/auth/me', '/api/v1/usuarios/me']) {
-              try {
-                const res = await api.get(path);
-                const data = res.data as Record<string, unknown>;
-                // Soporta { usuario: {...} } o usuario plano
-                const u = (data.usuario ?? data.user ?? data) as Record<string, unknown>;
-                if (u && (u.id ?? u.Id)) {
-                  hydrated = {
-                    id: Number(u.id ?? u.Id),
-                    email: String(u.email ?? u.Email ?? decodedUser.email),
-                    nombre: String(u.nombre ?? u.Nombre ?? ''),
-                    apellido: String(u.apellido ?? u.Apellido ?? ''),
-                    rol: String(u.rol ?? u.Rol ?? decodedUser.rol) as User['rol'],
-                    id_negocio: u.id_negocio != null ? Number(u.id_negocio) : u.IdNegocio != null ? Number(u.IdNegocio) : decodedUser.id_negocio,
-                    negocio_nombre: (u.negocio_nombre as string | undefined) ?? (u.NegocioNombre as string | undefined),
-                  };
-                  break;
-                }
-              } catch {
-                // 404 = endpoint no existe, sigue al siguiente
-              }
+            // Sin stored válido: usa claims del JWT. El login trae Usuario completo y lo persiste para próximos F5.
+            try {
+              localStorage.setItem('auth_token', newToken);
+            } catch {
+              // ignore
             }
-            if (hydrated) {
-              get().setAuth(newToken, hydrated);
-            } else {
-              if (!localStorage.getItem('auth_user')) {
-                console.warn(
-                  '[auth] initializeAuth: sin usuario persistido y sin endpoint /me — usando claims del JWT (nombre vacío esperado). Login trae Usuario completo y lo persiste para próximos F5.'
-                );
-              }
-              try {
-                localStorage.setItem('auth_token', newToken);
-              } catch {
-                // ignore
-              }
-              set({ token: newToken, user: decodedUser, isAuthenticated: true });
-            }
+            set({ token: newToken, user: decodedUser, isAuthenticated: true });
           }
         } else {
           // Token válido pero sin claims esperados -> limpia
@@ -171,8 +139,8 @@ export const authStore = create<AuthState>((set, get) => ({
     set({ isLoggingOut: true });
     
     try {
-      // Call logout API endpoint
-      await api.post('/api/v1/auth/logout');
+      // Backend expone POST /api/v1/auth/revoke (no /logout) — limpia cookie HttpOnly
+      await api.post('/api/v1/auth/revoke');
     } catch (error) {
       // Log error but continue with local logout (graceful degradation)
       console.warn('Logout API call failed, proceeding with local logout:', error);

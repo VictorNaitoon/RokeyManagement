@@ -232,7 +232,10 @@ using (var scope = app.Services.CreateScope())
     await seedService.SeedSuperAdminAsync();
 }
 
-app.UseHttpsRedirection();
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 
 app.UseAuthentication();
 app.UseSubscriptionBlocking();
