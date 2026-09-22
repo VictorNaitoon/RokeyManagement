@@ -241,6 +241,9 @@ app.UseAuthentication();
 app.UseSubscriptionBlocking();
 app.UseAuthorization();
 
+// Health check endpoint for Docker HEALTHCHECK / Cloud Run probes
+app.MapGet("/health", () => Results.Ok(new { status = "Healthy" }));
+
 app.MapControllers();
 
 app.Run();

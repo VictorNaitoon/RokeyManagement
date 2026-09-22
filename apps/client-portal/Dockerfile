@@ -15,4 +15,5 @@ RUN mkdir -p /var/cache/nginx /var/run /var/log/nginx && chown -R nginx:nginx /v
 USER nginx
 EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 CMD wget -q --spider http://localhost:8080/ || exit 1
+# Nota: nginx.conf debe existir en este directorio (lo sirve el SPA en /)
 CMD ["nginx", "-g", "daemon off;"]

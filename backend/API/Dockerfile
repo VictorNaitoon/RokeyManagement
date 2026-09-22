@@ -25,6 +25,11 @@ RUN dotnet publish "API.csproj" -c Release -o /app/publish /p:UseAppHost=false
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS runtime
 WORKDIR /app
 
+# curl para HEALTHCHECK (aspnet:9.0 no lo trae por defecto)
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/*
+
 # Usuario no-root para seguridad
 RUN adduser --disabled-password --gecos "" --uid 1000 appuser \
     && chown -R appuser:appuser /app
