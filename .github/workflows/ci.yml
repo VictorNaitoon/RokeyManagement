@@ -1,0 +1,230 @@
+# =============================================================================
+# RoKey MANAGEMENT — CI / Build & Push (GHCR) + Deploy placeholder (Cloud Run)
+# =============================================================================
+# Qué hace:
+#   1. build-and-test-backend → dotnet restore/build/test (.NET 9)
+#   2. build-images           → buildx + push a GHCR (gratis, sin GCP)
+#   3. deploy                 → placeholder hasta tener Terraform GCP
+#
+# Secrets/Vars para habilitar el deploy REAL a GCP (cuando exista Terraform):
+#   Vars (Repository variables → Settings > Variables):
+#     GCP_PROJECT_ID  — ej: rokey-prod-123456
+#     GCP_REGION      — ej: us-central1
+#     GCP_AR_REPO     — ej: rokey-repo  (Artifact Registry repo name)
+#   Secrets (Settings > Secrets and variables > Actions):
+#     GCP_WORKLOAD_IDENTITY_PROVIDER — ej: projects/123/locations/global/workloadIdentityPools/pool/providers/github
+#     GCP_SERVICE_ACCOUNT            — ej: deploy@rokey-prod-123456.iam.gserviceaccount.com
+#     JWT_KEY, JWT_ISSUER, JWT_AUDIENCE, POSTGRES_*  — si Cloud Run necesita env vars
+#     (alternativa WIF) GCP_WORKLOAD_IDENTITY_PROVIDER + GCP_SERVICE_ACCOUNT usan
+#     google-github-actions/auth@v2 con Workload Identity Federation (recomendado).
+#
+# El workflow está diseñado para PASAR EN VERDE sin ningún secret GCP:
+#   - build-images pushea a ghcr.io con GITHUB_TOKEN (siempre disponible)
+#   - deploy solo hace echo; el step real de Cloud Run está comentado
+# =============================================================================
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+# Permisos mínimos necesarios (GHCR push requiere packages: write)
+permissions:
+  contents: read
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+  # Normaliza el owner/repo a lowercase para GHCR (GHCR exige minúsculas)
+  # Se usa en los tags vía github.repository (ya viene en lowercase en la práctica)
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # 1) Backend .NET 9 — build + test
+  # ---------------------------------------------------------------------------
+  build-and-test-backend:
+    name: build-and-test-backend
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 9
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "9.0.x"
+          # Cache automático de NuGet (equivalente a cache-dependency-path)
+          cache: true
+          cache-dependency-path: backend/API/API.csproj
+
+      - name: Restore
+        run: dotnet restore backend/API/API.sln
+
+      - name: Build (Release)
+        run: dotnet build backend/API/API.sln --configuration Release --no-restore
+
+      - name: Test
+        # Si no hay tests, este step igualmente pasa (dotnet test no falla si no hay tests,
+        # pero por si el proyecto Tests no existe, el --no-build evita recompilar)
+        # El .sln ya incluye backend/Tests/API.Tests.csproj
+        run: dotnet test backend/API/API.sln --configuration Release --no-build --verbosity normal
+
+  # ---------------------------------------------------------------------------
+  # 2) Docker images → GHCR (gratis). Deja bloque comentado para Artifact Registry
+  # ---------------------------------------------------------------------------
+  build-images:
+    name: build-images (${{ matrix.name }})
+    runs-on: ubuntu-latest
+    needs: build-and-test-backend
+    # Para PRs también buildea, pero solo pushea si es push a main o workflow_dispatch.
+    # Si querés pushear también en PRs, cambiá el if a: always()
+    # Por defecto: build siempre, push solo en push main / dispatch.
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: backend
+            context: ./backend/API
+            dockerfile: ./backend/API/Dockerfile
+            image_suffix: backend
+          - name: admin-panel
+            context: ./apps/admin-panel
+            dockerfile: ./apps/admin-panel/Dockerfile
+            image_suffix: admin-panel
+          - name: client-portal
+            context: ./apps/client-portal
+            dockerfile: ./apps/client-portal/Dockerfile
+            image_suffix: client-portal
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Genera tags/labels con metadata-action (opcional pero recomendado)
+      - name: Docker meta (GHCR)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ github.repository }}/${{ matrix.image_suffix }}
+          # Tags: :latest solo en main, :sha siempre
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha,format=long
+
+      - name: Build and push (GHCR)
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          # Para client-portal, el ARG VITE_API_URL se puede setear aquí si hace falta:
+          # build-args: |
+          #   VITE_API_URL=${{ vars.VITE_API_URL }}
+
+      # -----------------------------------------------------------------------
+      # BLOQUE PARAMETRIZADO PARA ARTIFACT REGISTRY GCP (descomentar cuando
+      # tengan Terraform + WIF). Requiere vars/secrets listados arriba.
+      # -----------------------------------------------------------------------
+      # - name: Auth to Google Cloud (WIF)
+      #   if: vars.GCP_PROJECT_ID != '' && vars.GCP_REGION != ''
+      #   uses: google-github-actions/auth@v2
+      #   with:
+      #     workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+      #     service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+      #
+      # - name: Set up Cloud SDK
+      #   if: vars.GCP_PROJECT_ID != '' && vars.GCP_REGION != ''
+      #   uses: google-github-actions/setup-gcloud@v2
+      #
+      # - name: Configure Docker for Artifact Registry
+      #   if: vars.GCP_PROJECT_ID != '' && vars.GCP_REGION != ''
+      #   run: gcloud auth configure-docker ${{ vars.GCP_REGION }}-docker.pkg.dev --quiet
+      #
+      # - name: Build and push (Artifact Registry)
+      #   if: vars.GCP_PROJECT_ID != '' && vars.GCP_REGION != ''
+      #   uses: docker/build-push-action@v6
+      #   with:
+      #     context: ${{ matrix.context }}
+      #     file: ${{ matrix.dockerfile }}
+      #     push: true
+      #     tags: |
+      #       ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.GCP_AR_REPO }}/${{ matrix.image_suffix }}:${{ github.sha }}
+      #       ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.GCP_AR_REPO }}/${{ matrix.image_suffix }}:latest
+      #     cache-from: type=gha
+      #     cache-to: type=gha,mode=max
+
+  # ---------------------------------------------------------------------------
+  # 3) Deploy placeholder — solo en push a main (opt-in real con Cloud Run)
+  # ---------------------------------------------------------------------------
+  deploy:
+    name: deploy (placeholder)
+    runs-on: ubuntu-latest
+    needs: [build-and-test-backend, build-images]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    # Permisos extra si usás WIF para GCP
+    permissions:
+      contents: read
+      packages: read
+      id-token: write
+    steps:
+      - name: Deploy placeholder
+        run: echo "Deploy to Cloud Run pending Terraform — workflow verde sin secrets GCP."
+
+      # ---------------------------------------------------------------------
+      # DEPLOY REAL A CLOUD RUN (descomentar cuando Terraform + secrets listos)
+      # Requiere: GCP_PROJECT_ID, GCP_REGION, GCP_WORKLOAD_IDENTITY_PROVIDER,
+      #           GCP_SERVICE_ACCOUNT, y que las imágenes estén en Artifact
+      #           Registry o GHCR accesible desde Cloud Run.
+      # ---------------------------------------------------------------------
+      # - name: Auth to Google Cloud (WIF)
+      #   uses: google-github-actions/auth@v2
+      #   with:
+      #     workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+      #     service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+      #
+      # - name: Deploy backend to Cloud Run
+      #   uses: google-github-actions/deploy-cloudrun@v2
+      #   with:
+      #     service: rokey-backend
+      #     region: ${{ vars.GCP_REGION }}
+      #     project_id: ${{ vars.GCP_PROJECT_ID }}
+      #     image: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.GCP_AR_REPO }}/backend:${{ github.sha }}
+      #     env_vars: |
+      #       ASPNETCORE_ENVIRONMENT=Production
+      #       ConnectionStrings__WebApiDatabase=Host=${{ secrets.POSTGRES_HOST }};Port=5432;Database=${{ secrets.POSTGRES_DB }};Username=${{ secrets.POSTGRES_USER }};Password=${{ secrets.POSTGRES_PASSWORD }}
+      #       JWT__Key=${{ secrets.JWT_KEY }}
+      #       JWT__Issuer=${{ secrets.JWT_ISSUER }}
+      #       JWT__Audience=${{ secrets.JWT_AUDIENCE }}
+      #
+      # - name: Deploy admin-panel to Cloud Run
+      #   uses: google-github-actions/deploy-cloudrun@v2
+      #   with:
+      #     service: rokey-admin
+      #     region: ${{ vars.GCP_REGION }}
+      #     project_id: ${{ vars.GCP_PROJECT_ID }}
+      #     image: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.GCP_AR_REPO }}/admin-panel:${{ github.sha }}
+      #
+      # - name: Deploy client-portal to Cloud Run
+      #   uses: google-github-actions/deploy-cloudrun@v2
+      #   with:
+      #     service: rokey-client
+      #     region: ${{ vars.GCP_REGION }}
+      #     project_id: ${{ vars.GCP_PROJECT_ID }}
+      #     image: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.GCP_AR_REPO }}/client-portal:${{ github.sha }}
