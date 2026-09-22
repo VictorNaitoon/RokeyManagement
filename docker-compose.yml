@@ -1,0 +1,113 @@
+# =============================================================================
+# RoKey MANAGEMENT - docker-compose.yml (desarrollo local)
+# Stack: .NET 9 API + PostgreSQL 16 + admin-panel (nginx) + client-portal (nginx)
+# Uso: docker compose up --build
+# Requiere: .env en Management/ (ver .env.example)
+# =============================================================================
+
+services:
+  # ---------------------------------------------------------------------------
+  # PostgreSQL 16 - Base de datos principal
+  # ---------------------------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: rokey-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-rokey}
+      POSTGRES_USER: ${POSTGRES_USER:-rokey}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-rokey}
+    ports:
+      # Expuesto en 5432 para dev (psql, pgAdmin, EF migrations desde host)
+      # En prod/cloud: quitar o cambiar a "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      # $$ escapa la interpolación de compose y deja que el shell del contenedor expanda la var
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    networks:
+      - rokey-net
+
+  # ---------------------------------------------------------------------------
+  # Backend API (.NET 9) - puerto 8080
+  # ---------------------------------------------------------------------------
+  backend:
+    build:
+      context: ./backend/API
+      dockerfile: Dockerfile
+    container_name: rokey-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
+      ASPNETCORE_URLS: http://+:8080
+      DOTNET_RUNNING_IN_CONTAINER: "true"
+      # ConnectionStrings.WebApiDatabase es la clave real usada en Program.cs / appsettings.json
+      # Se provee también DefaultConnection como alias por compatibilidad con el enunciado
+      ConnectionStrings__WebApiDatabase: Host=postgres;Port=5432;Database=${POSTGRES_DB:-rokey};Username=${POSTGRES_USER:-rokey};Password=${POSTGRES_PASSWORD:-rokey}
+      ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=${POSTGRES_DB:-rokey};Username=${POSTGRES_USER:-rokey};Password=${POSTGRES_PASSWORD:-rokey}
+      JWT__Key: ${JWT_KEY:-RoKeySuperSecretKey2026!@#$$%^&*()}
+      JWT__Issuer: ${JWT_ISSUER:-RoKeyAPI}
+      JWT__Audience: ${JWT_AUDIENCE:-RoKeyApp}
+      JWT__ExpiryMinutes: ${JWT_EXPIRY_MINUTES:-480}
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    networks:
+      - rokey-net
+
+  # ---------------------------------------------------------------------------
+  # Admin Panel (React Vite + nginx) - http://localhost:3000
+  # nginx escucha 8080 dentro del contenedor (ver apps/admin-panel/Dockerfile)
+  # Proxy /api/ -> http://backend:8080 (definido en nginx.conf)
+  # ---------------------------------------------------------------------------
+  admin-panel:
+    build:
+      context: ./apps/admin-panel
+      dockerfile: Dockerfile
+    container_name: rokey-admin
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "${ADMIN_PORT:-3000}:8080"
+    networks:
+      - rokey-net
+
+  # ---------------------------------------------------------------------------
+  # Client Portal (React Vite SPA + nginx) - http://localhost:3001
+  # nginx escucha 8080, solo try_files (sin proxy /api por ahora)
+  # ---------------------------------------------------------------------------
+  client-portal:
+    build:
+      context: ./apps/client-portal
+      dockerfile: Dockerfile
+    container_name: rokey-client
+    restart: unless-stopped
+    ports:
+      - "${CLIENT_PORT:-3001}:8080"
+    networks:
+      - rokey-net
+
+networks:
+  rokey-net:
+    driver: bridge
+    name: rokey-net
+
+volumes:
+  pgdata:
+    name: rokey-pgdata
+    driver: local
