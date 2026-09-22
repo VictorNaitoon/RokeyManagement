@@ -1,0 +1,31 @@
+# =============================================================================
+# RoKey MANAGEMENT - terraform.tfvars.example
+# Copiar a terraform.tfvars y completar: cp terraform.tfvars.example terraform.tfvars
+# NUNCA commitear terraform.tfvars (esta en .gitignore)
+# =============================================================================
+
+gcp_project_id = "rokey-prod-123456"
+gcp_region     = "us-central1"
+gcp_ar_repo    = "rokey-repo"
+
+# Cloud SQL (cambiar password en prod!)
+db_name     = "rokey"
+db_user     = "rokey"
+db_password = "CHANGE_ME_generate_with_openssl_rand_base64_32"
+db_tier     = "db-f1-micro" # prod: db-custom-1-3840
+
+# JWT (generar con: openssl rand -base64 48)
+jwt_key            = "CHANGE_ME_min_32_chars_random_string"
+jwt_issuer         = "RoKeyAPI"
+jwt_audience       = "RoKeyApp"
+jwt_expiry_minutes = "480"
+
+# Imagenes (tras primer push a Artifact Registry o GHCR)
+# Si usas Artifact Registry:
+# backend_image = "us-central1-docker.pkg.dev/rokey-prod-123456/rokey-repo/backend:latest"
+# admin_image   = "us-central1-docker.pkg.dev/rokey-prod-123456/rokey-repo/admin-panel:latest"
+# client_image  = "us-central1-docker.pkg.dev/rokey-prod-123456/rokey-repo/client-portal:latest"
+# Si usas GHCR, el backend igual puede apuntar a ghcr.io (Cloud Run puede pull publico o con auth):
+backend_image = "ghcr.io/victornaitoon/rokeymanagement/backend:latest"
+admin_image   = "ghcr.io/victornaitoon/rokeymanagement/admin-panel:latest"
+client_image  = "ghcr.io/victornaitoon/rokeymanagement/client-portal:latest"
