@@ -121,8 +121,11 @@ export function LoginPage() {
     <div className="space-y-6">
       {/* Logo & Brand */}
       <div className="text-center">
-        <h1 className="text-2xl font-bold text-primary">RoKey</h1>
-        <p className="text-sm text-text-secondary mt-1">Management</p>
+        <h1 className="text-2xl font-bold">
+          <span className="text-[#6A4B9F]">Ro</span>
+          <span className="text-[#0F766E]">Key</span>
+        </h1>
+        <p className="text-sm text-[#0F766E] mt-1">Management</p>
       </div>
 
       {/* Login Card */}

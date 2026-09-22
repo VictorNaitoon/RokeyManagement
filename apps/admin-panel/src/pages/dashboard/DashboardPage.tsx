@@ -6,10 +6,21 @@
  */
 
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Clock, RefreshCw, WifiOff } from 'lucide-react';
+import {
+  Clock,
+  RefreshCw,
+  WifiOff,
+  ShoppingCart,
+  Package,
+  Truck,
+  FileText,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { authStore } from '@/stores/authStore';
 import { useDashboardData } from '@/hooks/useDashboardData';
 import {
   VentasKPI,
@@ -21,10 +32,38 @@ import {
   DashboardSkeleton,
 } from '@/components/dashboard';
 
+const quickActions = [
+  {
+    title: 'Nueva Venta',
+    href: '/ventas/nueva',
+    icon: ShoppingCart,
+    description: 'Registrar una venta',
+  },
+  {
+    title: 'Agregar Producto',
+    href: '/productos',
+    icon: Package,
+    description: 'Crear nuevo producto',
+  },
+  {
+    title: 'Registrar Compra',
+    href: '/compras',
+    icon: Truck,
+    description: 'Cargar compra a proveedor',
+  },
+  {
+    title: 'Crear Presupuesto',
+    href: '/presupuestos',
+    icon: FileText,
+    description: 'Generar presupuesto',
+  },
+] as const;
+
 export function DashboardPage() {
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [secondsAgo, setSecondsAgo] = useState(0);
-  
+  const user = authStore((s) => s.user);
+
   const { isLoading, isFetching, error, refetch, canViewAdminData } = useDashboardData();
 
   // Track last update time
@@ -92,13 +131,16 @@ export function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      {/* Page Header with Title and Refresh Indicator */}
+      {/* Page Header - Inicio */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
-          <p className="text-muted-foreground">Bienvenido al sistema de gestión</p>
+          <h1 className="text-2xl font-bold text-foreground">Inicio</h1>
+          <p className="text-muted-foreground">
+            {user?.nombre ? `Bienvenido, ${user.nombre}` : 'Bienvenido al sistema de gestión'}
+            {user?.nombre ? ' — sistema de gestión' : ''}
+          </p>
         </div>
-        
+
         <div className="flex items-center gap-4 text-sm text-muted-foreground">
           {lastUpdated && (
             <div className="flex items-center gap-1.5">
@@ -106,8 +148,8 @@ export function DashboardPage() {
               <span>Actualizado hace {formatSecondsAgo(secondsAgo)}</span>
             </div>
           )}
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             size="sm"
             onClick={() => {
               refetch();
@@ -118,6 +160,27 @@ export function DashboardPage() {
             Actualizar
           </Button>
         </div>
+      </div>
+
+      {/* Quick Actions - 4 cards */}
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+        {quickActions.map(({ title, href, icon: Icon, description }) => (
+          <Link key={href} to={href} className="group">
+            <Card className="h-full border bg-white p-0 py-0 transition-all hover:border-[#6A4B9F] hover:shadow-md group-hover:border-[#6A4B9F]">
+              <CardContent className="p-5 flex items-center gap-4">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#6A4B9F] text-white">
+                  <Icon className="h-5 w-5" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-foreground group-hover:text-[#6A4B9F] transition-colors">
+                    {title}
+                  </p>
+                  <p className="text-xs text-muted-foreground">{description}</p>
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
+        ))}
       </div>
 
       {/* KPI Cards Row - Responsive: 1 col mobile, 2 cols tablet, 3 cols desktop */}

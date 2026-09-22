@@ -3,11 +3,11 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* Design Tokens from PRD2-A */
+/* Design Tokens from PRD2-A - RoKey MANAGEMENT primary updated to #6A4B9F (2026-09-22) */
 @theme inline {
   /* Colors - PRD2-A tokens override shadcn defaults */
-  --color-primary: #0F766E;
-  --color-primary-hover: #0D9488;
+  --color-primary: #6A4B9F;
+  --color-primary-hover: #5A3F8A;
   --color-primary-foreground: #FFFFFF;
   --color-secondary: #64748B;
   --color-secondary-foreground: #FFFFFF;
@@ -27,7 +27,7 @@
   --color-card-foreground: #0F172A;
   --color-popover: #FFFFFF;
   --color-popover-foreground: #0F172A;
-  --color-primary: #0F766E;
+  --color-primary: #6A4B9F;
   --color-primary-foreground: #FFFFFF;
   --color-secondary: #64748B;
   --color-secondary-foreground: #FFFFFF;
@@ -39,21 +39,21 @@
   --color-destructive-foreground: #FFFFFF;
   --color-border: #E2E8F0;
   --color-input: #E2E8F0;
-  --color-ring: #0F766E;
+  --color-ring: #6A4B9F;
 
   /* Sidebar colors */
   --color-sidebar: #FFFFFF;
   --color-sidebar-foreground: #0F172A;
-  --color-sidebar-primary: #0F766E;
+  --color-sidebar-primary: #6A4B9F;
   --color-sidebar-primary-foreground: #FFFFFF;
   --color-sidebar-accent: #F1F5F9;
   --color-sidebar-accent-foreground: #0F172A;
   --color-sidebar-border: #E2E8F0;
-  --color-sidebar-ring: #0F766E;
+  --color-sidebar-ring: #6A4B9F;
 
   /* Chart colors */
-  --color-chart-1: #0F766E;
-  --color-chart-2: #0D9488;
+  --color-chart-1: #6A4B9F;
+  --color-chart-2: #5A3F8A;
   --color-chart-3: #64748B;
   --color-chart-4: #16A34A;
   --color-chart-5: #CA8A04;

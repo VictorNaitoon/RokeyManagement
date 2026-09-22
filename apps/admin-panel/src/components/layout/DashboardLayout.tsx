@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
 const navigation = [
-  { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
+  { name: 'Inicio', href: '/dashboard', icon: HomeIcon },
   { name: 'Productos', href: '/productos', icon: PackageIcon },
   { name: 'Alertas de Stock', href: '/productos/alertas', icon: AlertIcon },
   { name: 'Categorías', href: '/categorias', icon: TagIcon, roles: ['Dueño', 'Gerente'] },
@@ -151,11 +151,14 @@ export function DashboardLayout() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="fixed top-0 left-0 right-0 h-[60px] bg-surface border-b border-border z-50">
+      <header className="fixed top-0 left-0 right-0 h-[60px] bg-white border-b border-border z-50">
         <div className="h-full px-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <h1 className="text-xl font-bold text-primary">RoKey</h1>
-            <span className="text-sm text-text-secondary">Management</span>
+          <div className="flex items-center gap-1">
+            <h1 className="text-xl font-bold">
+              <span className="text-[#6A4B9F]">Ro</span>
+              <span className="text-[#0F766E]">Key</span>
+            </h1>
+            <span className="text-sm text-[#0F766E] ml-1">Management</span>
           </div>
           
           <div className="flex items-center gap-4">
@@ -187,7 +190,7 @@ export function DashboardLayout() {
       </header>
 
       {/* Sidebar */}
-      <aside className="fixed left-0 top-[60px] bottom-0 w-[240px] bg-surface border-r border-border overflow-y-auto">
+      <aside className="fixed left-0 top-[60px] bottom-0 w-[240px] bg-white border-r border-border overflow-y-auto">
         <nav className="p-4 space-y-1">
           {navigation.filter(item => {
             // Filter items by role if specified
@@ -202,8 +205,8 @@ export function DashboardLayout() {
                 className={cn(
                   'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
                   isActive
-                    ? 'bg-primary text-white'
-                    : 'text-text-secondary hover:bg-slate-100 hover:text-text-primary'
+                    ? 'bg-[#6A4B9F] text-white hover:bg-[#5A3F8A]'
+                    : 'text-text-secondary hover:bg-[#6A4B9F] hover:text-white'
                 )}
               >
                 <item.icon className={cn('w-5 h-5', isActive ? 'text-white' : '')} />
@@ -218,8 +221,8 @@ export function DashboardLayout() {
               className={cn(
                 'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
                 location.pathname.startsWith('/settings')
-                  ? 'bg-primary text-white'
-                  : 'text-text-secondary hover:bg-slate-100 hover:text-text-primary'
+                  ? 'bg-[#6A4B9F] text-white hover:bg-[#5A3F8A]'
+                  : 'text-text-secondary hover:bg-[#6A4B9F] hover:text-white'
               )}
             >
               <SettingsIcon className="w-5 h-5" />
