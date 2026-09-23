@@ -7,8 +7,11 @@ using API.Services.Auditoria;
 using API.Services.Common;
 using CsvHelper;
 using CsvHelper.Configuration;
+using FluentValidation;
+using FluentValidation.Results;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using System.Globalization;
 using System.Text;
 using System.Text.Json;
@@ -20,12 +23,38 @@ namespace API.Services.Productos
         private readonly AppDbContext _context;
         private readonly ICurrentUserService _currentUser;
         private readonly IAuditoriaService _auditoriaService;
+        private readonly ILogger<ProductoService> _logger;
 
-        public ProductoService(AppDbContext context, ICurrentUserService currentUser, IAuditoriaService auditoriaService)
+        public ProductoService(AppDbContext context, ICurrentUserService currentUser, IAuditoriaService auditoriaService, ILogger<ProductoService> logger)
         {
             _context = context;
             _currentUser = currentUser;
             _auditoriaService = auditoriaService;
+            _logger = logger;
+        }
+
+        private static void ValidateImagenUrl(string? url)
+        {
+            if (string.IsNullOrWhiteSpace(url)) return;
+            var trimmed = url.Trim();
+            if (trimmed.StartsWith("data:", StringComparison.OrdinalIgnoreCase))
+                throw new FluentValidation.ValidationException(new[] { new ValidationFailure("ImagenURL", "Usa URL https, no data URL (base64). Sube la imagen a Cloudinary para obtener la URL.") });
+            if (trimmed.Length > 2048)
+                throw new FluentValidation.ValidationException(new[] { new ValidationFailure("ImagenURL", "La URL de la imagen es demasiado larga (máximo 2048 caracteres). Usa una URL https corta de Cloudinary.") });
+            if (!trimmed.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+                throw new FluentValidation.ValidationException(new[] { new ValidationFailure("ImagenURL", "La URL de la imagen debe comenzar con https://") });
+        }
+
+        private async Task SafeAuditoriaAsync(string entidad, int idRegistro, string accion, object? datosAnteriores, object? datosNuevos, CancellationToken ct = default)
+        {
+            try
+            {
+                await _auditoriaService.RegistrarAsync(entidad, idRegistro, accion, datosAnteriores, datosNuevos, ct);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Auditoria falló Entidad={Entidad} Id={Id} Accion={Accion} — no se propaga (producto ya guardado)", entidad, idRegistro, accion);
+            }
         }
 
         public async Task<ProductoListResponse> GetAllAsync(string? busqueda = null)
@@ -101,6 +130,8 @@ namespace API.Services.Productos
 
         public async Task<ProductoResponse> CreateAsync(CrearProductoRequest request)
         {
+            ValidateImagenUrl(request.ImagenURL);
+
             // Validar que la categoría exista y esté activa si se especifica
             if (request.IdCategoria.HasValue)
             {
@@ -148,8 +179,8 @@ namespace API.Services.Productos
             _context.Productos.Add(producto);
             await _context.SaveChangesAsync();
 
-            // Registrar auditoría
-            await _auditoriaService.RegistrarAsync(
+            // Registrar auditoría — no debe convertir producto guardado en 500
+            await SafeAuditoriaAsync(
                 "Producto",
                 producto.Id,
                 "CREATE",
@@ -178,6 +209,8 @@ namespace API.Services.Productos
                 .FirstOrDefaultAsync();
 
             if (producto == null) return null;
+
+            ValidateImagenUrl(request.ImagenURL);
 
             // Capturar estado antes de modificar para auditoría
             var datosAnteriores = new
@@ -276,8 +309,8 @@ namespace API.Services.Productos
 
             await _context.SaveChangesAsync();
 
-            // Registrar auditoría
-            await _auditoriaService.RegistrarAsync(
+            // Registrar auditoría — no debe convertir producto guardado en 500
+            await SafeAuditoriaAsync(
                 "Producto",
                 producto.Id,
                 "UPDATE",
@@ -326,8 +359,8 @@ namespace API.Services.Productos
             producto.IdUsuarioModificador = _currentUser.UserId;
             await _context.SaveChangesAsync();
 
-            // Registrar auditoría
-            await _auditoriaService.RegistrarAsync(
+            // Registrar auditoría — no propaga fallo
+            await SafeAuditoriaAsync(
                 "Producto",
                 producto.Id,
                 "SOFT_DELETE",
@@ -389,8 +422,8 @@ namespace API.Services.Productos
             _context.Productos.Add(productoDuplicado);
             await _context.SaveChangesAsync();
 
-            // Registrar auditoría
-            await _auditoriaService.RegistrarAsync(
+            // Registrar auditoría — no propaga fallo
+            await SafeAuditoriaAsync(
                 "Producto",
                 productoDuplicado.Id,
                 "CREATE",
@@ -931,22 +964,29 @@ namespace API.Services.Productos
                         // Asignar usuario modificador
                         producto.IdUsuarioModificador = _currentUser.UserId;
 
-                        // Registrar auditoría por cada producto (Tarea 4.1-4.3)
-                        await _auditoriaService.RegistrarAsync(
-                            "Productos",
-                            producto.Id,
-                            "UPDATE",
-                            new
-                            {
-                                PrecioVenta = precioVentaAnterior,
-                                PrecioCompra = precioCompraAnterior
-                            },
-                            new
-                            {
-                                PrecioVenta = nuevoPrecioVenta,
-                                PrecioCompra = nuevoPrecioCompra,
-                                Operacion = "ActualizacionMasivaPrecios"
-                            });
+                        // Registrar auditoría por cada producto (Tarea 4.1-4.3) — no debe romper transacción
+                        try
+                        {
+                            await _auditoriaService.RegistrarAsync(
+                                "Productos",
+                                producto.Id,
+                                "UPDATE",
+                                new
+                                {
+                                    PrecioVenta = precioVentaAnterior,
+                                    PrecioCompra = precioCompraAnterior
+                                },
+                                new
+                                {
+                                    PrecioVenta = nuevoPrecioVenta,
+                                    PrecioCompra = nuevoPrecioCompra,
+                                    Operacion = "ActualizacionMasivaPrecios"
+                                });
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogWarning(ex, "Auditoria masiva falló Id={Id} — continúa", producto.Id);
+                        }
 
                         detalles.Add(new DetalleActualizacion
                         {

@@ -2,6 +2,7 @@ using API.Exceptions;
 using FluentValidation;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace API.Middleware;
 
@@ -135,6 +136,63 @@ public class GlobalExceptionHandler : IExceptionHandler
                 ["StockActual"] = new[] { domainEx.Message }
             };
             httpContext.Response.StatusCode = StatusCodes.Status422UnprocessableEntity;
+            httpContext.Response.ContentType = "application/problem+json";
+            await httpContext.Response.WriteAsJsonAsync(problem, cancellationToken);
+            return true;
+        }
+
+        if (exception is InvalidOperationException invalidOpEx)
+        {
+            _logger.LogWarning(invalidOpEx, "Invalid operation TraceId={TraceId}", traceId);
+            var problem = new ProblemDetails
+            {
+                Type = "https://httpstatuses.com/400",
+                Title = "Bad Request",
+                Status = StatusCodes.Status400BadRequest,
+                Detail = invalidOpEx.Message,
+                Instance = httpContext.Request.Path
+            };
+            problem.Extensions["traceId"] = traceId;
+            httpContext.Response.StatusCode = StatusCodes.Status400BadRequest;
+            httpContext.Response.ContentType = "application/problem+json";
+            await httpContext.Response.WriteAsJsonAsync(problem, cancellationToken);
+            return true;
+        }
+
+        if (exception is ArgumentException argEx)
+        {
+            _logger.LogWarning(argEx, "Bad argument TraceId={TraceId}", traceId);
+            var problem = new ProblemDetails
+            {
+                Type = "https://httpstatuses.com/400",
+                Title = "Bad Request",
+                Status = StatusCodes.Status400BadRequest,
+                Detail = argEx.Message,
+                Instance = httpContext.Request.Path
+            };
+            problem.Extensions["traceId"] = traceId;
+            httpContext.Response.StatusCode = StatusCodes.Status400BadRequest;
+            httpContext.Response.ContentType = "application/problem+json";
+            await httpContext.Response.WriteAsJsonAsync(problem, cancellationToken);
+            return true;
+        }
+
+        if (exception is DbUpdateException dbEx)
+        {
+            _logger.LogWarning(dbEx, "DbUpdate failure TraceId={TraceId}", traceId);
+            var detail = dbEx.InnerException?.Message ?? dbEx.Message;
+            // Avoid leaking full SQL but give friendly message
+            if (detail.Length > 300) detail = detail[..300];
+            var problem = new ProblemDetails
+            {
+                Type = "https://httpstatuses.com/409",
+                Title = "Conflict",
+                Status = StatusCodes.Status409Conflict,
+                Detail = $"Conflicto al guardar: {detail}",
+                Instance = httpContext.Request.Path
+            };
+            problem.Extensions["traceId"] = traceId;
+            httpContext.Response.StatusCode = StatusCodes.Status409Conflict;
             httpContext.Response.ContentType = "application/problem+json";
             await httpContext.Response.WriteAsJsonAsync(problem, cancellationToken);
             return true;

@@ -1,4 +1,6 @@
+import { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
+import { Menu, X } from 'lucide-react';
 import { authStore } from '@/stores/authStore';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -138,29 +140,99 @@ function LogoutIcon({ className }: { className?: string }) {
 export function DashboardLayout() {
   const location = useLocation();
   const { user, logout, isLoggingOut } = authStore();
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   const handleLogout = async () => {
     try {
       await logout();
-    } catch (error) {
-      // logout() already handles navigation, but show warning if API failed
+    } catch {
       toast.warning('Logout completado localmente');
     }
   };
+
+  // Close on Escape and lock body scroll when drawer open
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMobileOpen(false);
+    };
+    if (mobileOpen) {
+      document.addEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = 'hidden';
+    }
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = '';
+    };
+  }, [mobileOpen]);
+
+  const closeMobile = () => setMobileOpen(false);
+
+  const filteredNav = navigation.filter((item) => {
+    if (!item.roles) return true;
+    return user && item.roles.includes(user.rol);
+  });
+
+  const renderNavLinks = (onLinkClick?: () => void) => (
+    <>
+      {filteredNav.map((item) => {
+        const isActive = location.pathname === item.href || location.pathname.startsWith(item.href + '/');
+        return (
+          <Link
+            key={item.name}
+            to={item.href}
+            onClick={onLinkClick}
+            className={cn(
+              'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
+              isActive
+                ? 'bg-[#6A4B9F] text-white hover:bg-[#5A3F8A]'
+                : 'text-text-secondary hover:bg-[#6A4B9F] hover:text-white'
+            )}
+          >
+            <item.icon className={cn('w-5 h-5', isActive ? 'text-white' : '')} />
+            {item.name}
+          </Link>
+        );
+      })}
+      <div className="pt-4 mt-4 border-t border-border">
+        <Link
+          to="/settings"
+          onClick={onLinkClick}
+          className={cn(
+            'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
+            location.pathname.startsWith('/settings')
+              ? 'bg-[#6A4B9F] text-white hover:bg-[#5A3F8A]'
+              : 'text-text-secondary hover:bg-[#6A4B9F] hover:text-white'
+          )}
+        >
+          <SettingsIcon className="w-5 h-5" />
+          Configuración
+        </Link>
+      </div>
+    </>
+  );
 
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 h-[60px] bg-white border-b border-border z-50">
-        <div className="h-full px-4 flex items-center justify-between">
-          <div className="flex items-center gap-1">
+        <div className="h-full px-4 lg:px-6 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            {/* Hamburger - mobile only */}
+            <button
+              onClick={() => setMobileOpen(true)}
+              aria-label="Abrir menú"
+              aria-expanded={mobileOpen}
+              className="lg:hidden p-2 -ml-2 hover:bg-slate-100 rounded-lg transition-colors"
+            >
+              <Menu className="w-6 h-6 text-text-primary" />
+            </button>
             <h1 className="text-xl font-bold">
               <span className="text-[#6A4B9F]">Ro</span>
               <span className="text-[#0F766E]">Key</span>
             </h1>
-            <span className="text-sm text-[#0F766E] ml-1">Management</span>
+            <span className="text-sm text-[#0F766E] ml-1 hidden sm:inline">Management</span>
           </div>
-          
+
           <div className="flex items-center gap-4">
             {user && (
               <div className="flex items-center gap-2">
@@ -168,7 +240,7 @@ export function DashboardLayout() {
                   {(user.nombre?.charAt(0) || user.email.charAt(0).toUpperCase())}
                   {user.apellido?.charAt(0) || ''}
                 </div>
-                <span className="text-sm font-medium">{user.nombre || user.email}</span>
+                <span className="text-sm font-medium hidden sm:inline">{user.nombre || user.email}</span>
               </div>
             )}
             <button
@@ -189,52 +261,53 @@ export function DashboardLayout() {
         </div>
       </header>
 
-      {/* Sidebar */}
-      <aside className="fixed left-0 top-[60px] bottom-0 w-[240px] bg-white border-r border-border overflow-y-auto">
+      {/* Sidebar - Desktop (fixed, visible only >= lg) */}
+      <aside className="hidden lg:block fixed left-0 top-[60px] bottom-0 w-[240px] bg-white border-r border-border overflow-y-auto">
         <nav className="p-4 space-y-1">
-          {navigation.filter(item => {
-            // Filter items by role if specified
-            if (!item.roles) return true;
-            return user && item.roles.includes(user.rol);
-          }).map((item) => {
-            const isActive = location.pathname === item.href || location.pathname.startsWith(item.href + '/');
-            return (
-              <Link
-                key={item.name}
-                to={item.href}
-                className={cn(
-                  'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
-                  isActive
-                    ? 'bg-[#6A4B9F] text-white hover:bg-[#5A3F8A]'
-                    : 'text-text-secondary hover:bg-[#6A4B9F] hover:text-white'
-                )}
-              >
-                <item.icon className={cn('w-5 h-5', isActive ? 'text-white' : '')} />
-                {item.name}
-              </Link>
-            );
-          })}
-          
-          <div className="pt-4 mt-4 border-t border-border">
-            <Link
-              to="/settings"
-              className={cn(
-                'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
-                location.pathname.startsWith('/settings')
-                  ? 'bg-[#6A4B9F] text-white hover:bg-[#5A3F8A]'
-                  : 'text-text-secondary hover:bg-[#6A4B9F] hover:text-white'
-              )}
-            >
-              <SettingsIcon className="w-5 h-5" />
-              Configuración
-            </Link>
-          </div>
+          {renderNavLinks()}
+        </nav>
+      </aside>
+
+      {/* Mobile overlay */}
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 bg-black/40 z-40 lg:hidden"
+          onClick={closeMobile}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* Mobile Drawer */}
+      <aside
+        role="dialog"
+        aria-modal="true"
+        aria-label="Menú de navegación"
+        className={cn(
+          'fixed top-0 left-0 bottom-0 w-[240px] bg-white border-r border-border z-50 lg:hidden overflow-y-auto transition-transform duration-200',
+          mobileOpen ? 'translate-x-0' : '-translate-x-full'
+        )}
+      >
+        <div className="flex items-center justify-between h-[60px] px-4 border-b border-border">
+          <h2 className="text-xl font-bold">
+            <span className="text-[#6A4B9F]">Ro</span>
+            <span className="text-[#0F766E]">Key</span>
+          </h2>
+          <button
+            onClick={closeMobile}
+            aria-label="Cerrar menú"
+            className="p-2 -mr-2 hover:bg-slate-100 rounded-lg transition-colors"
+          >
+            <X className="w-5 h-5 text-text-primary" />
+          </button>
+        </div>
+        <nav className="p-4 space-y-1">
+          {renderNavLinks(closeMobile)}
         </nav>
       </aside>
 
       {/* Main Content */}
-      <main className="ml-[240px] pt-[60px] min-h-screen">
-        <div className="p-6">
+      <main className="pt-[60px] lg:ml-[240px] min-h-screen">
+        <div className="p-4 lg:p-6">
           <Outlet />
         </div>
       </main>

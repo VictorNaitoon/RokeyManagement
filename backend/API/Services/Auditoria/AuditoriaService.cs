@@ -15,6 +15,7 @@ namespace API.Services.Auditoria
     {
         private readonly AppDbContext _context;
         private readonly ICurrentUserService _currentUser;
+        private readonly ILogger<AuditoriaService> _logger;
 
         private static readonly JsonSerializerOptions JsonOptions = new()
         {
@@ -23,10 +24,25 @@ namespace API.Services.Auditoria
             DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
         };
 
-        public AuditoriaService(AppDbContext context, ICurrentUserService currentUser)
+        public AuditoriaService(AppDbContext context, ICurrentUserService currentUser, ILogger<AuditoriaService> logger)
         {
             _context = context;
             _currentUser = currentUser;
+            _logger = logger;
+        }
+
+        private static string? SafeSerialize(object? data, JsonSerializerOptions opts, ILogger logger)
+        {
+            if (data == null) return null;
+            try
+            {
+                return JsonSerializer.Serialize(data, opts);
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Auditoria Serialize falló, usando fallback {{}}");
+                return "{}";
+            }
         }
 
         /// <summary>
@@ -47,13 +63,22 @@ namespace API.Services.Auditoria
                 Accion = accion.ToUpperInvariant(),
                 IdUsuario = _currentUser.UserId,
                 Fecha = DateTime.UtcNow,
-                DatosAnteriores = datosAnteriores != null ? JsonSerializer.Serialize(datosAnteriores, JsonOptions) : null,
-                DatosNuevos = datosNuevos != null ? JsonSerializer.Serialize(datosNuevos, JsonOptions) : null,
+                DatosAnteriores = SafeSerialize(datosAnteriores, JsonOptions, _logger),
+                DatosNuevos = SafeSerialize(datosNuevos, JsonOptions, _logger),
                 Id_negocio = _currentUser.NegocioId
             };
 
             _context.Auditorias.Add(auditoria);
-            await _context.SaveChangesAsync(ct);
+            try
+            {
+                await _context.SaveChangesAsync(ct);
+            }
+            catch (Exception ex)
+            {
+                // No propagar fallo de auditoría como 500 — solo loguear warning y remover entrada del ChangeTracker
+                _logger.LogWarning(ex, "Auditoria SaveChanges falló Entidad={Entidad} IdRegistro={IdRegistro} Accion={Accion}", entidad, idRegistro, accion);
+                _context.Entry(auditoria).State = Microsoft.EntityFrameworkCore.EntityState.Detached;
+            }
         }
 
         /// <summary>

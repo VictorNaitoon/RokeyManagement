@@ -14,7 +14,20 @@ export const productoFormSchema = z.object({
   stockMinimo: z.number().int('El stock mínimo debe ser un número entero').min(0, 'El stock mínimo no puede ser negativo').optional().nullable(),
   idCategoria: z.number().int().positive().optional().nullable(),
   esServicio: z.boolean().optional().nullable(),
-  imagenURL: z.string().url('La URL de la imagen debe ser válida').optional().nullable(),
+  imagenURL: z
+    .string()
+    .max(2048, 'La URL de la imagen no puede exceder 2048 caracteres')
+    .refine((v) => !v || !v.startsWith('data:'), {
+      message: 'Usa URL https, no data URL (base64)',
+    })
+    .refine((v) => !v || v.startsWith('https://'), {
+      message: 'La URL de la imagen debe comenzar con https://',
+    })
+    .refine((v) => !v || (() => { try { new URL(v); return true; } catch { return false; } })(), {
+      message: 'La URL de la imagen debe ser válida',
+    })
+    .optional()
+    .nullable(),
   activo: z.boolean().optional().nullable(),
 }).strict();
 
