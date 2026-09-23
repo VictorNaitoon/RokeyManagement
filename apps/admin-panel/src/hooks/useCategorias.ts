@@ -65,8 +65,18 @@ export function useCategorias(options: UseCategoriasOptions = {}) {
   return useQuery({
     queryKey: ['categorias', options.filters],
     queryFn: async () => {
-      const response = await api.get<CategoriaListResponse>('/api/v1/Categoria');
-      return response.data;
+      const response = await api.get<any>('/api/v1/Categoria');
+      const raw = response.data;
+      // Normalize PascalCase vs camelCase (backend may return Categorias/Total)
+      const categoriasRaw = raw.categorias ?? raw.Categorias ?? [];
+      const total = raw.total ?? raw.Total ?? categoriasRaw.length;
+      const categorias: Categoria[] = (categoriasRaw as any[]).map((c: any) => ({
+        id: c.id ?? c.Id,
+        nombre: c.nombre ?? c.Nombre ?? '',
+        descripcion: c.descripcion ?? c.Descripcion ?? null,
+        activo: c.activo ?? c.Activo ?? true,
+      }));
+      return { categorias, total } as CategoriaListResponse;
     },
     ...CATEGORIAS_QUERY_CONFIG,
   });

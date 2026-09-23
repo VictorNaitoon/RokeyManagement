@@ -22,4 +22,11 @@ namespace API.DTO.Request.Usuarios
         public string PasswordActual { get; set; } = string.Empty;
         public string PasswordNuevo { get; set; } = string.Empty;
     }
+
+    public class ActualizarPerfilRequest
+    {
+        public string Nombre { get; set; } = string.Empty;
+        public string Apellido { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+    }
 }

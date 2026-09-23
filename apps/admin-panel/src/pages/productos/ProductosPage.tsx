@@ -247,7 +247,7 @@ export function ProductosPage() {
         </div>
         
         <div className="flex gap-2">
-          {canHistorial && (
+          {canManage && (
             <Button variant="outline" onClick={() => setShowImport(true)} className="gap-2">
               <Upload className="h-4 w-4" />
               Importar CSV

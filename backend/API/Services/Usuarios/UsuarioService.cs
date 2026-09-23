@@ -17,6 +17,7 @@ namespace API.Services.Usuarios
         Task<UsuarioResponse?> UpdateAsync(int id, ActualizarUsuarioRequest request);
         Task<bool> DeleteAsync(int id);
         Task<bool> CambiarPasswordAsync(CambiarPasswordRequest request);
+        Task<UsuarioResponse?> UpdatePerfilAsync(ActualizarPerfilRequest request);
     }
 
     public class UsuarioService : IUsuarioService
@@ -289,6 +290,45 @@ namespace API.Services.Usuarios
             await _authService.RevokeAllUserTokensAsync(usuario.Id);
 
             return true;
+        }
+
+        public async Task<UsuarioResponse?> UpdatePerfilAsync(ActualizarPerfilRequest request)
+        {
+            var usuario = await _context.Usuarios
+                .FirstOrDefaultAsync(u => u.Id == _currentUser.UserId && u.Id_negocio == _currentUser.NegocioId);
+
+            if (usuario == null) return null;
+
+            // Validar email único dentro del negocio si cambia
+            if (!string.Equals(usuario.Email, request.Email, StringComparison.OrdinalIgnoreCase))
+            {
+                var existing = await _context.Usuarios
+                    .FirstOrDefaultAsync(u => u.Email == request.Email && u.Id_negocio == _currentUser.NegocioId && u.Id != usuario.Id);
+                if (existing != null)
+                    throw new InvalidOperationException("Ya existe un usuario con este email en este negocio");
+            }
+
+            var datosAnteriores = new { usuario.Nombre, usuario.Apellido, usuario.Email };
+
+            usuario.Nombre = request.Nombre.Trim();
+            usuario.Apellido = request.Apellido.Trim();
+            usuario.Email = request.Email.Trim();
+            usuario.IdUsuarioModificador = _currentUser.UserId;
+
+            await _context.SaveChangesAsync();
+
+            await _auditoriaService.RegistrarAsync("Usuario", usuario.Id, "UPDATE_PERFIL", datosAnteriores, new { usuario.Nombre, usuario.Apellido, usuario.Email });
+
+            return new UsuarioResponse
+            {
+                Id = usuario.Id,
+                Email = usuario.Email,
+                Nombre = usuario.Nombre,
+                Apellido = usuario.Apellido,
+                Rol = usuario.Rol.ToString(),
+                Activo = usuario.Activo,
+                FechaAlta = DateTime.Now
+            };
         }
     }
 }

@@ -22,15 +22,15 @@ namespace API.Controllers.Clientes
         }
 
         /// <summary>
-        /// Lista los clientes del negocio (Admin y Gerente solamente)
+        /// Lista los clientes del negocio (todos los roles del negocio)
         /// </summary>
         [HttpGet]
         [ProducesResponseType(typeof(List<AccountResponse>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> GetAll([FromQuery] bool incluirConsumidorFinal = false)
         {
-            // Solo Admin y Gerente pueden listar todos los clientes
-            if (!_currentUser.IsAdmin && !_currentUser.IsManager)
+            // Todos los roles del negocio pueden listar clientes (view-only para Empleado)
+            if (!_currentUser.IsAdmin && !_currentUser.IsManager && !_currentUser.IsVendedor)
             {
                 return StatusCode(403, new { error = "No tiene permisos para listar clientes" });
             }

@@ -32,30 +32,40 @@ import {
   DashboardSkeleton,
 } from '@/components/dashboard';
 
-const quickActions = [
+const quickActionsBase = [
   {
+    key: 'venta',
     title: 'Nueva Venta',
     href: '/ventas/nueva',
     icon: ShoppingCart,
     description: 'Registrar una venta',
+    roles: ['Dueño', 'Gerente', 'Empleado'] as const,
   },
   {
+    key: 'producto',
     title: 'Agregar Producto',
+    titleEmpleado: 'Listar Productos',
     href: '/productos',
     icon: Package,
     description: 'Crear nuevo producto',
+    descriptionEmpleado: 'Ver productos',
+    roles: ['Dueño', 'Gerente', 'Empleado'] as const,
   },
   {
+    key: 'compra',
     title: 'Registrar Compra',
     href: '/compras',
     icon: Truck,
     description: 'Cargar compra a proveedor',
+    roles: ['Dueño', 'Gerente'] as const,
   },
   {
+    key: 'presupuesto',
     title: 'Crear Presupuesto',
     href: '/presupuestos',
     icon: FileText,
     description: 'Generar presupuesto',
+    roles: ['Dueño', 'Gerente', 'Empleado'] as const,
   },
 ] as const;
 
@@ -63,6 +73,9 @@ export function DashboardPage() {
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [secondsAgo, setSecondsAgo] = useState(0);
   const user = authStore((s) => s.user);
+  const rol = user?.rol ?? 'Empleado';
+  const canManageProductos = rol === 'Dueño';
+  const filteredActions = quickActionsBase.filter((a) => (a.roles as readonly string[]).includes(rol));
 
   const { isLoading, isFetching, error, refetch, canViewAdminData } = useDashboardData();
 
@@ -162,25 +175,31 @@ export function DashboardPage() {
         </div>
       </div>
 
-      {/* Quick Actions - 4 cards */}
+      {/* Quick Actions - role filtered */}
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-        {quickActions.map(({ title, href, icon: Icon, description }) => (
-          <Link key={href} to={href} className="group">
-            <Card className="h-full border bg-white p-0 py-0 transition-all hover:border-[#6A4B9F] hover:shadow-md group-hover:border-[#6A4B9F]">
-              <CardContent className="p-5 flex items-center gap-4">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#6A4B9F] text-white">
-                  <Icon className="h-5 w-5" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold text-foreground group-hover:text-[#6A4B9F] transition-colors">
-                    {title}
-                  </p>
-                  <p className="text-xs text-muted-foreground">{description}</p>
-                </div>
-              </CardContent>
-            </Card>
-          </Link>
-        ))}
+        {filteredActions.map((action) => {
+          const isProducto = action.key === 'producto';
+          const title = isProducto && !canManageProductos ? (action as any).titleEmpleado : action.title;
+          const description = isProducto && !canManageProductos ? (action as any).descriptionEmpleado : action.description;
+          const Icon = action.icon;
+          return (
+            <Link key={action.href} to={action.href} className="group">
+              <Card className="h-full border bg-white p-0 py-0 transition-all hover:border-[#6A4B9F] hover:shadow-md group-hover:border-[#6A4B9F]">
+                <CardContent className="p-5 flex items-center gap-4">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#6A4B9F] text-white">
+                    <Icon className="h-5 w-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-foreground group-hover:text-[#6A4B9F] transition-colors">
+                      {title}
+                    </p>
+                    <p className="text-xs text-muted-foreground">{description}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+          );
+        })}
       </div>
 
       {/* KPI Cards Row - Responsive: 1 col mobile, 2 cols tablet, 3 cols desktop */}

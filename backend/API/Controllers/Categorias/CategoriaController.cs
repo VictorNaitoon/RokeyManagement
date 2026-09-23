@@ -35,9 +35,9 @@ namespace API.Controllers.Categorias
                 return StatusCode(403, new { message = "El super administrador no puede gestionar categorías de un negocio" });
             }
 
-            if (!_currentUser.IsAdmin)
+            if (!_currentUser.IsAdmin && !_currentUser.IsManager)
             {
-                return StatusCode(403, new { message = "Solo el administrador puede ver la lista de categorías" });
+                return StatusCode(403, new { message = "Solo el administrador o gerente puede ver la lista de categorías" });
             }
 
             var result = await _categoriaService.GetAllAsync();
@@ -59,9 +59,9 @@ namespace API.Controllers.Categorias
                 return StatusCode(403, new { message = "El super administrador no puede gestionar categorías de un negocio" });
             }
 
-            if (!_currentUser.IsAdmin)
+            if (!_currentUser.IsAdmin && !_currentUser.IsManager)
             {
-                return StatusCode(403, new { message = "Solo el administrador puede ver categorías" });
+                return StatusCode(403, new { message = "Solo el administrador o gerente puede ver categorías" });
             }
 
             var categoria = await _categoriaService.GetByIdAsync(id);

@@ -172,5 +172,32 @@ namespace API.Controllers.Usuarios
                 return BadRequest(new { message = ex.Message });
             }
         }
+
+        /// <summary>
+        /// Actualiza el perfil del usuario actual (todos los roles)
+        /// </summary>
+        [HttpPut("me")]
+        [ProducesResponseType(typeof(UsuarioResponse), 200)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(401)]
+        [ProducesResponseType(404)]
+        public async Task<IActionResult> UpdatePerfil([FromBody] ActualizarPerfilRequest request)
+        {
+            if (string.IsNullOrWhiteSpace(request.Nombre) || string.IsNullOrWhiteSpace(request.Apellido) || string.IsNullOrWhiteSpace(request.Email))
+            {
+                return BadRequest(new { message = "Nombre, apellido y email son obligatorios" });
+            }
+
+            try
+            {
+                var result = await _usuarioService.UpdatePerfilAsync(request);
+                if (result == null) return NotFound(new { message = "Usuario no encontrado" });
+                return Ok(result);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
     }
 }

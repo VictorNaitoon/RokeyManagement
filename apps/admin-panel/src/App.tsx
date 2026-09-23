@@ -21,6 +21,7 @@ import { PresupuestosPage } from '@/pages/presupuestos/PresupuestosPage';
 import { ComprasPage } from '@/pages/compras/ComprasPage';
 import { CajaPage } from '@/pages/caja/CajaPage';
 import { InformesPage } from '@/pages/informes/InformesPage';
+import { SettingsPage } from '@/pages/settings/SettingsPage';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 
 function SubscriptionRedirect() {
@@ -96,6 +97,7 @@ function App() {
             <Route path="presupuestos" element={<PresupuestosPage />} />
             <Route path="compras" element={<ComprasPage />} />
             <Route path="caja" element={<CajaPage />} />
+            <Route path="settings" element={<SettingsPage />} />
             <Route
               path="informes"
               element={

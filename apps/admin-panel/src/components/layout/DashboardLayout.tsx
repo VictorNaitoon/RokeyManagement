@@ -11,12 +11,16 @@ const navigation = [
   { name: 'Alertas de Stock', href: '/productos/alertas', icon: AlertIcon },
   { name: 'Categorías', href: '/categorias', icon: TagIcon, roles: ['Dueño', 'Gerente'] },
   { name: 'Ventas', href: '/ventas', icon: ShoppingCartIcon },
-  { name: 'Compras', href: '/compras', icon: TruckIcon },
+  { name: 'Compras', href: '/compras', icon: TruckIcon, roles: ['Dueño', 'Gerente'] },
   { name: 'Presupuestos', href: '/presupuestos', icon: FileTextIcon },
   { name: 'Clientes', href: '/clientes', icon: UsersIcon },
-  { name: 'Proveedores', href: '/proveedores', icon: BuildingIcon },
-  { name: 'Caja', href: '/caja', icon: WalletIcon },
+  { name: 'Proveedores', href: '/proveedores', icon: BuildingIcon, roles: ['Dueño'] },
+  { name: 'Caja', href: '/caja', icon: WalletIcon, roles: ['Dueño', 'Gerente'] },
   { name: 'Informes', href: '/informes', icon: BarChartIcon, roles: ['Dueño', 'Gerente'] },
+];
+
+const superAdminNavigation = [
+  { name: 'Panel', href: '/admin', icon: HomeIcon },
 ];
 
 // Simple SVG icons as components
@@ -167,7 +171,10 @@ export function DashboardLayout() {
 
   const closeMobile = () => setMobileOpen(false);
 
-  const filteredNav = navigation.filter((item) => {
+  const isSuperAdmin = user?.rol === 'SuperAdmin';
+  const baseNav: Array<{ name: string; href: string; icon: any; roles?: string[] }> = isSuperAdmin ? superAdminNavigation : navigation;
+  const filteredNav = baseNav.filter((item) => {
+    if (isSuperAdmin) return true;
     if (!item.roles) return true;
     return user && item.roles.includes(user.rol);
   });
@@ -193,21 +200,23 @@ export function DashboardLayout() {
           </Link>
         );
       })}
-      <div className="pt-4 mt-4 border-t border-border">
-        <Link
-          to="/settings"
-          onClick={onLinkClick}
-          className={cn(
-            'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
-            location.pathname.startsWith('/settings')
-              ? 'bg-[#6A4B9F] text-white hover:bg-[#5A3F8A]'
-              : 'text-text-secondary hover:bg-[#6A4B9F] hover:text-white'
-          )}
-        >
-          <SettingsIcon className="w-5 h-5" />
-          Configuración
-        </Link>
-      </div>
+      {!isSuperAdmin && (
+        <div className="pt-4 mt-4 border-t border-border">
+          <Link
+            to="/settings"
+            onClick={onLinkClick}
+            className={cn(
+              'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
+              location.pathname.startsWith('/settings')
+                ? 'bg-[#6A4B9F] text-white hover:bg-[#5A3F8A]'
+                : 'text-text-secondary hover:bg-[#6A4B9F] hover:text-white'
+            )}
+          >
+            <SettingsIcon className="w-5 h-5" />
+            Configuración
+          </Link>
+        </div>
+      )}
     </>
   );
 
