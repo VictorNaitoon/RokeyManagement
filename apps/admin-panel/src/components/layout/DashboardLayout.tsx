@@ -15,7 +15,7 @@ const navigation = [
   { name: 'Presupuestos', href: '/presupuestos', icon: FileTextIcon },
   { name: 'Clientes', href: '/clientes', icon: UsersIcon },
   { name: 'Proveedores', href: '/proveedores', icon: BuildingIcon, roles: ['Dueño'] },
-  { name: 'Caja', href: '/caja', icon: WalletIcon, roles: ['Dueño', 'Gerente'] },
+  { name: 'Caja', href: '/caja', icon: WalletIcon, roles: ['Dueño', 'Gerente', 'Empleado'] },
   { name: 'Informes', href: '/informes', icon: BarChartIcon, roles: ['Dueño', 'Gerente'] },
 ];
 

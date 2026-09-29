@@ -57,6 +57,16 @@ namespace API.Services.Caja
         Task<IEnumerable<MovimientoCajaResponse>> ObtenerMovimientosAsync(int cajaId, int negocioId, CancellationToken ct = default);
 
         /// <summary>
+        /// Calcula la ganancia real de una caja: suma de (PrecioUnitario - PrecioCompra) * Cantidad
+        /// de las ventas activas registradas en ella. Devuelve solo el agregado (apto para todos los roles).
+        /// </summary>
+        /// <param name="cajaId">ID de la caja</param>
+        /// <param name="negocioId">ID del negocio (tenant isolation)</param>
+        /// <param name="ct">Cancellation token</param>
+        /// <returns>Ganancia agregada y cantidad de ventas activas</returns>
+        Task<GananciaCajaResponse> ObtenerGananciaAsync(int cajaId, int negocioId, CancellationToken ct = default);
+
+        /// <summary>
         /// Verifica si el negocio tiene una caja abierta
         /// </summary>
         /// <param name="negocioId">ID del negocio</param>

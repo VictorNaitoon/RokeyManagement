@@ -8,6 +8,7 @@ import {
   useAperturaMutation,
   useCierreMutation,
   useMovimientoMutation,
+  useGananciaCaja,
 } from '@/hooks/useCaja';
 import { KPICards } from '@/components/caja/KPICards';
 import { MovimientoForm } from '@/components/caja/MovimientoForm';
@@ -51,8 +52,11 @@ export function CajaPage() {
     }
   }, [isError, error]);
 
+  // Ids de ventas de esta caja: el backend registra cada venta como movimiento "Venta #<id>"
+  // (todos los hooks van antes de los returns tempranos — reglas de React)
+  const { data: gananciaCaja, isLoading: gananciaLoading } = useGananciaCaja(cajaId);
+
   const esDueñoOGerente = user?.rol === 'Dueño' || user?.rol === 'Gerente';
-  const esDueñoGerenteOEmpleado = user?.rol === 'Dueño' || user?.rol === 'Gerente' || user?.rol === 'Empleado';
   const esSuperAdmin = user?.rol === 'SuperAdmin';
 
   if (!isAuthenticated) {
@@ -95,7 +99,7 @@ export function CajaPage() {
         estado: ((caja.estado ?? caja.Estado ?? '') as string).toLowerCase() as 'abierta' | 'cerrada',
         fecha_apertura: caja.fechaApertura ?? caja.FechaApertura,
         usuario_nombre: String(caja.id_usuario_apertura ?? caja.Id_usuario_apertura ?? ''),
-        nombre: `Caja #${caja.id ?? caja.Id}`,
+        nombre: `Caja N°${caja.id ?? caja.Id}`,
         id: caja.id ?? caja.Id,
         fecha_cierre: caja.fechaCierre ?? caja.FechaCierre,
         usuario_id: caja.id_usuario_apertura ?? caja.Id_usuario_apertura,
@@ -111,6 +115,13 @@ export function CajaPage() {
     monto: m.monto ?? m.Monto,
     usuario_nombre: m.usuarioNombre ?? m.usuario_nombre ?? m.UsuarioNombre ?? String(m.id_usuario ?? m.Id_usuario ?? ''),
   }));
+
+  // Monto esperado al cierre: la ganancia del día (lo que se retira; el resto queda para reponer)
+  const montoEsperado = gananciaCaja?.ganancia;
+  const montoEsperadoFmt =
+    montoEsperado == null
+      ? null
+      : montoEsperado.toLocaleString('es-AR', { style: 'currency', currency: 'ARS' });
 
   const handleApertura = async () => {
     const monto = Number(montoInicial);
@@ -155,7 +166,7 @@ export function CajaPage() {
           <h1 className="text-3xl font-bold text-foreground">Caja</h1>
         </Link>
         <p className="text-muted-foreground mt-1">
-          {caja ? `Caja #${caja.id ?? caja.Id} — ${caja.estado ?? caja.Estado}` : 'Registro de Caja'}
+          {caja ? `Caja N°${caja.id ?? caja.Id} — ${caja.estado ?? caja.Estado}` : 'Registro de Caja'}
         </p>
         {(caja?.fechaApertura ?? caja?.FechaApertura) && (
           <p className="text-sm text-muted-foreground mt-1" data-testid="auditoria-fecha-apertura">
@@ -165,7 +176,12 @@ export function CajaPage() {
       </header>
 
       <div className="mb-8">
-        <KPICards cajaActual={kpiCajaActual as never} />
+        <KPICards
+          cajaActual={kpiCajaActual as never}
+          movimientos={movimientosTableData as never}
+          ganancia={gananciaCaja?.ganancia}
+          gananciaLoading={gananciaLoading}
+        />
       </div>
 
       <main className="space-y-8">
@@ -214,6 +230,18 @@ export function CajaPage() {
               <p className="text-muted-foreground text-sm">
                 Estado actual: <span className={estadoCajaStr === 'Cerrada' ? 'text-green-600' : 'text-red-600'}>{estadoCajaStr || 'Abierta'}</span>
               </p>
+              <div className="mt-3 rounded-md bg-muted/50 p-3 text-sm text-muted-foreground">
+                <p className="font-medium text-foreground mb-1">Antes de cerrar, verificá:</p>
+                <ul className="list-disc pl-5 space-y-1">
+                  <li>Que no queden ventas pendientes de registrar.</li>
+                  <li>Que todos los movimientos manuales del día estén cargados.</li>
+                  <li>Que el efectivo en mano coincida con el monto esperado.</li>
+                </ul>
+                <p className="mt-2">
+                  Monto esperado: <span className="font-semibold text-foreground">{gananciaLoading ? '…' : (montoEsperadoFmt ?? '—')}</span>
+                  {' '}(ganancia del día: lo que se retira; el resto queda para reponer materiales).
+                </p>
+              </div>
               <div className="mt-4 space-y-3">
                 <div>
                   <label className="block text-sm font-medium mb-1">Monto final</label>
@@ -226,6 +254,14 @@ export function CajaPage() {
                     className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm"
                     placeholder="0.00"
                   />
+                  <button
+                    type="button"
+                    onClick={() => montoEsperado != null && setMontoFinal(String(montoEsperado))}
+                    disabled={!tieneCajaAbierta || montoEsperado == null}
+                    className="mt-1 text-xs text-primary hover:underline disabled:opacity-50"
+                  >
+                    Usar monto esperado ({gananciaLoading ? '…' : (montoEsperadoFmt ?? '—')})
+                  </button>
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1">Observaciones (opcional)</label>
@@ -249,9 +285,16 @@ export function CajaPage() {
           </div>
         )}
 
-        {esDueñoGerenteOEmpleado && (
+        {esDueñoOGerente && (
           <div className="p-6 bg-white rounded-lg shadow-sm border">
-            <h3 className="font-semibold mb-4">Agregar Movimiento</h3>
+            <h3 className="font-semibold mb-1">Agregar Movimiento</h3>
+            <p className="text-sm text-muted-foreground mb-1">
+              Registra un movimiento manual de dinero que no proviene de una venta: por ejemplo, gastos
+              menores del local, retiros de efectivo o aportes de dinero a la caja.
+            </p>
+            <p className="text-sm text-muted-foreground mb-4">
+              Las ventas no se cargan acá: se registran solas en la caja al momento de vender.
+            </p>
             {/* MovimientoForm uses its own mutation internally; parent just reflects pending state */}
             <MovimientoForm disabled={movimiento.isPending} />
           </div>
@@ -265,7 +308,7 @@ export function CajaPage() {
           </div>
         )}
 
-        {movimientosTableData && movimientosTableData.length > 0 && (
+        {esDueñoOGerente && movimientosTableData && movimientosTableData.length > 0 && (
           <MovimientosTable
             movimientos={movimientosTableData}
             refetch={refetch}
@@ -273,7 +316,7 @@ export function CajaPage() {
           />
         )}
 
-        {!esSuperAdmin && (!movimientosTableData || movimientosTableData.length === 0) && (
+        {esDueñoOGerente && (!movimientosTableData || movimientosTableData.length === 0) && (
           <p className="text-muted-foreground text-center py-8">
             No hay movimientos registrados
           </p>

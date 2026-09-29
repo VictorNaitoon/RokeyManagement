@@ -174,5 +174,33 @@ namespace API.Controllers.Caja
 
             return Ok(result);
         }
+
+        /// <summary>
+        /// Calcula la ganancia real de una caja (margen por producto, solo agregado).
+        /// Visible para Dueño, Gerente y Empleado: no expone costos por producto.
+        /// </summary>
+        [HttpGet("{id}/ganancia")]
+        [ProducesResponseType(typeof(GananciaCajaResponse), 200)]
+        [ProducesResponseType(401)]
+        [ProducesResponseType(403)]
+        [ProducesResponseType(404)]
+        public async Task<IActionResult> ObtenerGanancia(int id, CancellationToken ct)
+        {
+            if (_currentUser.IsSuperAdmin)
+            {
+                return StatusCode(403, new { message = "El super administrador no puede gestionar cajas de un negocio" });
+            }
+
+            try
+            {
+                var result = await _cajaService.ObtenerGananciaAsync(id, _currentUser.NegocioId, ct);
+
+                return Ok(result);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+        }
     }
 }

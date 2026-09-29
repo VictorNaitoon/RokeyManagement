@@ -1,10 +1,20 @@
 import type { CajaActualDTO, EstadoCajaResponse } from '@/hooks/useCaja';
 import { Skeleton } from '@/components/ui/skeleton';
-import { WalletIcon, ClockIcon, UserIcon } from 'lucide-react';
+import { WalletIcon, ClockIcon, ShoppingCartIcon, BanknoteIcon, CircleHelpIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+
+interface KpiMovimiento {
+  tipo: string;
+  descripcion: string;
+  monto: number;
+}
 
 export interface KPICardsProps {
   cajaActual?: CajaActualDTO | EstadoCajaResponse | null;
+  movimientos?: KpiMovimiento[] | null;
+  /** Ganancia real del día (margen por producto). undefined = no disponible para este rol. */
+  ganancia?: number;
+  gananciaLoading?: boolean;
   skeleton?: boolean;
 }
 
@@ -14,10 +24,12 @@ function isEstadoCajaResponse(v: unknown): v is EstadoCajaResponse {
   return 'tieneCajaAbierta' in r || 'TieneCajaAbierta' in r;
 }
 
-export function KPICards({ cajaActual, skeleton = false }: KPICardsProps) {
+export function KPICards({ cajaActual, movimientos, ganancia, gananciaLoading = false, skeleton = false }: KPICardsProps) {
   if (skeleton) {
     return (
       <div className="flex flex-wrap gap-4">
+        <Skeleton className="w-64 h-48 rounded-lg" />
+        <Skeleton className="w-64 h-48 rounded-lg" />
         <Skeleton className="w-64 h-48 rounded-lg" />
         <Skeleton className="w-64 h-48 rounded-lg" />
         <Skeleton className="w-64 h-48 rounded-lg" />
@@ -82,16 +94,46 @@ export function KPICards({ cajaActual, skeleton = false }: KPICardsProps) {
     </div>
   );
 
-  const movimientosHoy = 0;
+  const lista = movimientos ?? [];
+  // Las ventas generan movimientos con descripcion "Venta #<id>" (VentaService);
+  // las anulaciones ("Anulación de Venta #...") son Egreso y no cuentan como venta.
+  const ventasHoy = lista.filter((m) => {
+    const desc = String(m.descripcion ?? '');
+    return desc.startsWith('Venta #');
+  }).length;
+  const totalDiaFmt =
+    ganancia == null
+      ? null
+      : ganancia.toLocaleString('es-AR', { style: 'currency', currency: 'ARS' });
+  const totalAyuda =
+    'Ganancia real del día: por cada producto vendido se calcula (precio de venta − costo de compra) × cantidad, y se suman todas las ventas de esta caja. No incluye movimientos manuales ni el monto inicial.';
 
-  const hoyCard = (
-    <div key="3" className="bg-white rounded-lg p-4 shadow-sm hover:shadow-md flex flex-col min-w-0">
+  const ventasCard = (
+    <div key="4" className="bg-white rounded-lg p-4 shadow-sm hover:shadow-md flex flex-col min-w-0">
       <div className="flex items-center gap-2 mb-2">
-        <UserIcon className="h-5 w-5 text-primary" />
-        <span className="text-sm font-medium text-foreground">Hoy</span>
+        <ShoppingCartIcon className="h-5 w-5 text-primary" />
+        <span className="text-sm font-medium text-foreground">Ventas hoy</span>
       </div>
-      <div className="text-2xl font-bold">{movimientosHoy.toLocaleString()}</div>
-      <p className="text-sm mt-1 text-muted-foreground">movimientos registrados hoy</p>
+      <div className="text-2xl font-bold">{ventasHoy.toLocaleString()}</div>
+      <p className="text-sm mt-1 text-muted-foreground">ventas realizadas hoy</p>
+    </div>
+  );
+
+  const totalCard = (
+    <div key="5" className="bg-white rounded-lg p-4 shadow-sm hover:shadow-md flex flex-col min-w-0">
+      <div className="flex items-center gap-2 mb-2">
+        <BanknoteIcon className="h-5 w-5 text-primary" />
+        <span className="text-sm font-medium text-foreground">Ganancia del día</span>
+        <span title={totalAyuda} aria-label={totalAyuda} className="cursor-help text-muted-foreground">
+          <CircleHelpIcon className="h-4 w-4" />
+        </span>
+      </div>
+      <div className={cn('text-2xl font-bold', ganancia != null && ganancia < 0 ? 'text-red-600' : 'text-green-600')}>
+        {gananciaLoading ? '…' : (totalDiaFmt ?? '—')}
+      </div>
+      <p className="text-sm mt-1 text-muted-foreground">
+        precio de venta menos costo, por producto
+      </p>
     </div>
   );
 
@@ -99,7 +141,8 @@ export function KPICards({ cajaActual, skeleton = false }: KPICardsProps) {
     <div className="flex flex-wrap gap-4">
       {estadoCard}
       {ultimaAperturaCard}
-      {hoyCard}
+      {ventasCard}
+      {totalCard}
     </div>
   );
 }

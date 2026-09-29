@@ -215,6 +215,69 @@ namespace API.Services.Caja
         }
 
         /// <summary>
+        /// Calcula la ganancia real de una caja (tenant-filtered, agregado sin costos por producto)
+        /// </summary>
+        public async Task<GananciaCajaResponse> ObtenerGananciaAsync(int cajaId, int negocioId, CancellationToken ct = default)
+        {
+            // Verify caja belongs to negocio to enforce tenant isolation
+            var cajaPertenece = await _context.Cajas
+                .AnyAsync(c => c.Id == cajaId && c.Id_negocio == negocioId, ct);
+
+            if (!cajaPertenece)
+            {
+                throw new KeyNotFoundException($"Caja con id '{cajaId}' no encontrada para este negocio.");
+            }
+
+            // Venta IDs are recorded in movimientos as "Venta #<id>" (VentaService)
+            var descripciones = await _context.MovimientosCaja
+                .Where(m => m.Id_caja == cajaId && m.Id_negocio == negocioId && m.Descripcion != null)
+                .Select(m => m.Descripcion!)
+                .ToListAsync(ct);
+
+            var ventaIds = descripciones
+                .Select(d =>
+                {
+                    const string prefix = "Venta #";
+                    if (!d.StartsWith(prefix)) return (int?)null;
+                    return int.TryParse(d.Substring(prefix.Length).Trim(), out var id) ? id : (int?)null;
+                })
+                .Where(id => id.HasValue)
+                .Select(id => id!.Value)
+                .Distinct()
+                .ToList();
+
+            if (ventaIds.Count == 0)
+            {
+                return new GananciaCajaResponse { Ganancia = 0, VentasCantidad = 0 };
+            }
+
+            // Only active (non-voided) sales of this tenant count
+            var ventasActivasIds = await _context.Ventas
+                .Where(v => ventaIds.Contains(v.Id) && v.Id_negocio == negocioId && !v.Anulada)
+                .Select(v => v.Id)
+                .ToListAsync(ct);
+
+            if (ventasActivasIds.Count == 0)
+            {
+                return new GananciaCajaResponse { Ganancia = 0, VentasCantidad = 0 };
+            }
+
+            var ganancia = await (
+                from d in _context.DetallesVenta
+                join p in _context.Productos on d.IdProducto equals p.Id
+                where ventasActivasIds.Contains(d.IdVenta)
+                    && p.Id_negocio == negocioId
+                select (d.PrecioUnitario - p.PrecioCompra) * d.Cantidad
+            ).SumAsync(ct);
+
+            return new GananciaCajaResponse
+            {
+                Ganancia = ganancia,
+                VentasCantidad = ventasActivasIds.Count
+            };
+        }
+
+        /// <summary>
         /// Verifica si el negocio tiene una caja abierta
         /// </summary>
         public async Task<bool> TieneCajaAbiertaAsync(int negocioId, CancellationToken ct = default)

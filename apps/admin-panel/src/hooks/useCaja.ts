@@ -319,3 +319,35 @@ export function useMovimientoMutation() {
     },
   });
 }
+
+// ============================================
+// Ganancia del día (margen real por producto)
+// ============================================
+
+export interface GananciaCaja {
+  ganancia: number;
+  ventasCantidad: number;
+}
+
+/**
+ * Ganancia real de la caja, calculada en el servidor:
+ * por cada línea vendida, (precioUnitario − precioCompra) × cantidad.
+ * El backend devuelve solo el agregado (sin costos por producto), por eso
+ * está disponible para Dueño, Gerente y Empleado. Las ventas anuladas no cuentan.
+ */
+export function useGananciaCaja(cajaId: number) {
+  return useQuery({
+    queryKey: [...CajaQueryKey.Movimientos, 'ganancia', cajaId],
+    queryFn: async (): Promise<GananciaCaja> => {
+      const response = await api.get(`/api/v1/Caja/${cajaId}/ganancia`);
+      const data = response.data as any;
+      return {
+        ganancia: Number(data?.ganancia ?? data?.Ganancia ?? 0),
+        ventasCantidad: Number(data?.ventasCantidad ?? data?.VentasCantidad ?? 0),
+      };
+    },
+    enabled: !!cajaId && cajaId > 0,
+    staleTime: 0,
+    refetchOnMount: 'always' as const,
+  });
+}
