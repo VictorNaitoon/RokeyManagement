@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Dashboard Data Hooks - React Query hooks for fetching dashboard data
  * RoKey MANAGEMENT - Multi-tenant SaaS ERP/POS for locksmiths
  *
@@ -15,13 +15,11 @@ import type {
   IngresosGastos,
   AlertaStock,
   AlertasStockResponse,
-  ProductoTop,
   ProductosTopResponse,
-  VentasPorPago,
   VentasPorPagoResponse,
   FlujoCaja,
-  VentasPorVendedor,
   VentasPorVendedorResponse,
+  UltimaVenta,
   UserRole,
 } from '@/types';
 
@@ -52,7 +50,7 @@ function getUserRole(): UserRole | null {
 }
 
 /**
- * Check if user has access to admin-only data (Dueño or Gerente)
+  * Check if user has access to admin-only data (Dueño or Gerente)
  */
 function canAccessAdminData(): boolean {
   const role = getUserRole();
@@ -194,179 +192,117 @@ export function useVentasPorVendedor() {
   });
 }
 
+/**
+ * Hook for the latest sales shown on Inicio
+ * GET /api/v1/ventas - available to every role (no informes restriction)
+ * The backend already returns newest-first ordering.
+ */
+export function useUltimasVentas(limite: number = 6) {
+  return useQuery({
+    queryKey: ['dashboard', 'ultimas-ventas', limite],
+    queryFn: async () => {
+      const response = await api.get<{ items?: Record<string, unknown>[] }>('/api/v1/ventas', {
+        params: { page: 1, pageSize: limite },
+      });
+
+      return (response.data.items ?? []).map((item): UltimaVenta => {
+        const fecha = typeof item.fecha === 'string' ? item.fecha : new Date().toISOString();
+        const estado = item.estado === 'Anulada' ? 'Anulada' : 'Activa';
+        return {
+          id: typeof item.id === 'number' ? item.id : 0,
+          fecha,
+          totalVenta: typeof item.totalVenta === 'number' ? item.totalVenta : 0,
+          estado,
+          clienteNombre: typeof item.nombreCliente === 'string' ? item.nombreCliente : '',
+          usuarioNombre: typeof item.nombreUsuario === 'string' ? item.nombreUsuario : '',
+        };
+      });
+    },
+    ...DASHBOARD_QUERY_CONFIG,
+  });
+}
+
 // ============================================
 // Combined Hook for Convenience
 // ============================================
 
-export interface UseDashboardDataOptions {
-  fecha?: string;
-  limiteProductos?: number;
-}
 
 export interface DashboardDataReturn {
-  // Data states
+  // Data
   ventasResumen: VentasResumen | undefined;
   ingresosGastos: IngresosGastos | undefined;
   alertasStock: AlertaStock[] | undefined;
-  productosTop: ProductoTop[] | undefined;
-  ventasPorPago: VentasPorPago[] | undefined;
-  flujoCaja: FlujoCaja | undefined;
-  ventasPorVendedor: VentasPorVendedor[] | undefined;
-  
-  // Loading states
+  ultimasVentas: UltimaVenta[] | undefined;
+
+  // Data states
   isLoading: boolean;
   isFetching: boolean;
-  isLoadingVentasResumen: boolean;
-  isLoadingIngresosGastos: boolean;
-  isLoadingAlertasStock: boolean;
-  isLoadingProductosTop: boolean;
-  isLoadingVentasPorPago: boolean;
-  isLoadingFlujoCaja: boolean;
-  isLoadingVentasPorVendedor: boolean;
-  
-  // Error states
   isError: boolean;
   error: Error | null;
-  errorVentasResumen: Error | null;
-  errorIngresosGastos: Error | null;
-  errorAlertasStock: Error | null;
-  errorProductosTop: Error | null;
-  errorVentasPorPago: Error | null;
-  errorFlujoCaja: Error | null;
-  errorVentasPorVendedor: Error | null;
-  
-  // Refetch functions
+  /** Epoch ms of the newest successful fetch (0 when nothing has loaded yet) */
+  dataUpdatedAt: number;
+
+  // Refetch
   refetch: () => void;
-  refetchVentasResumen: () => void;
-  refetchIngresosGastos: () => void;
-  refetchAlertasStock: () => void;
-  refetchProductosTop: () => void;
-  refetchVentasPorPago: () => void;
-  refetchFlujoCaja: () => void;
-  refetchVentasPorVendedor: () => void;
-  
+
   // Access control
   canViewAdminData: boolean;
   userRole: UserRole | null;
-  allFailed: boolean;
 }
 
 /**
- * Combined hook for fetching all dashboard data
- * Automatically handles role-based access control
+ * Combined hook for the Inicio page.
+ *
+ * Only aggregates the queries the Inicio actually renders. The chart/product-top
+ * series live in useInformes and are not requested here (they used to be fetched
+ * on every Inicio load even when nothing consumed them).
+ *
+ * React Query de-duplicates by queryKey, so the components that render the same
+ * data (ResumenHoy, AlertasStockPanel, UltimasVentas) share these requests.
  */
-export function useDashboardData(options: UseDashboardDataOptions = {}): DashboardDataReturn {
-  const { fecha = 'mes', limiteProductos = 10 } = options;
-  
-  // Individual queries
+export function useDashboardData(): DashboardDataReturn {
   const ventasResumen = useVentasResumen('hoy');
-  const ingresosGastos = useIngresosGastos(fecha);
+  const ingresosGastos = useIngresosGastos('hoy');
   const alertasStock = useAlertasStock();
-  const productosTop = useProductosTop(limiteProductos);
-  const ventasPorPago = useVentasPorPago();
-  const flujoCaja = useFlujoCaja(fecha);
-  const ventasPorVendedor = useVentasPorVendedor();
-  
-  // Determine if any query is loading (excluding disabled admin-only queries)
-  const isLoading = 
-    ventasResumen.isLoading ||
-    alertasStock.isLoading ||
-    productosTop.isLoading ||
-    flujoCaja.isLoading ||
-    (ingresosGastos.isEnabled && ingresosGastos.isLoading) ||
-    (ventasPorPago.isEnabled && ventasPorPago.isLoading) ||
-    (ventasPorVendedor.isEnabled && ventasPorVendedor.isLoading);
+  const ultimasVentas = useUltimasVentas(6);
 
-  // Determine if ALL enabled queries have failed
-  const allFailed = 
-    (ventasResumen.isError || ventasResumen.isLoading === false) &&
-    (alertasStock.isError || alertasStock.isLoading === false) &&
-    (productosTop.isError || productosTop.isLoading === false) &&
-    (flujoCaja.isError || flujoCaja.isLoading === false) &&
-    (!ingresosGastos.isEnabled || ingresosGastos.isError || ingresosGastos.isLoading === false) &&
-    (!ventasPorPago.isEnabled || ventasPorPago.isError || ventasPorPago.isLoading === false) &&
-    (!ventasPorVendedor.isEnabled || ventasPorVendedor.isError || ventasPorVendedor.isLoading === false);
+  const queries = [ventasResumen, alertasStock, ultimasVentas];
+  const adminQueries = [ingresosGastos];
 
-  // Determine if any query is fetching (re-fetching in background)
-  const isFetching = 
-    ventasResumen.isFetching ||
-    alertasStock.isFetching ||
-    productosTop.isFetching ||
-    flujoCaja.isFetching ||
-    (ingresosGastos.isEnabled && ingresosGastos.isFetching) ||
-    (ventasPorPago.isEnabled && ventasPorPago.isFetching) ||
-    (ventasPorVendedor.isEnabled && ventasPorVendedor.isFetching);
-  
-  // Collect all errors
+  const isLoading =
+    queries.some((q) => q.isLoading) ||
+    adminQueries.some((q) => q.isEnabled && q.isLoading);
+
+  const isFetching =
+    queries.some((q) => q.isFetching) ||
+    adminQueries.some((q) => q.isEnabled && q.isFetching);
+
   const errors = [
-    ventasResumen.error,
-    alertasStock.error,
-    productosTop.error,
-    flujoCaja.error,
-    ingresosGastos.isEnabled ? ingresosGastos.error : null,
-    ventasPorPago.isEnabled ? ventasPorPago.error : null,
-    ventasPorVendedor.isEnabled ? ventasPorVendedor.error : null,
+    ...queries.map((q) => q.error),
+    ...adminQueries.map((q) => (q.isEnabled ? q.error : null)),
   ].filter(Boolean) as Error[];
-  
-  const error = errors.length > 0 ? errors[0] : null;
-  const isError = errors.length > 0;
-  
-  // Refetch all enabled queries
+
+  const dataUpdatedAt = Math.max(...queries.map((q) => q.dataUpdatedAt), ...adminQueries.map((q) => q.dataUpdatedAt));
+
   const refetch = () => {
-    ventasResumen.refetch();
-    alertasStock.refetch();
-    productosTop.refetch();
-    flujoCaja.refetch();
-    if (ingresosGastos.isEnabled) ingresosGastos.refetch();
-    if (ventasPorPago.isEnabled) ventasPorPago.refetch();
-    if (ventasPorVendedor.isEnabled) ventasPorVendedor.refetch();
+    queries.forEach((q) => q.refetch());
+    adminQueries.forEach((q) => {
+      if (q.isEnabled) q.refetch();
+    });
   };
-  
+
   return {
-    // Data
     ventasResumen: ventasResumen.data,
     ingresosGastos: ingresosGastos.data,
     alertasStock: alertasStock.data,
-    productosTop: productosTop.data,
-    ventasPorPago: ventasPorPago.data,
-    flujoCaja: flujoCaja.data,
-    ventasPorVendedor: ventasPorVendedor.data,
-    
-    // Loading
+    ultimasVentas: ultimasVentas.data,
     isLoading,
     isFetching,
-    isLoadingVentasResumen: ventasResumen.isLoading,
-    isLoadingIngresosGastos: ingresosGastos.isLoading,
-    isLoadingAlertasStock: alertasStock.isLoading,
-    isLoadingProductosTop: productosTop.isLoading,
-    isLoadingVentasPorPago: ventasPorPago.isLoading,
-    isLoadingFlujoCaja: flujoCaja.isLoading,
-    isLoadingVentasPorVendedor: ventasPorVendedor.isLoading,
-    
-    // Errors
-    isError,
-    error,
-    errorVentasResumen: ventasResumen.error,
-    errorIngresosGastos: ingresosGastos.error,
-    errorAlertasStock: alertasStock.error,
-    errorProductosTop: productosTop.error,
-    errorVentasPorPago: ventasPorPago.error,
-    errorFlujoCaja: flujoCaja.error,
-    errorVentasPorVendedor: ventasPorVendedor.error,
-    
-    // Refetch
+    isError: errors.length > 0,
+    error: errors.length > 0 ? errors[0] : null,
+    dataUpdatedAt,
     refetch,
-    refetchVentasResumen: ventasResumen.refetch,
-    refetchIngresosGastos: ingresosGastos.refetch,
-    refetchAlertasStock: alertasStock.refetch,
-    refetchProductosTop: productosTop.refetch,
-    refetchVentasPorPago: ventasPorPago.refetch,
-    refetchFlujoCaja: flujoCaja.refetch,
-    refetchVentasPorVendedor: ventasPorVendedor.refetch,
-    
-    // Access control
     canViewAdminData: canAccessAdminData(),
     userRole: getUserRole(),
-    allFailed,
   };
 }

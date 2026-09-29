@@ -96,6 +96,19 @@ export interface VentasPorVendedorResponse {
   ventas: VentasPorVendedor[];
 }
 
+/**
+ * GET /api/v1/ventas (page=1, pageSize=N)
+ * Latest sales shown on the Inicio page (all roles)
+ */
+export interface UltimaVenta {
+  id: number;
+  fecha: string;
+  totalVenta: number;
+  estado: 'Activa' | 'Anulada';
+  clienteNombre: string;
+  usuarioNombre: string;
+}
+
 // ============================================
 // Combined Dashboard Data Type
 // ============================================

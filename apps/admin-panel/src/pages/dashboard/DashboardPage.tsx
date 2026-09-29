@@ -1,8 +1,6 @@
 /**
- * Dashboard Page - Main dashboard with KPIs, charts, and role-based access
+ * Dashboard Page - Inicio: quick actions, today's metrics, stock alerts and latest sales
  * RoKey MANAGEMENT - Multi-tenant SaaS ERP/POS for locksmiths
- * 
- * Phase 5: States + Integration
  */
 
 import { useEffect, useState } from 'react';
@@ -11,35 +9,43 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import {
   Clock,
-  RefreshCw,
-  WifiOff,
-  ShoppingCart,
-  Package,
-  Truck,
   FileText,
+  Package,
+  RefreshCw,
+  ShoppingCart,
+  Truck,
+  WifiOff,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { authStore } from '@/stores/authStore';
 import { useDashboardData } from '@/hooks/useDashboardData';
 import {
-  VentasKPI,
-  IngresosGastosKPI,
-  AlertasStockKPI,
-  IngresosGastosChart,
-  VentasPorPagoChart,
-  ProductosTopChart,
+  AlertasStockPanel,
   DashboardSkeleton,
+  ResumenHoy,
+  UltimasVentas,
 } from '@/components/dashboard';
 
-const quickActionsBase = [
+type QuickAction = {
+  key: 'venta' | 'producto' | 'compra' | 'presupuesto';
+  title: string;
+  titleEmpleado?: string;
+  href: string;
+  icon: typeof ShoppingCart;
+  description: string;
+  descriptionEmpleado?: string;
+  roles: readonly string[];
+};
+
+const quickActionsBase: readonly QuickAction[] = [
   {
     key: 'venta',
     title: 'Nueva Venta',
     href: '/ventas/nueva',
     icon: ShoppingCart,
     description: 'Registrar una venta',
-    roles: ['Dueño', 'Gerente', 'Empleado'] as const,
+    roles: ['Dueño', 'Gerente', 'Empleado'],
   },
   {
     key: 'producto',
@@ -49,7 +55,7 @@ const quickActionsBase = [
     icon: Package,
     description: 'Crear nuevo producto',
     descriptionEmpleado: 'Ver productos',
-    roles: ['Dueño', 'Gerente', 'Empleado'] as const,
+    roles: ['Dueño', 'Gerente', 'Empleado'],
   },
   {
     key: 'compra',
@@ -57,7 +63,7 @@ const quickActionsBase = [
     href: '/compras',
     icon: Truck,
     description: 'Cargar compra a proveedor',
-    roles: ['Dueño', 'Gerente'] as const,
+    roles: ['Dueño', 'Gerente'],
   },
   {
     key: 'presupuesto',
@@ -65,39 +71,33 @@ const quickActionsBase = [
     href: '/presupuestos',
     icon: FileText,
     description: 'Generar presupuesto',
-    roles: ['Dueño', 'Gerente', 'Empleado'] as const,
+    roles: ['Dueño', 'Gerente', 'Empleado'],
   },
-] as const;
+];
 
 export function DashboardPage() {
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [secondsAgo, setSecondsAgo] = useState(0);
   const user = authStore((s) => s.user);
   const rol = user?.rol ?? 'Empleado';
   const canManageProductos = rol === 'Dueño';
-  const filteredActions = quickActionsBase.filter((a) => (a.roles as readonly string[]).includes(rol));
+  const filteredActions = quickActionsBase.filter((a) => a.roles.includes(rol));
 
-  const { isLoading, isFetching, error, refetch, canViewAdminData } = useDashboardData();
+  const { isLoading, isFetching, error, refetch, canViewAdminData, dataUpdatedAt } =
+    useDashboardData();
 
-  // Track last update time
+  const lastUpdated = dataUpdatedAt > 0 ? new Date(dataUpdatedAt) : null;
+
+  // Auto-refresh indicator: React Query already tells us when data landed,
+  // so the timestamp is derived instead of stored (no setState inside an effect).
   useEffect(() => {
-    if (!isLoading && !isFetching && !error) {
-      setLastUpdated(new Date());
-    }
-  }, [isLoading, isFetching, error]);
+    if (!dataUpdatedAt) return;
 
-  // Auto-refresh indicator - update every second
-  useEffect(() => {
-    if (!lastUpdated) return;
-
-    const interval = setInterval(() => {
-      const now = new Date();
-      const seconds = Math.floor((now.getTime() - lastUpdated.getTime()) / 1000);
-      setSecondsAgo(seconds);
-    }, 1000);
+    const update = () => setSecondsAgo(Math.floor((Date.now() - dataUpdatedAt) / 1000));
+    update();
+    const interval = setInterval(update, 1000);
 
     return () => clearInterval(interval);
-  }, [lastUpdated]);
+  }, [dataUpdatedAt]);
 
   // Format relative time in Spanish
   const formatSecondsAgo = (seconds: number): string => {
@@ -112,40 +112,15 @@ export function DashboardPage() {
     return hours === 1 ? '1 hora' : `${hours} horas`;
   };
 
-  // Error state - show when there's an error
-  if (error) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6 p-8">
-        <WifiOff className="h-16 w-16 text-muted-foreground" />
-        <div className="text-center space-y-2">
-          <h2 className="text-xl font-semibold text-foreground">
-            No se pudo conectar con el servidor
-          </h2>
-          <p className="text-muted-foreground max-w-md">
-            Verifica que el backend esté corriendo en http://localhost:5147
-          </p>
-        </div>
-        <Button 
-          onClick={() => refetch()}
-          size="lg"
-          className="gap-2"
-        >
-          <RefreshCw className={`h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
-          Reintentar
-        </Button>
-      </div>
-    );
-  }
-
-  // Loading state
-  if (isLoading || isFetching) {
+  // First load only: background refetches must NOT blank the page
+  if (isLoading) {
     return <DashboardSkeleton />;
   }
 
   return (
     <div className="space-y-6">
       {/* Page Header - Inicio */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Inicio</h1>
           <p className="text-muted-foreground">
@@ -161,36 +136,48 @@ export function DashboardPage() {
               <span>Actualizado hace {formatSecondsAgo(secondsAgo)}</span>
             </div>
           )}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              refetch();
-              setLastUpdated(new Date());
-            }}
-          >
+          <Button variant="outline" size="sm" onClick={() => refetch()}>
             <RefreshCw className={`h-4 w-4 mr-1.5 ${isFetching ? 'animate-spin' : ''}`} />
             Actualizar
           </Button>
         </div>
       </div>
 
+      {/* Connection warning - the page stays usable when a single query fails */}
+      {error && (
+        <div className="flex flex-col gap-3 rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-2 text-amber-700 dark:text-amber-400">
+            <WifiOff className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+            <p>
+              Algunos datos no se pudieron cargar. Verificá que el backend esté corriendo en
+              http://localhost:5147
+            </p>
+          </div>
+          <Button variant="outline" size="sm" onClick={() => refetch()} className="shrink-0">
+            <RefreshCw className={`h-4 w-4 mr-1.5 ${isFetching ? 'animate-spin' : ''}`} />
+            Reintentar
+          </Button>
+        </div>
+      )}
+
       {/* Quick Actions - role filtered */}
-      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {filteredActions.map((action) => {
           const isProducto = action.key === 'producto';
-          const title = isProducto && !canManageProductos ? (action as any).titleEmpleado : action.title;
-          const description = isProducto && !canManageProductos ? (action as any).descriptionEmpleado : action.description;
+          const useEmpleadoCopy = isProducto && !canManageProductos;
+          const title = (useEmpleadoCopy && action.titleEmpleado) || action.title;
+          const description =
+            (useEmpleadoCopy && action.descriptionEmpleado) || action.description;
           const Icon = action.icon;
           return (
             <Link key={action.href} to={action.href} className="group">
-              <Card className="h-full border bg-white p-0 py-0 transition-all hover:border-[#6A4B9F] hover:shadow-md group-hover:border-[#6A4B9F]">
-                <CardContent className="p-5 flex items-center gap-4">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#6A4B9F] text-white">
+              <Card className="h-full gap-0 py-0 transition-all hover:border-primary hover:shadow-md group-hover:border-primary">
+                <CardContent className="flex items-center gap-4 p-5">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
                     <Icon className="h-5 w-5" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold text-foreground group-hover:text-[#6A4B9F] transition-colors">
+                    <p className="text-sm font-semibold text-foreground transition-colors group-hover:text-primary">
                       {title}
                     </p>
                     <p className="text-xs text-muted-foreground">{description}</p>
@@ -202,34 +189,20 @@ export function DashboardPage() {
         })}
       </div>
 
-      {/* KPI Cards Row - Responsive: 1 col mobile, 2 cols tablet, 3 cols desktop */}
-      <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-        {/* Ventas del día - All roles */}
-        <VentasKPI />
-        
-        {/* Ingresos vs Gastos - Admin/Manager only */}
-        {canViewAdminData && <IngresosGastosKPI />}
-        
-        {/* Alertas de Stock - All roles */}
-        <AlertasStockKPI />
-      </div>
+      {/* Today's metrics - Dueño/Gerente only (/informes is restricted) */}
+      {canViewAdminData && <ResumenHoy />}
 
-      {/* Charts Row - Responsive: full-width mobile, 2 cols desktop */}
-      <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
-        {/* Ingresos vs Gastos Chart - Admin/Manager only */}
-        {canViewAdminData && <IngresosGastosChart />}
-        
-        {/* Ventas por Método de Pago Chart - Admin/Manager only */}
-        {canViewAdminData && <VentasPorPagoChart />}
-      </div>
+      {/* Stock alerts - Dueño/Gerente only (backend restriction) */}
+      {canViewAdminData && <AlertasStockPanel />}
 
-      {/* Top Products Chart - Full Width */}
-      <ProductosTopChart />
+      {/* Latest sales - every role can read /api/v1/ventas */}
+      <UltimasVentas />
 
       {/* Footer with timestamp */}
-      <div className="text-xs text-muted-foreground text-center pt-4 border-t">
+      <div className="border-t pt-4 text-center text-xs text-muted-foreground">
         <p>
-          Última actualización: {lastUpdated 
+          Última actualización:{' '}
+          {lastUpdated
             ? format(lastUpdated, "d 'de' MMMM 'de' yyyy, HH:mm", { locale: es })
             : '-'}
         </p>
