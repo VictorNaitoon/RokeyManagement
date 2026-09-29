@@ -12,8 +12,6 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 import { useVentaDetalles, useVentaPagos } from '@/hooks';
 import { useNegocio } from '@/hooks/useNegocio';
 import type { Venta } from '@/types';
