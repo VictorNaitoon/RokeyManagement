@@ -1,5 +1,6 @@
 using System.Text;
 using API.Jobs;
+using Microsoft.AspNetCore.HttpOverrides;
 using API.Data;
 using API.Services;
 using API.Services.Auth;
@@ -208,7 +209,17 @@ builder.Services.AddFluentValidation(fv => fv.RegisterValidatorsFromAssemblyCont
 
 var app = builder.Build();
 
+// Configure ForwardedHeaders for reverse proxy (Render handles TLS)
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto,
+    // Clear known proxies/networks to trust the reverse proxy (Render)
+    KnownNetworks = { },
+    KnownProxies = { }
+});
+
 // Configure the HTTP request pipeline.
+// ...
 
 // 1. Manejo global de excepciones (IExceptionHandler + ProblemDetails, ValidationException -> 400 con traceId)
 app.UseExceptionHandler();
