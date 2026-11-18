@@ -5,11 +5,14 @@
  * Phase 3: UI Components - Cloudinary integration for product images
  * Fix: adblock can block upload-widget/all.js or its inner rollbar.min.js.
  * We add script.onerror + direct fetch fallback to api.cloudinary.com.
+ * Mobile: the widget's `camera` source hangs on mobile browsers, so mobile
+ * devices open the native camera input (capture="environment") instead.
  */
 
 import * as React from 'react';
-import { Upload, X, Loader2, Image as ImageIcon } from 'lucide-react';
+import { Camera, Upload, X, Loader2, Image as ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { isMobileUserAgent } from '@/lib/mobile-device';
 import { cn } from '@/lib/utils';
 
 export interface ImageUploadProps {
@@ -127,11 +130,16 @@ export function ImageUpload({
   const [error, setError] = React.useState<string | null>(null);
   const { isLoaded, isLoading, scriptError } = useCloudinaryScript();
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const cameraInputRef = React.useRef<HTMLInputElement>(null);
+  const isMobile = React.useMemo(
+    () => isMobileUserAgent(typeof navigator === 'undefined' ? '' : navigator.userAgent),
+    []
+  );
 
-  // Show script blocked error in UI
+  // Show script blocked error in UI (mobile usa la cámara/galería nativa, no depende del widget)
   React.useEffect(() => {
-    if (scriptError) setError(scriptError);
-  }, [scriptError]);
+    if (scriptError && !isMobile) setError(scriptError);
+  }, [scriptError, isMobile]);
 
   const validateFile = React.useCallback((file: File): string | null => {
     if (file.size > MAX_FILE_SIZE) {
@@ -202,6 +210,13 @@ export function ImageUpload({
   const triggerFilePicker = React.useCallback(() => {
     if (disabled || isUploading) return;
     fileInputRef.current?.click();
+  }, [disabled, isUploading]);
+
+  // En móvil se abre la cámara nativa: la fuente `camera` del widget de
+  // Cloudinary usa getUserMedia dentro de un iframe y se cuelga en el celular.
+  const openCamera = React.useCallback(() => {
+    if (disabled || isUploading) return;
+    cameraInputRef.current?.click();
   }, [disabled, isUploading]);
 
   const handleFileChange = React.useCallback(
@@ -331,14 +346,27 @@ export function ImageUpload({
         disabled={disabled || isUploading}
       />
 
+      {/* Cámara nativa del dispositivo — solo en móvil, donde el widget se cuelga */}
+      {isMobile && (
+        <input
+          ref={cameraInputRef}
+          type="file"
+          accept={ALLOWED_MIME.join(',') + ',.jpg,.jpeg,.png,.webp,.gif'}
+          capture="environment"
+          className="hidden"
+          onChange={handleFileChange}
+          disabled={disabled || isUploading}
+        />
+      )}
+
       <Button
         type="button"
         variant="outline"
-        onClick={openWidget}
-        disabled={disabled || isUploading || isLoading}
+        onClick={isMobile ? openCamera : openWidget}
+        disabled={disabled || isUploading || (isLoading && !isMobile)}
         className={cn('w-full h-32 flex flex-col items-center justify-center gap-2', error && 'border-destructive')}
       >
-        {isLoading ? (
+        {isLoading && !isMobile ? (
           <>
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             <span className="text-sm text-muted-foreground">Cargando...</span>
@@ -350,24 +378,46 @@ export function ImageUpload({
           </>
         ) : (
           <>
-            <Upload className="h-8 w-8 text-muted-foreground" />
-            <span className="text-sm text-muted-foreground">{placeholder}</span>
+            {isMobile ? (
+              <Camera className="h-8 w-8 text-muted-foreground" />
+            ) : (
+              <Upload className="h-8 w-8 text-muted-foreground" />
+            )}
+            <span className="text-sm text-muted-foreground">
+              {isMobile ? 'Tomar foto' : placeholder}
+            </span>
           </>
         )}
       </Button>
 
-      {/* Subida alternativa — solo si el widget está bloqueado (no molesta en desarrollo normal) */}
-      {showFallbackHint && !isUploading && (
-        <Button
-          type="button"
-          variant="secondary"
-          onClick={triggerFilePicker}
-          disabled={disabled || isUploading}
-          className="w-full"
-        >
-          <ImageIcon className="h-4 w-4 mr-2" />
-          Subida alternativa (sin bloqueador)
-        </Button>
+      {/* En móvil la galería se abre con el input nativo (sin capture) */}
+      {isMobile ? (
+        !isUploading && (
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={triggerFilePicker}
+            disabled={disabled || isUploading}
+            className="w-full"
+          >
+            <ImageIcon className="h-4 w-4 mr-2" />
+            Elegir de la galería
+          </Button>
+        )
+      ) : (
+        /* Subida alternativa — solo si el widget está bloqueado (no molesta en desarrollo normal) */
+        showFallbackHint && !isUploading && (
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={triggerFilePicker}
+            disabled={disabled || isUploading}
+            className="w-full"
+          >
+            <ImageIcon className="h-4 w-4 mr-2" />
+            Subida alternativa (sin bloqueador)
+          </Button>
+        )
       )}
 
       {error && <p className="text-xs text-destructive">{error}</p>}
