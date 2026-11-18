@@ -15,7 +15,7 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'jsdom',
-    include: ['src/tests/useInformes.test.ts'],
+    include: ['src/tests/useInformes.test.ts', 'src/tests/imageUploadCamera.test.tsx'],
   },
   server: {
     host: '0.0.0.0',
