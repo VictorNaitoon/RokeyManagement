@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { CircleHelpIcon } from 'lucide-react';
 import { useInformes } from '@/hooks/useInformes';
 import { FilterBar } from '@/components/informes/FilterBar';
 import { ReportSection } from '@/components/informes/ReportSection';
@@ -67,10 +68,24 @@ export function InformesPage() {
             </Card>
             <Card>
               <CardHeader>
-                <CardTitle className="text-sm text-muted-foreground">Ticket promedio</CardTitle>
+                <CardTitle className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                  <span>Compras totales</span>
+                  <span
+                    title="Total invertido en compras de reposición de stock realizadas en el periodo, sin incluir compras anuladas."
+                    aria-label="Total invertido en compras de reposición de stock realizadas en el periodo, sin incluir compras anuladas."
+                    className="cursor-help text-muted-foreground"
+                  >
+                    <CircleHelpIcon className="h-4 w-4" />
+                  </span>
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{currency.format(ventasResumen.data.ticketPromedio)}</div>
+                <div className="text-2xl font-bold">
+                  {ingresosGastos.isLoading
+                    ? '…'
+                    : currency.format(ingresosGastos.data?.comprasTotales ?? 0)}
+                </div>
+                <p className="text-xs text-muted-foreground">Inversión en reposición del periodo</p>
               </CardContent>
             </Card>
             <Card>
