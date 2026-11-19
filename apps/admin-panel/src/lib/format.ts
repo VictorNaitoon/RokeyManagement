@@ -38,3 +38,22 @@ export function formatHora(iso: string): string {
     hour12: false,
   }).format(date);
 }
+
+/**
+ * Format an ISO date or DateTime as dd/MM/yyyy using only its date part.
+ * The backend serializes DateTime with a time component (and sometimes a Z
+ * suffix), so parsing the whole value as local time could shift the day in
+ * UTC-3 or throw "Invalid time value". A midday local date avoids both.
+ */
+export function formatFecha(iso: string | null | undefined): string {
+  if (!iso) return '—';
+  const datePart = iso.slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(datePart)) return '—';
+  const date = new Date(`${datePart}T12:00:00`);
+  if (Number.isNaN(date.getTime())) return '—';
+  return new Intl.DateTimeFormat('es-AR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  }).format(date);
+}

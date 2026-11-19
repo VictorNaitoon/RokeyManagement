@@ -6,6 +6,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { buildParams } from '@/hooks/useInformes';
+import { formatFecha } from '@/lib/format';
 import type { InformesFilter } from '@/types/informes.types';
 
 describe('useInformes buildParams (R07 - Fixed Param Mapping)', () => {
@@ -83,5 +84,24 @@ describe('useInformes buildParams (R07 - Fixed Param Mapping)', () => {
       expect((p as any).fecha).toBeUndefined();
       expect((p as any).limite).toBeUndefined();
     }
+  });
+});
+
+describe('formatFecha (reportes de compras)', () => {
+  it('formatea un DateTime con hora sin lanzar Invalid time value', () => {
+    expect(formatFecha('2026-01-10T10:00:00')).toBe('10/01/2026');
+  });
+
+  it('formatea un DateTime con sufijo Z sin correr el día en UTC-3', () => {
+    expect(formatFecha('2026-01-10T23:30:00Z')).toBe('10/01/2026');
+  });
+
+  it('acepta una fecha pura yyyy-MM-dd', () => {
+    expect(formatFecha('2026-01-10')).toBe('10/01/2026');
+  });
+
+  it('devuelve un placeholder para valores vacíos o inválidos en vez de romper la página', () => {
+    expect(formatFecha('')).toBe('—');
+    expect(formatFecha('no-es-una-fecha')).toBe('—');
   });
 });

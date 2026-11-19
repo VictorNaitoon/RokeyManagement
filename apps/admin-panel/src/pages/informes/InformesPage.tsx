@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableCaption } from '@/components/ui/table';
 import type { InformesFilter } from '@/types/informes.types';
 import { INFORME_TIPO } from '@/types/informes.types';
+import { formatFecha } from '@/lib/format';
 
 const currency = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' });
 
@@ -335,7 +336,7 @@ export function InformesPage() {
                     <TableCell className="text-right">{currency.format(l.costoUnitario)}</TableCell>
                     <TableCell className="text-right">{currency.format(l.subtotal)}</TableCell>
                     <TableCell>{l.proveedor}</TableCell>
-                    <TableCell>{format(new Date(`${l.fecha}T12:00:00`), 'dd/MM/yyyy', { locale: es })}</TableCell>
+                    <TableCell>{formatFecha(l.fecha)}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
