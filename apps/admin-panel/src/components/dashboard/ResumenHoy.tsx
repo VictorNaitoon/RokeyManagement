@@ -59,7 +59,7 @@ export function ResumenHoy() {
   const ventasData = ventas.data;
   const ingresosData = ingresos.data;
 
-  const ganancia = ingresosData?.gananciaBruta ?? 0;
+  const ganancia = ingresosData?.ganancia ?? 0;
   const gananciaTone: 'positive' | 'negative' | 'default' =
     ganancia > 0 ? 'positive' : ganancia < 0 ? 'negative' : 'default';
 
@@ -110,13 +110,13 @@ export function ResumenHoy() {
             <MetricCell
               label="Ganancia del día"
               value={ingresosData ? formatCurrency(ganancia) : '-'}
-              sub={ingresosData ? `${Math.round(ingresosData.margen)}% de margen` : undefined}
+              sub={ingresosData ? `${ingresosData.margenPorcentaje}% de margen` : undefined}
               tone={gananciaTone}
               loading={loading}
             />
             <MetricCell
               label="Compras del día"
-              value={ingresosData ? formatCurrency(ingresosData.totalCompras) : '-'}
+              value={ingresosData ? formatCurrency(ingresosData.comprasTotales) : '-'}
               sub="cargadas a proveedores"
               loading={loading}
             />

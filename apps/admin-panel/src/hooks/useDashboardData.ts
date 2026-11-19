@@ -94,7 +94,7 @@ export function useIngresosGastos(preset: string = 'mes') {
       const response = await api.get<IngresosGastos>('/api/v1/informes/ingresos-gastos', {
         params: { preset },
       });
-      return response.data ?? { totalVentas: 0, totalCompras: 0, gananciaBruta: 0, margen: 0 };
+      return response.data ?? { ventasTotales: 0, comprasTotales: 0, ganancia: 0, flujoNeto: 0, margenPorcentaje: 0 };
     },
     enabled: isAdmin,
     ...DASHBOARD_QUERY_CONFIG,

@@ -66,8 +66,13 @@ export interface FlujoCajaResponse {
 export interface IngresosGastosResponse {
   ventasTotales: number;
   comprasTotales: number;
-  gananciaBruta: number;
+  /** Margen de lo vendido: (precio de venta - costo) * cantidad. */
+  ganancia: number;
+  /** Ventas - compras: inversión en stock, no una pérdida. */
+  flujoNeto: number;
   margenPorcentaje: number;
+  /** Alias legacy de flujoNeto; no usar en UI nueva. */
+  gananciaBruta?: number;
 }
 
 export interface StockAlertResponse {

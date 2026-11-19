@@ -107,10 +107,17 @@ export function InformesPage() {
                 <span className="font-medium">{currency.format(ingresosGastos.data.comprasTotales)}</span>
               </div>
               <div className="flex justify-between border-t pt-2">
-                <span>Ganancia bruta</span>
-                <span className="font-bold">{currency.format(ingresosGastos.data.gananciaBruta)}</span>
+                <span>Ganancia (margen de lo vendido)</span>
+                <span className="font-bold text-emerald-600">{currency.format(ingresosGastos.data.ganancia)}</span>
               </div>
               <p className="text-xs text-muted-foreground">Margen: {ingresosGastos.data.margenPorcentaje}%</p>
+              <div className="flex justify-between border-t pt-2">
+                <span className="text-muted-foreground">Flujo neto (ventas − compras)</span>
+                <span className="font-medium">{currency.format(ingresosGastos.data.flujoNeto)}</span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Incluye la inversión en stock; ser negativo no implica una pérdida.
+              </p>
             </div>
           )}
         </ReportSection>

@@ -265,18 +265,24 @@ public class PdfFormatter
 
     private static void BuildIngresosGastosContent(ColumnDescriptor col, IngresosGastosResponse dto)
     {
-        // Summary table (GananciaBruta / Margen untouched)
+        // Summary: ganancia = margen de lo vendido; flujo neto = ventas - compras.
         col.Item().Table(table =>
         {
-            table.ColumnsDefinition(c => { c.RelativeColumn(); c.RelativeColumn(); c.RelativeColumn(); c.RelativeColumn(); });
+            table.ColumnsDefinition(c =>
+            {
+                c.RelativeColumn(); c.RelativeColumn(); c.RelativeColumn();
+                c.RelativeColumn(); c.RelativeColumn();
+            });
             table.Header(h =>
             {
                 HeaderCell(h.Cell(), "Ventas Totales"); HeaderCell(h.Cell(), "Compras Totales");
-                HeaderCell(h.Cell(), "Ganancia Bruta"); HeaderCell(h.Cell(), "Margen %");
+                HeaderCell(h.Cell(), "Flujo Neto"); HeaderCell(h.Cell(), "Ganancia");
+                HeaderCell(h.Cell(), "Margen %");
             });
             BodyCell(table.Cell(), FormatCurrency(dto.VentasTotales));
             BodyCell(table.Cell(), FormatCurrency(dto.ComprasTotales));
-            BodyCell(table.Cell(), FormatCurrency(dto.GananciaBruta));
+            BodyCell(table.Cell(), FormatCurrency(dto.FlujoNeto));
+            BodyCell(table.Cell(), FormatCurrency(dto.Ganancia));
             BodyCell(table.Cell(), $"{dto.MargenPorcentaje:F2}%");
         });
 

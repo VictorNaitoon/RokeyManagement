@@ -168,7 +168,7 @@ public class DocxFormatter
 
     private static void AppendIngresosGastosContent(Body body, IngresosGastosResponse dto)
     {
-        // Summary (GananciaBruta / Margen untouched)
+        // Summary (FlujoNeto / Ganancia / Margen)
         body.Append(BuildIngresosGastosSummary(dto));
 
         // Detalle Ventas
@@ -319,11 +319,12 @@ public class DocxFormatter
 
     private static Table BuildIngresosGastosSummary(IngresosGastosResponse dto)
     {
-        var t = CreateTable("Ventas Totales", "Compras Totales", "Ganancia Bruta", "Margen %");
+        var t = CreateTable("Ventas Totales", "Compras Totales", "Flujo Neto", "Ganancia", "Margen %");
         var row = new TableRow();
         row.Append(Cell(FormatCurrency(dto.VentasTotales)));
         row.Append(Cell(FormatCurrency(dto.ComprasTotales)));
-        row.Append(Cell(FormatCurrency(dto.GananciaBruta)));
+        row.Append(Cell(FormatCurrency(dto.FlujoNeto)));
+        row.Append(Cell(FormatCurrency(dto.Ganancia)));
         row.Append(Cell($"{dto.MargenPorcentaje:F2}%"));
         t.Append(row);
         return t;

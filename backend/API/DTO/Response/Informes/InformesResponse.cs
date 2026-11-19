@@ -67,7 +67,9 @@ namespace API.DTO.Response.Informes
         decimal GananciaBruta,
         decimal MargenPorcentaje,
         List<DetalleVentaInforme>? DetalleVentas = null,
-        List<DetalleCompraInforme>? DetalleCompras = null
+        List<DetalleCompraInforme>? DetalleCompras = null,
+        decimal Ganancia = 0,
+        decimal FlujoNeto = 0
     );
 
     /// <summary>

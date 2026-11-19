@@ -80,9 +80,9 @@ public class CsvFormatter
 
     private static void WriteIngresosGastos(IngresosGastosResponse dto, StreamWriter w)
     {
-        // Summary (GananciaBruta / Margen preserved)
-        WriteRow(w, ["VentasTotales", "ComprasTotales", "GananciaBruta", "MargenPorcentaje"]);
-        WriteRow(w, [FormatDecimal(dto.VentasTotales), FormatDecimal(dto.ComprasTotales), FormatDecimal(dto.GananciaBruta), dto.MargenPorcentaje.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)]);
+        // Ganancia = margen de lo vendido; FlujoNeto = ventas - compras (inversión en stock).
+        WriteRow(w, ["VentasTotales", "ComprasTotales", "FlujoNeto", "Ganancia", "MargenPorcentaje"]);
+        WriteRow(w, [FormatDecimal(dto.VentasTotales), FormatDecimal(dto.ComprasTotales), FormatDecimal(dto.FlujoNeto), FormatDecimal(dto.Ganancia), dto.MargenPorcentaje.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)]);
         w.WriteLine();
 
         // Detail Ventas
