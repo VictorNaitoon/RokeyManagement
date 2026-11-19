@@ -50,6 +50,9 @@ public class CsvFormatter
             case "ventas-por-vendedor":
                 WriteVentasPorVendedor((VentasPorVendedorResponse)dto, writer);
                 break;
+            case "compras-reposicion":
+                WriteComprasReposicion((ComprasReposicionResponse)dto, writer);
+                break;
             default:
                 throw new ArgumentException($"Tipo desconocido: {tipo}", nameof(tipo));
         }
@@ -57,8 +60,8 @@ public class CsvFormatter
 
     private static void WriteVentasResumen(VentasResumenResponse dto, StreamWriter w)
     {
-        WriteRow(w, ["TotalVentas", "CantidadVentas", "TicketPromedio", "VentasAnuladas", "Periodo"]);
-        WriteRow(w, [FormatDecimal(dto.TotalVentas), dto.CantidadVentas.ToString(), FormatDecimal(dto.TicketPromedio), dto.VentasAnuladas.ToString(), dto.Periodo]);
+        WriteRow(w, ["TotalVentas", "CantidadVentas", "TicketPromedio", "VentasAnuladas", "Periodo", "Ganancia"]);
+        WriteRow(w, [FormatDecimal(dto.TotalVentas), dto.CantidadVentas.ToString(), FormatDecimal(dto.TicketPromedio), dto.VentasAnuladas.ToString(), dto.Periodo, FormatDecimal(dto.Ganancia)]);
     }
 
     private static void WriteProductosTop(ProductosTopResponse dto, StreamWriter w)
@@ -77,9 +80,9 @@ public class CsvFormatter
 
     private static void WriteIngresosGastos(IngresosGastosResponse dto, StreamWriter w)
     {
-        // Summary (GananciaBruta / Margen preserved)
-        WriteRow(w, ["VentasTotales", "ComprasTotales", "GananciaBruta", "MargenPorcentaje"]);
-        WriteRow(w, [FormatDecimal(dto.VentasTotales), FormatDecimal(dto.ComprasTotales), FormatDecimal(dto.GananciaBruta), dto.MargenPorcentaje.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)]);
+        // Ganancia = margen de lo vendido; FlujoNeto = ventas - compras (inversión en stock).
+        WriteRow(w, ["VentasTotales", "ComprasTotales", "FlujoNeto", "Ganancia", "MargenPorcentaje"]);
+        WriteRow(w, [FormatDecimal(dto.VentasTotales), FormatDecimal(dto.ComprasTotales), FormatDecimal(dto.FlujoNeto), FormatDecimal(dto.Ganancia), dto.MargenPorcentaje.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)]);
         w.WriteLine();
 
         // Detail Ventas
@@ -125,6 +128,20 @@ public class CsvFormatter
         var items = dto.Vendedores.Take(TakeCap);
         foreach (var v in items)
             WriteRow(w, [v.Nombre, v.CantidadVentas.ToString(), FormatDecimal(v.MontoTotal)]);
+    }
+
+    private static void WriteComprasReposicion(ComprasReposicionResponse dto, StreamWriter w)
+    {
+        WriteRow(w, ["TotalInvertido", "CantidadCompras", "ProductosDistintos"]);
+        WriteRow(w, [FormatDecimal(dto.TotalInvertido), dto.CantidadCompras.ToString(), dto.ProductosDistintos.ToString()]);
+        w.WriteLine();
+
+        WriteRow(w, ["Producto", "Cantidad", "CostoUnitario", "Subtotal", "Proveedor", "Fecha"]);
+        foreach (var l in dto.Lineas.Take(TakeCap))
+            WriteRow(w, [l.Producto, l.Cantidad.ToString(), FormatDecimal(l.CostoUnitario), FormatDecimal(l.Subtotal), l.Proveedor, l.Fecha.ToString("yyyy-MM-dd")]);
+
+        if (dto.Lineas.Count >= TakeCap)
+            WriteRow(w, ["Mostrando primeros 5000 registros."]);
     }
 
     private static void WriteRow(StreamWriter w, string[] fields)

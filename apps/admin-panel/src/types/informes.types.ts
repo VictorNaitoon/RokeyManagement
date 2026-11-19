@@ -6,6 +6,7 @@ export const INFORME_TIPO = {
   ALERTAS_STOCK: 'alertas-stock',
   VENTAS_POR_PAGO: 'ventas-por-pago',
   VENTAS_POR_VENDEDOR: 'ventas-por-vendedor',
+  COMPRAS_REPOSICION: 'compras-reposicion',
 } as const;
 
 export type TipoInforme = (typeof INFORME_TIPO)[keyof typeof INFORME_TIPO];
@@ -40,6 +41,7 @@ export interface VentasResumenResponse {
   ticketPromedio: number;
   ventasAnuladas: number;
   periodo: string;
+  ganancia: number;
 }
 
 export interface TopProductoResponse {
@@ -64,8 +66,13 @@ export interface FlujoCajaResponse {
 export interface IngresosGastosResponse {
   ventasTotales: number;
   comprasTotales: number;
-  gananciaBruta: number;
+  /** Margen de lo vendido: (precio de venta - costo) * cantidad. */
+  ganancia: number;
+  /** Ventas - compras: inversión en stock, no una pérdida. */
+  flujoNeto: number;
   margenPorcentaje: number;
+  /** Alias legacy de flujoNeto; no usar en UI nueva. */
+  gananciaBruta?: number;
 }
 
 export interface StockAlertResponse {
@@ -100,4 +107,20 @@ export interface VendedorResponse {
 
 export interface VentasPorVendedorResponse {
   vendedores: VendedorResponse[];
+}
+
+export interface CompraReposicionItem {
+  producto: string;
+  cantidad: number;
+  costoUnitario: number;
+  subtotal: number;
+  proveedor: string;
+  fecha: string;
+}
+
+export interface ComprasReposicionResponse {
+  totalInvertido: number;
+  cantidadCompras: number;
+  productosDistintos: number;
+  lineas: CompraReposicionItem[];
 }

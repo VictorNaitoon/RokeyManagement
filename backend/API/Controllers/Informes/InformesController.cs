@@ -64,6 +64,36 @@ namespace API.Controllers.Informes
         }
 
         /// <summary>
+        /// Obtiene las compras realizadas para reponer stock en el periodo
+        /// </summary>
+        [HttpGet("compras-reposicion")]
+        [ProducesResponseType(typeof(ComprasReposicionResponse), 200)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(401)]
+        [ProducesResponseType(403)]
+        public async Task<IActionResult> GetComprasReposicion(
+            [FromQuery] DateTime? fechaDesde = null,
+            [FromQuery] DateTime? fechaHasta = null,
+            [FromQuery] string? preset = null,
+            CancellationToken ct = default)
+        {
+            if (_currentUser.IsSuperAdmin)
+            {
+                return StatusCode(403, new { message = "El super administrador no puede acceder a informes de un negocio" });
+            }
+
+            if (!_currentUser.IsAdmin && !_currentUser.IsManager)
+            {
+                return StatusCode(403, new { message = "Solo los administradores y gerentes pueden acceder a informes" });
+            }
+
+            await _informesValidator.ValidateAndThrowAsync(new InformesQuery(preset, fechaDesde, fechaHasta, null), ct);
+
+            var result = await _informesService.GetComprasReposicionAsync(fechaDesde, fechaHasta, preset, ct);
+            return Ok(result);
+        }
+
+        /// <summary>
         /// Obtiene los productos más vendidos por ingresos/cantidad
         /// </summary>
         /// <param name="cantidad">Cantidad de productos a retornar (default: 10, max: 50)</param>

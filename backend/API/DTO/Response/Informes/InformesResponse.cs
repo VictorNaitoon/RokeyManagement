@@ -8,7 +8,8 @@ namespace API.DTO.Response.Informes
         int CantidadVentas,
         decimal TicketPromedio,
         int VentasAnuladas,
-        string Periodo
+        string Periodo,
+        decimal Ganancia = 0
     );
 
     /// <summary>
@@ -66,7 +67,31 @@ namespace API.DTO.Response.Informes
         decimal GananciaBruta,
         decimal MargenPorcentaje,
         List<DetalleVentaInforme>? DetalleVentas = null,
-        List<DetalleCompraInforme>? DetalleCompras = null
+        List<DetalleCompraInforme>? DetalleCompras = null,
+        decimal Ganancia = 0,
+        decimal FlujoNeto = 0
+    );
+
+    /// <summary>
+    /// Line item for purchases made to replenish stock (compras-reposicion)
+    /// </summary>
+    public record CompraReposicionItem(
+        string Producto,
+        int Cantidad,
+        decimal CostoUnitario,
+        decimal Subtotal,
+        string Proveedor,
+        DateTime Fecha
+    );
+
+    /// <summary>
+    /// Response DTO for the stock replenishment purchases report (compras-reposicion)
+    /// </summary>
+    public record ComprasReposicionResponse(
+        decimal TotalInvertido,
+        int CantidadCompras,
+        int ProductosDistintos,
+        List<CompraReposicionItem> Lineas
     );
 
     /// <summary>

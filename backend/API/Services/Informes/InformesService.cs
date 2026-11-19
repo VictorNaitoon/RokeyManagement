@@ -97,6 +97,24 @@ namespace API.Services.Informes
             return (desde, hasta);
         }
 
+        /// <summary>
+        /// Margen por producto vendido: (precio historico de venta - costo actual) * cantidad.
+        /// Formula compartida por el resumen de ventas, ingresos-gastos y la caja.
+        /// </summary>
+        private async Task<decimal> CalcularGananciaMargenAsync(
+            IReadOnlyList<int> ventasActivasIds, int negocioId, CancellationToken ct)
+        {
+            if (ventasActivasIds.Count == 0) return 0;
+
+            return await (
+                from d in _context.DetallesVenta.AsNoTracking()
+                join p in _context.Productos on d.IdProducto equals p.Id
+                where ventasActivasIds.Contains(d.IdVenta)
+                    && p.Id_negocio == negocioId
+                select (d.PrecioUnitario - p.PrecioCompra) * d.Cantidad
+            ).SumAsync(ct);
+        }
+
         public async Task<VentasResumenResponse> GetVentasResumenAsync(DateTime? fechaDesde, DateTime? fechaHasta, string? preset, CancellationToken ct)
         {
             var (desde, hasta) = ResolveDateRange(fechaDesde, fechaHasta, preset);
@@ -114,12 +132,17 @@ namespace API.Services.Informes
             var cantidadVentas = ventasActivas.Count;
             var ticketPromedio = cantidadVentas > 0 ? totalVentas / cantidadVentas : 0;
 
+            // Margen real por producto, igual que CajaService.ObtenerGananciaAsync.
+            var ganancia = await CalcularGananciaMargenAsync(
+                ventasActivas.Select(v => v.Id).ToList(), negocioId, ct);
+
             return new VentasResumenResponse(
                 TotalVentas: totalVentas,
                 CantidadVentas: cantidadVentas,
                 TicketPromedio: ticketPromedio,
                 VentasAnuladas: ventasAnuladas.Count,
-                Periodo: $"{desde:yyyy-MM-dd} al {hasta:yyyy-MM-dd}"
+                Periodo: $"{desde:yyyy-MM-dd} al {hasta:yyyy-MM-dd}",
+                Ganancia: ganancia
             );
         }
 
@@ -200,6 +223,15 @@ namespace API.Services.Informes
             var (desde, hasta) = ResolveDateRange(fechaDesde, fechaHasta, preset);
             var negocioId = _currentUser.NegocioId;
 
+            var ventasActivasIds = await _context.Ventas
+                .AsNoTracking()
+                .Where(v => v.Id_negocio == negocioId
+                            && v.FechaVenta >= desde
+                            && v.FechaVenta <= hasta
+                            && !v.Anulada)
+                .Select(v => v.Id)
+                .ToListAsync(ct);
+
             // Get total ventas (excluding cancelled)
             var ventasTotales = await _context.Ventas
                 .Where(v => v.Id_negocio == negocioId
@@ -216,9 +248,12 @@ namespace API.Services.Informes
                             && !c.Anulada)
                 .SumAsync(c => c.TotalGasto, ct);
 
-            var gananciaBruta = ventasTotales - comprasTotales;
+            // Ganancia = margen de lo vendido (no se hunde con compras de reposición).
+            // FlujoNeto = ventas - compras: inversión en stock, no una pérdida.
+            var ganancia = await CalcularGananciaMargenAsync(ventasActivasIds, negocioId, ct);
+            var flujoNeto = ventasTotales - comprasTotales;
             var margenPorcentaje = ventasTotales > 0
-                ? Math.Round((gananciaBruta / ventasTotales) * 100, 2)
+                ? Math.Round((ganancia / ventasTotales) * 100, 2)
                 : 0;
 
             // Enriched detail: itemised ventas and compras for export/reporting
@@ -276,10 +311,57 @@ namespace API.Services.Informes
             return new IngresosGastosResponse(
                 VentasTotales: ventasTotales,
                 ComprasTotales: comprasTotales,
-                GananciaBruta: gananciaBruta,
+                GananciaBruta: flujoNeto,
                 MargenPorcentaje: margenPorcentaje,
                 DetalleVentas: detalleVentas,
-                DetalleCompras: detalleCompras
+                DetalleCompras: detalleCompras,
+                Ganancia: ganancia,
+                FlujoNeto: flujoNeto
+            );
+        }
+
+        public async Task<ComprasReposicionResponse> GetComprasReposicionAsync(DateTime? fechaDesde, DateTime? fechaHasta, string? preset, CancellationToken ct)
+        {
+            var (desde, hasta) = ResolveDateRange(fechaDesde, fechaHasta, preset);
+            var negocioId = _currentUser.NegocioId;
+
+            // Compras activas del negocio en el periodo, con su detalle y proveedor.
+            var raw = await (
+                from d in _context.DetallesCompra.AsNoTracking()
+                join c in _context.Compras on d.IdCompra equals c.Id
+                join p in _context.Productos on d.IdProducto equals p.Id
+                join pr in _context.Proveedores on c.IdProveedor equals pr.Id into proveedores
+                from pr in proveedores.DefaultIfEmpty()
+                where c.Id_negocio == negocioId
+                    && c.FechaCompra >= desde && c.FechaCompra <= hasta
+                    && !c.Anulada
+                select new
+                {
+                    d.IdCompra,
+                    d.IdProducto,
+                    Producto = p.Nombre ?? "Producto eliminado",
+                    d.Cantidad,
+                    d.PrecioUnitario,
+                    Subtotal = d.Cantidad * d.PrecioUnitario,
+                    Proveedor = pr != null ? pr.Nombre : "Sin proveedor",
+                    c.FechaCompra
+                }
+            ).ToListAsync(ct);
+
+            // Los totales se calculan sobre todas las filas; solo la tabla se limita para export.
+            const int detailCap = 5000;
+            var lineas = raw
+                .OrderByDescending(x => x.FechaCompra)
+                .Take(detailCap)
+                .Select(x => new CompraReposicionItem(
+                    x.Producto, x.Cantidad, x.PrecioUnitario, x.Subtotal, x.Proveedor, x.FechaCompra))
+                .ToList();
+
+            return new ComprasReposicionResponse(
+                TotalInvertido: raw.Sum(x => x.Subtotal),
+                CantidadCompras: raw.Select(x => x.IdCompra).Distinct().Count(),
+                ProductosDistintos: raw.Select(x => x.IdProducto).Distinct().Count(),
+                Lineas: lineas
             );
         }
 

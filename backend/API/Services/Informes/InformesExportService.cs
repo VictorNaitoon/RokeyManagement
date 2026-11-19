@@ -69,9 +69,10 @@ public class InformesExportService : IInformesExportService
                 "alertas-stock" => await _informesService.GetAlertasStockAsync(ct),
                 "ventas-por-pago" => await _informesService.GetVentasPorPagoAsync(query.FechaDesde, query.FechaHasta, query.Preset, ct),
                 "ventas-por-vendedor" => await _informesService.GetVentasPorVendedorAsync(query.FechaDesde, query.FechaHasta, query.Preset, ct),
+                "compras-reposicion" => await _informesService.GetComprasReposicionAsync(query.FechaDesde, query.FechaHasta, query.Preset, ct),
                 _ => throw new FluentValidation.ValidationException(new[]
                 {
-                    new FluentValidation.Results.ValidationFailure("tipo", $"Tipo debe ser uno de: ventas-resumen, productos-top, flujo-caja, ingresos-gastos, alertas-stock, ventas-por-pago, ventas-por-vendedor")
+                    new FluentValidation.Results.ValidationFailure("tipo", $"Tipo debe ser uno de: ventas-resumen, productos-top, flujo-caja, ingresos-gastos, alertas-stock, ventas-por-pago, ventas-por-vendedor, compras-reposicion")
                 })
             };
 

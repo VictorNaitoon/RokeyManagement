@@ -48,10 +48,11 @@ export interface FlujoCaja {
  * Income vs Expenses (Admin/Manager only)
  */
 export interface IngresosGastos {
-  totalVentas: number;
-  totalCompras: number;
-  gananciaBruta: number;
-  margen: number;
+  ventasTotales: number;
+  comprasTotales: number;
+  ganancia: number;
+  flujoNeto: number;
+  margenPorcentaje: number;
 }
 
 /**

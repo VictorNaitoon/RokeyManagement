@@ -28,6 +28,11 @@ namespace API.Services.Informes
         Task<IngresosGastosResponse> GetIngresosGastosAsync(DateTime? fechaDesde, DateTime? fechaHasta, string? preset, CancellationToken ct);
 
         /// <summary>
+        /// Get purchases made to replenish stock in the period
+        /// </summary>
+        Task<ComprasReposicionResponse> GetComprasReposicionAsync(DateTime? fechaDesde, DateTime? fechaHasta, string? preset, CancellationToken ct);
+
+        /// <summary>
         /// Get products below minimum stock (only products, not services)
         /// </summary>
         Task<AlertasStockResponse> GetAlertasStockAsync(CancellationToken ct);

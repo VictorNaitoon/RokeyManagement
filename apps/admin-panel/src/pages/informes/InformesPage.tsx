@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { CircleHelpIcon } from 'lucide-react';
 import { useInformes } from '@/hooks/useInformes';
 import { FilterBar } from '@/components/informes/FilterBar';
 import { ReportSection } from '@/components/informes/ReportSection';
@@ -8,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableCaption } from '@/components/ui/table';
 import type { InformesFilter } from '@/types/informes.types';
 import { INFORME_TIPO } from '@/types/informes.types';
+import { formatFecha } from '@/lib/format';
 
 const currency = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' });
 
@@ -17,7 +19,7 @@ function EmptyTableCaption() {
 
 export function InformesPage() {
   const [filter, setFilter] = useState<InformesFilter>({ preset: 'mes', cantidad: 10 });
-  const { ventasResumen, productosTop, flujoCaja, ingresosGastos, alertasStock, ventasPorPago, ventasPorVendedor } =
+  const { ventasResumen, productosTop, flujoCaja, ingresosGastos, alertasStock, ventasPorPago, ventasPorVendedor, comprasReposicion } =
     useInformes(filter);
 
   const periodoLabel = filter.fechaDesde && filter.fechaHasta
@@ -45,7 +47,7 @@ export function InformesPage() {
         filter={filter}
       >
         {ventasResumen.data && (
-          <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
+          <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
             <Card>
               <CardHeader>
                 <CardTitle className="text-sm text-muted-foreground">Total ventas</CardTitle>
@@ -57,10 +59,33 @@ export function InformesPage() {
             </Card>
             <Card>
               <CardHeader>
-                <CardTitle className="text-sm text-muted-foreground">Ticket promedio</CardTitle>
+                <CardTitle className="text-sm text-muted-foreground">Ganancia</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{currency.format(ventasResumen.data.ticketPromedio)}</div>
+                <div className="text-2xl font-bold">{currency.format(ventasResumen.data.ganancia)}</div>
+                <p className="text-xs text-muted-foreground">Margen por producto</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                  <span>Compras totales</span>
+                  <span
+                    title="Total invertido en compras de reposición de stock realizadas en el periodo, sin incluir compras anuladas."
+                    aria-label="Total invertido en compras de reposición de stock realizadas en el periodo, sin incluir compras anuladas."
+                    className="cursor-help text-muted-foreground"
+                  >
+                    <CircleHelpIcon className="h-4 w-4" />
+                  </span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {ingresosGastos.isLoading
+                    ? '…'
+                    : currency.format(ingresosGastos.data?.comprasTotales ?? 0)}
+                </div>
+                <p className="text-xs text-muted-foreground">Inversión en reposición del periodo</p>
               </CardContent>
             </Card>
             <Card>
@@ -97,10 +122,17 @@ export function InformesPage() {
                 <span className="font-medium">{currency.format(ingresosGastos.data.comprasTotales)}</span>
               </div>
               <div className="flex justify-between border-t pt-2">
-                <span>Ganancia bruta</span>
-                <span className="font-bold">{currency.format(ingresosGastos.data.gananciaBruta)}</span>
+                <span>Ganancia (margen de lo vendido)</span>
+                <span className="font-bold text-emerald-600">{currency.format(ingresosGastos.data.ganancia)}</span>
               </div>
               <p className="text-xs text-muted-foreground">Margen: {ingresosGastos.data.margenPorcentaje}%</p>
+              <div className="flex justify-between border-t pt-2">
+                <span className="text-muted-foreground">Flujo neto (ventas − compras)</span>
+                <span className="font-medium">{currency.format(ingresosGastos.data.flujoNeto)}</span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Incluye la inversión en stock; ser negativo no implica una pérdida.
+              </p>
             </div>
           )}
         </ReportSection>
@@ -276,6 +308,65 @@ export function InformesPage() {
         )}
         {alertasStock.data && alertasStock.data.productos.length === 0 && (
           <p className="py-4 text-center text-sm text-muted-foreground">Sin alertas de stock</p>
+        )}
+      </ReportSection>
+
+      <ReportSection
+        title="Compras para reposición de stock"
+        description="Productos comprados para reponer inventario en el periodo"
+        isLoading={comprasReposicion.isLoading}
+        isError={comprasReposicion.isError}
+        error={comprasReposicion.error}
+        onRetry={() => comprasReposicion.refetch()}
+        isEmpty={!!comprasReposicion.data && comprasReposicion.data.lineas.length === 0}
+        tipo={INFORME_TIPO.COMPRAS_REPOSICION}
+        filter={filter}
+      >
+        {comprasReposicion.data && comprasReposicion.data.lineas.length > 0 && (
+          <>
+            <div className="mb-4 flex flex-wrap gap-6 text-sm">
+              <div>
+                <span className="text-muted-foreground">Total invertido: </span>
+                <span className="font-bold">{currency.format(comprasReposicion.data.totalInvertido)}</span>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Compras: </span>
+                <span className="font-medium">{comprasReposicion.data.cantidadCompras}</span>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Productos distintos: </span>
+                <span className="font-medium">{comprasReposicion.data.productosDistintos}</span>
+              </div>
+            </div>
+            <Table>
+              <TableCaption>Compras del periodo, ordenadas por fecha</TableCaption>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Producto</TableHead>
+                  <TableHead className="text-right">Cantidad</TableHead>
+                  <TableHead className="text-right">Costo unitario</TableHead>
+                  <TableHead className="text-right">Subtotal</TableHead>
+                  <TableHead>Proveedor</TableHead>
+                  <TableHead>Fecha</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {comprasReposicion.data.lineas.map((l, i) => (
+                  <TableRow key={`${l.fecha}-${l.producto}-${i}`}>
+                    <TableCell>{l.producto}</TableCell>
+                    <TableCell className="text-right">{l.cantidad}</TableCell>
+                    <TableCell className="text-right">{currency.format(l.costoUnitario)}</TableCell>
+                    <TableCell className="text-right">{currency.format(l.subtotal)}</TableCell>
+                    <TableCell>{l.proveedor}</TableCell>
+                    <TableCell>{formatFecha(l.fecha)}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </>
+        )}
+        {comprasReposicion.data && comprasReposicion.data.lineas.length === 0 && (
+          <p className="py-4 text-center text-sm text-muted-foreground">Sin compras en el periodo</p>
         )}
       </ReportSection>
 

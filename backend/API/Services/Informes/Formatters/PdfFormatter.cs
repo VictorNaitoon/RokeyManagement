@@ -117,6 +117,7 @@ public class PdfFormatter
         "alertas-stock" => "Alertas de Stock",
         "ventas-por-pago" => "Ventas por Metodo de Pago",
         "ventas-por-vendedor" => "Ventas por Vendedor",
+        "compras-reposicion" => "Compras para Reposicion de Stock",
         _ => tipo
     };
 
@@ -162,6 +163,9 @@ public class PdfFormatter
                 case "ventas-por-vendedor":
                     BuildVentasPorVendedor(table, (VentasPorVendedorResponse)dto);
                     break;
+                case "compras-reposicion":
+                    BuildComprasReposicion(table, (ComprasReposicionResponse)dto);
+                    break;
             }
         });
     }
@@ -179,7 +183,8 @@ public class PdfFormatter
     {
         table.ColumnsDefinition(c =>
         {
-            c.RelativeColumn(); c.RelativeColumn(); c.RelativeColumn(); c.RelativeColumn(); c.RelativeColumn();
+            c.RelativeColumn(); c.RelativeColumn(); c.RelativeColumn(); c.RelativeColumn();
+            c.ConstantColumn(150); c.RelativeColumn();
         });
         table.Header(h =>
         {
@@ -188,12 +193,47 @@ public class PdfFormatter
             HeaderCell(h.Cell(), "Ticket Promedio");
             HeaderCell(h.Cell(), "Anuladas");
             HeaderCell(h.Cell(), "Periodo");
+            HeaderCell(h.Cell(), "Ganancia");
         });
         BodyCell(table.Cell(), FormatCurrency(dto.TotalVentas));
         BodyCell(table.Cell(), dto.CantidadVentas.ToString());
         BodyCell(table.Cell(), FormatCurrency(dto.TicketPromedio));
         BodyCell(table.Cell(), dto.VentasAnuladas.ToString());
         BodyCell(table.Cell(), dto.Periodo);
+        BodyCell(table.Cell(), FormatCurrency(dto.Ganancia));
+    }
+
+    private static void BuildComprasReposicion(TableDescriptor table, ComprasReposicionResponse dto)
+    {
+        table.ColumnsDefinition(c =>
+        {
+            c.RelativeColumn(3); c.ConstantColumn(55); c.ConstantColumn(85);
+            c.ConstantColumn(85); c.RelativeColumn(2); c.ConstantColumn(80);
+        });
+        table.Header(h =>
+        {
+            HeaderCell(h.Cell(), "Producto");
+            HeaderCell(h.Cell(), "Cant.");
+            HeaderCell(h.Cell(), "Costo Unit.");
+            HeaderCell(h.Cell(), "Subtotal");
+            HeaderCell(h.Cell(), "Proveedor");
+            HeaderCell(h.Cell(), "Fecha");
+        });
+        foreach (var l in dto.Lineas.Take(TakeCap))
+        {
+            BodyCell(table.Cell(), l.Producto);
+            BodyCell(table.Cell(), l.Cantidad.ToString());
+            BodyCell(table.Cell(), FormatCurrency(l.CostoUnitario));
+            BodyCell(table.Cell(), FormatCurrency(l.Subtotal));
+            BodyCell(table.Cell(), l.Proveedor);
+            BodyCell(table.Cell(), l.Fecha.ToString("yyyy-MM-dd"));
+        }
+        TotalCell(table.Cell(), "TOTAL");
+        TotalCell(table.Cell(), dto.Lineas.Sum(x => x.Cantidad).ToString());
+        TotalCell(table.Cell(), "");
+        TotalCell(table.Cell(), FormatCurrency(dto.TotalInvertido));
+        TotalCell(table.Cell(), $"{dto.CantidadCompras} compras / {dto.ProductosDistintos} productos");
+        TotalCell(table.Cell(), "");
     }
 
     private static void BuildProductosTop(TableDescriptor table, ProductosTopResponse dto)
@@ -225,18 +265,24 @@ public class PdfFormatter
 
     private static void BuildIngresosGastosContent(ColumnDescriptor col, IngresosGastosResponse dto)
     {
-        // Summary table (GananciaBruta / Margen untouched)
+        // Summary: ganancia = margen de lo vendido; flujo neto = ventas - compras.
         col.Item().Table(table =>
         {
-            table.ColumnsDefinition(c => { c.RelativeColumn(); c.RelativeColumn(); c.RelativeColumn(); c.RelativeColumn(); });
+            table.ColumnsDefinition(c =>
+            {
+                c.RelativeColumn(); c.RelativeColumn(); c.RelativeColumn();
+                c.RelativeColumn(); c.RelativeColumn();
+            });
             table.Header(h =>
             {
                 HeaderCell(h.Cell(), "Ventas Totales"); HeaderCell(h.Cell(), "Compras Totales");
-                HeaderCell(h.Cell(), "Ganancia Bruta"); HeaderCell(h.Cell(), "Margen %");
+                HeaderCell(h.Cell(), "Flujo Neto"); HeaderCell(h.Cell(), "Ganancia");
+                HeaderCell(h.Cell(), "Margen %");
             });
             BodyCell(table.Cell(), FormatCurrency(dto.VentasTotales));
             BodyCell(table.Cell(), FormatCurrency(dto.ComprasTotales));
-            BodyCell(table.Cell(), FormatCurrency(dto.GananciaBruta));
+            BodyCell(table.Cell(), FormatCurrency(dto.FlujoNeto));
+            BodyCell(table.Cell(), FormatCurrency(dto.Ganancia));
             BodyCell(table.Cell(), $"{dto.MargenPorcentaje:F2}%");
         });
 

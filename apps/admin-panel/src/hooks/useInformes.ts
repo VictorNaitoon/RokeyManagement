@@ -10,6 +10,7 @@ import type {
   AlertasStockResponse,
   VentasPorPagoResponse,
   VentasPorVendedorResponse,
+  ComprasReposicionResponse,
 } from '@/types/informes.types';
 import { INFORME_TIPO } from '@/types/informes.types';
 import type { TipoInforme, Formato } from '@/types/informes.types';
@@ -147,6 +148,20 @@ export function useVentasPorVendedor(filter: InformesFilter) {
   });
 }
 
+export function useComprasReposicion(filter: InformesFilter) {
+  const enabled = canAccessInformes();
+  return useQuery({
+    queryKey: ['informes', INFORME_TIPO.COMPRAS_REPOSICION, filter],
+    queryFn: async () => {
+      const params = buildParams(filter);
+      const res = await api.get<ComprasReposicionResponse>('/api/v1/informes/compras-reposicion', { params });
+      return res.data;
+    },
+    enabled,
+    ...INFORMES_QUERY_CONFIG,
+  });
+}
+
 export interface UseInformesReturn {
   ventasResumen: ReturnType<typeof useVentasResumen>;
   productosTop: ReturnType<typeof useProductosTop>;
@@ -155,6 +170,7 @@ export interface UseInformesReturn {
   alertasStock: ReturnType<typeof useAlertasStock>;
   ventasPorPago: ReturnType<typeof useVentasPorPago>;
   ventasPorVendedor: ReturnType<typeof useVentasPorVendedor>;
+  comprasReposicion: ReturnType<typeof useComprasReposicion>;
 }
 
 export function useInformes(filter: InformesFilter): UseInformesReturn {
@@ -165,6 +181,7 @@ export function useInformes(filter: InformesFilter): UseInformesReturn {
   const alertasStock = useAlertasStock();
   const ventasPorPago = useVentasPorPago(filter);
   const ventasPorVendedor = useVentasPorVendedor(filter);
+  const comprasReposicion = useComprasReposicion(filter);
 
   return {
     ventasResumen,
@@ -174,6 +191,7 @@ export function useInformes(filter: InformesFilter): UseInformesReturn {
     alertasStock,
     ventasPorPago,
     ventasPorVendedor,
+    comprasReposicion,
   };
 }
 
