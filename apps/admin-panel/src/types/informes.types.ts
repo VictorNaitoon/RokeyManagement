@@ -40,6 +40,7 @@ export interface VentasResumenResponse {
   ticketPromedio: number;
   ventasAnuladas: number;
   periodo: string;
+  ganancia: number;
 }
 
 export interface TopProductoResponse {

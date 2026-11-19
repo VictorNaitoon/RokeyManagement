@@ -57,8 +57,8 @@ public class CsvFormatter
 
     private static void WriteVentasResumen(VentasResumenResponse dto, StreamWriter w)
     {
-        WriteRow(w, ["TotalVentas", "CantidadVentas", "TicketPromedio", "VentasAnuladas", "Periodo"]);
-        WriteRow(w, [FormatDecimal(dto.TotalVentas), dto.CantidadVentas.ToString(), FormatDecimal(dto.TicketPromedio), dto.VentasAnuladas.ToString(), dto.Periodo]);
+        WriteRow(w, ["TotalVentas", "CantidadVentas", "TicketPromedio", "VentasAnuladas", "Periodo", "Ganancia"]);
+        WriteRow(w, [FormatDecimal(dto.TotalVentas), dto.CantidadVentas.ToString(), FormatDecimal(dto.TicketPromedio), dto.VentasAnuladas.ToString(), dto.Periodo, FormatDecimal(dto.Ganancia)]);
     }
 
     private static void WriteProductosTop(ProductosTopResponse dto, StreamWriter w)

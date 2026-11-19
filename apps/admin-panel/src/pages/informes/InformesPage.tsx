@@ -45,7 +45,7 @@ export function InformesPage() {
         filter={filter}
       >
         {ventasResumen.data && (
-          <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
+          <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
             <Card>
               <CardHeader>
                 <CardTitle className="text-sm text-muted-foreground">Total ventas</CardTitle>
@@ -53,6 +53,15 @@ export function InformesPage() {
               <CardContent>
                 <div className="text-2xl font-bold">{currency.format(ventasResumen.data.totalVentas)}</div>
                 <p className="text-xs text-muted-foreground">{ventasResumen.data.cantidadVentas} ventas</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm text-muted-foreground">Ganancia</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{currency.format(ventasResumen.data.ganancia)}</div>
+                <p className="text-xs text-muted-foreground">Margen por producto</p>
               </CardContent>
             </Card>
             <Card>

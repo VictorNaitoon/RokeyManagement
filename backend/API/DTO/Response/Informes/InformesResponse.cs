@@ -8,7 +8,8 @@ namespace API.DTO.Response.Informes
         int CantidadVentas,
         decimal TicketPromedio,
         int VentasAnuladas,
-        string Periodo
+        string Periodo,
+        decimal Ganancia = 0
     );
 
     /// <summary>

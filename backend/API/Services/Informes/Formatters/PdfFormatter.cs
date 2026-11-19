@@ -179,7 +179,8 @@ public class PdfFormatter
     {
         table.ColumnsDefinition(c =>
         {
-            c.RelativeColumn(); c.RelativeColumn(); c.RelativeColumn(); c.RelativeColumn(); c.RelativeColumn();
+            c.RelativeColumn(); c.RelativeColumn(); c.RelativeColumn(); c.RelativeColumn();
+            c.ConstantColumn(150); c.RelativeColumn();
         });
         table.Header(h =>
         {
@@ -188,12 +189,14 @@ public class PdfFormatter
             HeaderCell(h.Cell(), "Ticket Promedio");
             HeaderCell(h.Cell(), "Anuladas");
             HeaderCell(h.Cell(), "Periodo");
+            HeaderCell(h.Cell(), "Ganancia");
         });
         BodyCell(table.Cell(), FormatCurrency(dto.TotalVentas));
         BodyCell(table.Cell(), dto.CantidadVentas.ToString());
         BodyCell(table.Cell(), FormatCurrency(dto.TicketPromedio));
         BodyCell(table.Cell(), dto.VentasAnuladas.ToString());
         BodyCell(table.Cell(), dto.Periodo);
+        BodyCell(table.Cell(), FormatCurrency(dto.Ganancia));
     }
 
     private static void BuildProductosTop(TableDescriptor table, ProductosTopResponse dto)

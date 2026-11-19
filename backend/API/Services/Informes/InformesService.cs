@@ -114,12 +114,24 @@ namespace API.Services.Informes
             var cantidadVentas = ventasActivas.Count;
             var ticketPromedio = cantidadVentas > 0 ? totalVentas / cantidadVentas : 0;
 
+            // Margen real por producto, igual que CajaService.ObtenerGananciaAsync:
+            // (precio de venta historico - costo actual del producto) * cantidad.
+            var ventasActivasIds = ventasActivas.Select(v => v.Id).ToList();
+            var ganancia = await (
+                from d in _context.DetallesVenta
+                join p in _context.Productos on d.IdProducto equals p.Id
+                where ventasActivasIds.Contains(d.IdVenta)
+                    && p.Id_negocio == negocioId
+                select (d.PrecioUnitario - p.PrecioCompra) * d.Cantidad
+            ).SumAsync(ct);
+
             return new VentasResumenResponse(
                 TotalVentas: totalVentas,
                 CantidadVentas: cantidadVentas,
                 TicketPromedio: ticketPromedio,
                 VentasAnuladas: ventasAnuladas.Count,
-                Periodo: $"{desde:yyyy-MM-dd} al {hasta:yyyy-MM-dd}"
+                Periodo: $"{desde:yyyy-MM-dd} al {hasta:yyyy-MM-dd}",
+                Ganancia: ganancia
             );
         }
 
