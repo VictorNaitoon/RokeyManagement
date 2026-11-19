@@ -17,7 +17,7 @@ function EmptyTableCaption() {
 
 export function InformesPage() {
   const [filter, setFilter] = useState<InformesFilter>({ preset: 'mes', cantidad: 10 });
-  const { ventasResumen, productosTop, flujoCaja, ingresosGastos, alertasStock, ventasPorPago, ventasPorVendedor } =
+  const { ventasResumen, productosTop, flujoCaja, ingresosGastos, alertasStock, ventasPorPago, ventasPorVendedor, comprasReposicion } =
     useInformes(filter);
 
   const periodoLabel = filter.fechaDesde && filter.fechaHasta
@@ -285,6 +285,65 @@ export function InformesPage() {
         )}
         {alertasStock.data && alertasStock.data.productos.length === 0 && (
           <p className="py-4 text-center text-sm text-muted-foreground">Sin alertas de stock</p>
+        )}
+      </ReportSection>
+
+      <ReportSection
+        title="Compras para reposición de stock"
+        description="Productos comprados para reponer inventario en el periodo"
+        isLoading={comprasReposicion.isLoading}
+        isError={comprasReposicion.isError}
+        error={comprasReposicion.error}
+        onRetry={() => comprasReposicion.refetch()}
+        isEmpty={!!comprasReposicion.data && comprasReposicion.data.lineas.length === 0}
+        tipo={INFORME_TIPO.COMPRAS_REPOSICION}
+        filter={filter}
+      >
+        {comprasReposicion.data && comprasReposicion.data.lineas.length > 0 && (
+          <>
+            <div className="mb-4 flex flex-wrap gap-6 text-sm">
+              <div>
+                <span className="text-muted-foreground">Total invertido: </span>
+                <span className="font-bold">{currency.format(comprasReposicion.data.totalInvertido)}</span>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Compras: </span>
+                <span className="font-medium">{comprasReposicion.data.cantidadCompras}</span>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Productos distintos: </span>
+                <span className="font-medium">{comprasReposicion.data.productosDistintos}</span>
+              </div>
+            </div>
+            <Table>
+              <TableCaption>Compras del periodo, ordenadas por fecha</TableCaption>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Producto</TableHead>
+                  <TableHead className="text-right">Cantidad</TableHead>
+                  <TableHead className="text-right">Costo unitario</TableHead>
+                  <TableHead className="text-right">Subtotal</TableHead>
+                  <TableHead>Proveedor</TableHead>
+                  <TableHead>Fecha</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {comprasReposicion.data.lineas.map((l, i) => (
+                  <TableRow key={`${l.fecha}-${l.producto}-${i}`}>
+                    <TableCell>{l.producto}</TableCell>
+                    <TableCell className="text-right">{l.cantidad}</TableCell>
+                    <TableCell className="text-right">{currency.format(l.costoUnitario)}</TableCell>
+                    <TableCell className="text-right">{currency.format(l.subtotal)}</TableCell>
+                    <TableCell>{l.proveedor}</TableCell>
+                    <TableCell>{format(new Date(`${l.fecha}T12:00:00`), 'dd/MM/yyyy', { locale: es })}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </>
+        )}
+        {comprasReposicion.data && comprasReposicion.data.lineas.length === 0 && (
+          <p className="py-4 text-center text-sm text-muted-foreground">Sin compras en el periodo</p>
         )}
       </ReportSection>
 

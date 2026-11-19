@@ -7,7 +7,7 @@ public class ExportInformesQueryValidator : AbstractValidator<ExportInformesQuer
     private static readonly string[] TiposValidos =
     [
         "ventas-resumen", "productos-top", "flujo-caja", "ingresos-gastos",
-        "alertas-stock", "ventas-por-pago", "ventas-por-vendedor"
+        "alertas-stock", "ventas-por-pago", "ventas-por-vendedor", "compras-reposicion"
     ];
 
     private static readonly string[] FormatosValidos = ["csv", "pdf", "docx"];

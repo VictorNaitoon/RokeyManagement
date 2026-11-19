@@ -295,6 +295,51 @@ namespace API.Services.Informes
             );
         }
 
+        public async Task<ComprasReposicionResponse> GetComprasReposicionAsync(DateTime? fechaDesde, DateTime? fechaHasta, string? preset, CancellationToken ct)
+        {
+            var (desde, hasta) = ResolveDateRange(fechaDesde, fechaHasta, preset);
+            var negocioId = _currentUser.NegocioId;
+
+            // Compras activas del negocio en el periodo, con su detalle y proveedor.
+            var raw = await (
+                from d in _context.DetallesCompra.AsNoTracking()
+                join c in _context.Compras on d.IdCompra equals c.Id
+                join p in _context.Productos on d.IdProducto equals p.Id
+                join pr in _context.Proveedores on c.IdProveedor equals pr.Id into proveedores
+                from pr in proveedores.DefaultIfEmpty()
+                where c.Id_negocio == negocioId
+                    && c.FechaCompra >= desde && c.FechaCompra <= hasta
+                    && !c.Anulada
+                select new
+                {
+                    d.IdCompra,
+                    d.IdProducto,
+                    Producto = p.Nombre ?? "Producto eliminado",
+                    d.Cantidad,
+                    d.PrecioUnitario,
+                    Subtotal = d.Cantidad * d.PrecioUnitario,
+                    Proveedor = pr != null ? pr.Nombre : "Sin proveedor",
+                    c.FechaCompra
+                }
+            ).ToListAsync(ct);
+
+            // Los totales se calculan sobre todas las filas; solo la tabla se limita para export.
+            const int detailCap = 5000;
+            var lineas = raw
+                .OrderByDescending(x => x.FechaCompra)
+                .Take(detailCap)
+                .Select(x => new CompraReposicionItem(
+                    x.Producto, x.Cantidad, x.PrecioUnitario, x.Subtotal, x.Proveedor, x.FechaCompra))
+                .ToList();
+
+            return new ComprasReposicionResponse(
+                TotalInvertido: raw.Sum(x => x.Subtotal),
+                CantidadCompras: raw.Select(x => x.IdCompra).Distinct().Count(),
+                ProductosDistintos: raw.Select(x => x.IdProducto).Distinct().Count(),
+                Lineas: lineas
+            );
+        }
+
         public async Task<AlertasStockResponse> GetAlertasStockAsync(CancellationToken ct)
         {
             var negocioId = _currentUser.NegocioId;

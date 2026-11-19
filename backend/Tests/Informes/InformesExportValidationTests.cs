@@ -123,6 +123,22 @@ public class InformesExportValidationTests
     }
 
     [Fact]
+    public async Task ExportValidator_ComprasReposicion_ShouldPass()
+    {
+        var query = new ExportInformesQuery(
+            Tipo: "compras-reposicion",
+            Formato: "csv",
+            Preset: "mes",
+            FechaDesde: null,
+            FechaHasta: null,
+            Cantidad: null);
+
+        var result = await _validator.ValidateAsync(query);
+
+        Assert.True(result.IsValid);
+    }
+
+    [Fact]
     public async Task ExportValidator_CantidadOnNonProductosTop_ShouldFail400()
     {
         var query = new ExportInformesQuery(

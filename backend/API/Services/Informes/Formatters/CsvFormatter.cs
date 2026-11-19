@@ -50,6 +50,9 @@ public class CsvFormatter
             case "ventas-por-vendedor":
                 WriteVentasPorVendedor((VentasPorVendedorResponse)dto, writer);
                 break;
+            case "compras-reposicion":
+                WriteComprasReposicion((ComprasReposicionResponse)dto, writer);
+                break;
             default:
                 throw new ArgumentException($"Tipo desconocido: {tipo}", nameof(tipo));
         }
@@ -125,6 +128,20 @@ public class CsvFormatter
         var items = dto.Vendedores.Take(TakeCap);
         foreach (var v in items)
             WriteRow(w, [v.Nombre, v.CantidadVentas.ToString(), FormatDecimal(v.MontoTotal)]);
+    }
+
+    private static void WriteComprasReposicion(ComprasReposicionResponse dto, StreamWriter w)
+    {
+        WriteRow(w, ["TotalInvertido", "CantidadCompras", "ProductosDistintos"]);
+        WriteRow(w, [FormatDecimal(dto.TotalInvertido), dto.CantidadCompras.ToString(), dto.ProductosDistintos.ToString()]);
+        w.WriteLine();
+
+        WriteRow(w, ["Producto", "Cantidad", "CostoUnitario", "Subtotal", "Proveedor", "Fecha"]);
+        foreach (var l in dto.Lineas.Take(TakeCap))
+            WriteRow(w, [l.Producto, l.Cantidad.ToString(), FormatDecimal(l.CostoUnitario), FormatDecimal(l.Subtotal), l.Proveedor, l.Fecha.ToString("yyyy-MM-dd")]);
+
+        if (dto.Lineas.Count >= TakeCap)
+            WriteRow(w, ["Mostrando primeros 5000 registros."]);
     }
 
     private static void WriteRow(StreamWriter w, string[] fields)

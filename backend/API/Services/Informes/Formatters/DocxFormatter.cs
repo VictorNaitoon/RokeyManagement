@@ -107,6 +107,7 @@ public class DocxFormatter
         "alertas-stock" => "Alertas de Stock",
         "ventas-por-pago" => "Ventas por Metodo de Pago",
         "ventas-por-vendedor" => "Ventas por Vendedor",
+        "compras-reposicion" => "Compras para Reposicion de Stock",
         _ => tipo
     };
 
@@ -118,6 +119,7 @@ public class DocxFormatter
         "ventas-por-vendedor" => ((VentasPorVendedorResponse)dto).Vendedores.Count >= TakeCap,
         "ingresos-gastos" => (((IngresosGastosResponse)dto).DetalleVentas?.Count ?? 0) >= TakeCap
                            || (((IngresosGastosResponse)dto).DetalleCompras?.Count ?? 0) >= TakeCap,
+        "compras-reposicion" => ((ComprasReposicionResponse)dto).Lineas.Count >= TakeCap,
         _ => false
     };
 
@@ -130,6 +132,7 @@ public class DocxFormatter
         "alertas-stock" => BuildAlertasStock((AlertasStockResponse)dto),
         "ventas-por-pago" => BuildVentasPorPago((VentasPorPagoResponse)dto),
         "ventas-por-vendedor" => BuildVentasPorVendedor((VentasPorVendedorResponse)dto),
+        "compras-reposicion" => BuildComprasReposicion((ComprasReposicionResponse)dto),
         _ => throw new ArgumentException($"Tipo desconocido: {tipo}")
     };
 
@@ -259,6 +262,31 @@ public class DocxFormatter
         row.Append(Cell(dto.Periodo));
         row.Append(Cell(FormatCurrency(dto.Ganancia)));
         t.Append(row);
+        return t;
+    }
+
+    private static Table BuildComprasReposicion(ComprasReposicionResponse dto)
+    {
+        var t = CreateTable("Producto", "Cant.", "Costo Unit.", "Subtotal", "Proveedor", "Fecha");
+        foreach (var l in dto.Lineas.Take(TakeCap))
+        {
+            var row = new TableRow();
+            row.Append(Cell(l.Producto));
+            row.Append(Cell(l.Cantidad.ToString()));
+            row.Append(Cell(FormatCurrency(l.CostoUnitario)));
+            row.Append(Cell(FormatCurrency(l.Subtotal)));
+            row.Append(Cell(l.Proveedor));
+            row.Append(Cell(l.Fecha.ToString("yyyy-MM-dd")));
+            t.Append(row);
+        }
+        var total = new TableRow();
+        total.Append(Cell("TOTAL"));
+        total.Append(Cell(dto.Lineas.Sum(x => x.Cantidad).ToString()));
+        total.Append(Cell(""));
+        total.Append(Cell(FormatCurrency(dto.TotalInvertido)));
+        total.Append(Cell($"{dto.CantidadCompras} compras / {dto.ProductosDistintos} productos"));
+        total.Append(Cell(""));
+        t.Append(total);
         return t;
     }
 

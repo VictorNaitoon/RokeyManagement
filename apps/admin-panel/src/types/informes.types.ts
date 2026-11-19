@@ -6,6 +6,7 @@ export const INFORME_TIPO = {
   ALERTAS_STOCK: 'alertas-stock',
   VENTAS_POR_PAGO: 'ventas-por-pago',
   VENTAS_POR_VENDEDOR: 'ventas-por-vendedor',
+  COMPRAS_REPOSICION: 'compras-reposicion',
 } as const;
 
 export type TipoInforme = (typeof INFORME_TIPO)[keyof typeof INFORME_TIPO];
@@ -101,4 +102,20 @@ export interface VendedorResponse {
 
 export interface VentasPorVendedorResponse {
   vendedores: VendedorResponse[];
+}
+
+export interface CompraReposicionItem {
+  producto: string;
+  cantidad: number;
+  costoUnitario: number;
+  subtotal: number;
+  proveedor: string;
+  fecha: string;
+}
+
+export interface ComprasReposicionResponse {
+  totalInvertido: number;
+  cantidadCompras: number;
+  productosDistintos: number;
+  lineas: CompraReposicionItem[];
 }

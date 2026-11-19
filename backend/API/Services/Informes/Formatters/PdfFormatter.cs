@@ -117,6 +117,7 @@ public class PdfFormatter
         "alertas-stock" => "Alertas de Stock",
         "ventas-por-pago" => "Ventas por Metodo de Pago",
         "ventas-por-vendedor" => "Ventas por Vendedor",
+        "compras-reposicion" => "Compras para Reposicion de Stock",
         _ => tipo
     };
 
@@ -162,6 +163,9 @@ public class PdfFormatter
                 case "ventas-por-vendedor":
                     BuildVentasPorVendedor(table, (VentasPorVendedorResponse)dto);
                     break;
+                case "compras-reposicion":
+                    BuildComprasReposicion(table, (ComprasReposicionResponse)dto);
+                    break;
             }
         });
     }
@@ -197,6 +201,39 @@ public class PdfFormatter
         BodyCell(table.Cell(), dto.VentasAnuladas.ToString());
         BodyCell(table.Cell(), dto.Periodo);
         BodyCell(table.Cell(), FormatCurrency(dto.Ganancia));
+    }
+
+    private static void BuildComprasReposicion(TableDescriptor table, ComprasReposicionResponse dto)
+    {
+        table.ColumnsDefinition(c =>
+        {
+            c.RelativeColumn(3); c.ConstantColumn(55); c.ConstantColumn(85);
+            c.ConstantColumn(85); c.RelativeColumn(2); c.ConstantColumn(80);
+        });
+        table.Header(h =>
+        {
+            HeaderCell(h.Cell(), "Producto");
+            HeaderCell(h.Cell(), "Cant.");
+            HeaderCell(h.Cell(), "Costo Unit.");
+            HeaderCell(h.Cell(), "Subtotal");
+            HeaderCell(h.Cell(), "Proveedor");
+            HeaderCell(h.Cell(), "Fecha");
+        });
+        foreach (var l in dto.Lineas.Take(TakeCap))
+        {
+            BodyCell(table.Cell(), l.Producto);
+            BodyCell(table.Cell(), l.Cantidad.ToString());
+            BodyCell(table.Cell(), FormatCurrency(l.CostoUnitario));
+            BodyCell(table.Cell(), FormatCurrency(l.Subtotal));
+            BodyCell(table.Cell(), l.Proveedor);
+            BodyCell(table.Cell(), l.Fecha.ToString("yyyy-MM-dd"));
+        }
+        TotalCell(table.Cell(), "TOTAL");
+        TotalCell(table.Cell(), dto.Lineas.Sum(x => x.Cantidad).ToString());
+        TotalCell(table.Cell(), "");
+        TotalCell(table.Cell(), FormatCurrency(dto.TotalInvertido));
+        TotalCell(table.Cell(), $"{dto.CantidadCompras} compras / {dto.ProductosDistintos} productos");
+        TotalCell(table.Cell(), "");
     }
 
     private static void BuildProductosTop(TableDescriptor table, ProductosTopResponse dto)

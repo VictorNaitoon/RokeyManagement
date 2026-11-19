@@ -71,6 +71,28 @@ namespace API.DTO.Response.Informes
     );
 
     /// <summary>
+    /// Line item for purchases made to replenish stock (compras-reposicion)
+    /// </summary>
+    public record CompraReposicionItem(
+        string Producto,
+        int Cantidad,
+        decimal CostoUnitario,
+        decimal Subtotal,
+        string Proveedor,
+        DateTime Fecha
+    );
+
+    /// <summary>
+    /// Response DTO for the stock replenishment purchases report (compras-reposicion)
+    /// </summary>
+    public record ComprasReposicionResponse(
+        decimal TotalInvertido,
+        int CantidadCompras,
+        int ProductosDistintos,
+        List<CompraReposicionItem> Lineas
+    );
+
+    /// <summary>
     /// Response DTO for stock alerts (alertas-stock)
     /// </summary>
     public record StockAlertResponse(
