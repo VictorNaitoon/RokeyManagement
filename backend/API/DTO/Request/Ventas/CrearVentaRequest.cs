@@ -6,6 +6,12 @@ namespace API.DTO.Request.Ventas
     {
         public int? IdCliente { get; set; }
 
+        /// <summary>
+        /// Nombre del cliente escrito en la venta (opcional). Si no existe un cliente
+        /// con ese nombre en el negocio, se crea uno nuevo automáticamente.
+        /// </summary>
+        public string? NombreCliente { get; set; }
+
         [Required(ErrorMessage = "La venta debe tener al menos un producto")]
         public List<DetalleVentaRequest> Detalles { get; set; } = new();
 

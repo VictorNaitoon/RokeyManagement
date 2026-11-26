@@ -12,10 +12,18 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { useVentaDetalles, useVentaPagos } from '@/hooks';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { useVentaDetalles, useVentaPagos, useComprobanteVenta } from '@/hooks';
 import { useNegocio } from '@/hooks/useNegocio';
+import { triggerDownload } from '@/lib/export/download';
 import type { Venta } from '@/types';
-import { PrinterIcon } from 'lucide-react';
+import { ImageIcon, FileTextIcon, PrinterIcon, Share2Icon } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface VentasDetallesModalProps {
   open: boolean;
@@ -27,6 +35,7 @@ export function VentasDetallesModal({ open, onOpenChange, venta }: VentasDetalle
   const { data: detalles, isLoading: loadingDetalles } = useVentaDetalles(venta?.id ?? null);
   const { data: pagos, isLoading: loadingPagos } = useVentaPagos(venta?.id ?? null);
   const { data: negocio } = useNegocio();
+  const comprobante = useComprobanteVenta();
 
   if (!venta) return null;
 
@@ -72,6 +81,36 @@ export function VentasDetallesModal({ open, onOpenChange, venta }: VentasDetalle
 
   const getEstadoLabel = (estado: string) => {
     return estado === 'Activa' ? 'Pagado' : 'Anulada';
+  };
+
+  const compartir = async (formato: 'png' | 'pdf') => {
+    try {
+      const { blob, filename, contentType } = await comprobante.mutateAsync({ id: venta.id, formato });
+      const file = new File([blob], filename, { type: contentType });
+      const nav = navigator as Navigator & {
+        canShare?: (data?: ShareData) => boolean;
+        share?: (data?: ShareData) => Promise<void>;
+      };
+
+      if (nav.share && nav.canShare?.({ files: [file] })) {
+        await nav.share({
+          files: [file],
+          title: `Venta #${venta.id}`,
+          text: 'Comprobante de venta',
+        });
+        return;
+      }
+
+      // Navegadores de escritorio sin compartir archivos: se descarga para adjuntar.
+      triggerDownload(blob, filename);
+      toast.info(
+        'Este navegador no permite compartir archivos: descargamos el comprobante para que lo adjuntes.',
+      );
+    } catch (error) {
+      // El usuario cerró el menú nativo de compartir: no es un error.
+      if (error instanceof Error && error.name === 'AbortError') return;
+      toast.error('No se pudo generar el comprobante. Intentá de nuevo.');
+    }
   };
 
   const handlePrint = () => {
@@ -128,15 +167,36 @@ export function VentasDetallesModal({ open, onOpenChange, venta }: VentasDetalle
             <DialogTitle className="text-lg font-bold" style={{ color: '#000' }}>
               Detalle de Venta
             </DialogTitle>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={handlePrint}
-              className="no-print"
-              aria-label="Imprimir detalle de venta"
-            >
-              <PrinterIcon className="h-4 w-4" />
-            </Button>
+            <div className="flex items-center gap-2 no-print">
+              <DropdownMenu>
+                <DropdownMenuTrigger
+                  className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-md border border-input bg-background transition-colors hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-50"
+                  aria-label="Compartir detalle de venta"
+                  disabled={comprobante.isPending}
+                >
+                  <Share2Icon className="h-4 w-4" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => compartir('png')}>
+                    <ImageIcon className="h-4 w-4" />
+                    Compartir como imagen
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => compartir('pdf')}>
+                    <FileTextIcon className="h-4 w-4" />
+                    Compartir como PDF
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={handlePrint}
+                className="no-print"
+                aria-label="Imprimir detalle de venta"
+              >
+                <PrinterIcon className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </DialogHeader>
 

@@ -10,6 +10,10 @@ namespace API.DTO.Request.Ventas
             RuleFor(x => x.Detalles)
                 .NotEmpty().WithMessage("La venta debe tener al menos un producto.");
 
+            RuleFor(x => x.NombreCliente)
+                .MaximumLength(200)
+                .WithMessage("El nombre del cliente no puede exceder 200 caracteres.");
+
             RuleForEach(x => x.Detalles).ChildRules(detalle =>
             {
                 detalle.RuleFor(d => d.IdProducto)

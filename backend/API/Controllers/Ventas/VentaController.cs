@@ -2,6 +2,7 @@ using API.DTO.Request.Ventas;
 using API.DTO.Response.Ventas;
 using API.Services.Ventas;
 using API.Services.Common;
+using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -13,11 +14,16 @@ namespace API.Controllers.Ventas
     public class VentaController : ControllerBase
     {
         private readonly IVentaService _ventaService;
+        private readonly IComprobanteVentaService _comprobanteVentaService;
         private readonly ICurrentUserService _currentUser;
 
-        public VentaController(IVentaService ventaService, ICurrentUserService currentUser)
+        public VentaController(
+            IVentaService ventaService,
+            IComprobanteVentaService comprobanteVentaService,
+            ICurrentUserService currentUser)
         {
             _ventaService = ventaService;
+            _comprobanteVentaService = comprobanteVentaService;
             _currentUser = currentUser;
         }
 
@@ -209,6 +215,44 @@ namespace API.Controllers.Ventas
             catch (InvalidOperationException ex)
             {
                 return NotFound(new { message = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Genera el comprobante de una venta para imprimir, descargar o compartir.
+        /// </summary>
+        /// <param name="id">ID de la venta</param>
+        /// <param name="formato">Formato del comprobante: "pdf" o "png" (default "png")</param>
+        /// <returns>Archivo PDF o imagen PNG del ticket</returns>
+        [HttpGet("{id}/comprobante")]
+        [ProducesResponseType(200)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(401)]
+        [ProducesResponseType(403)]
+        [ProducesResponseType(404)]
+        public async Task<IActionResult> ObtenerComprobante(
+            int id,
+            [FromQuery] string formato = "png",
+            CancellationToken ct = default)
+        {
+            if (_currentUser.IsSuperAdmin)
+            {
+                return StatusCode(403, new { message = "El super administrador no puede gestionar ventas de un negocio" });
+            }
+
+            try
+            {
+                var comprobante = await _comprobanteVentaService.GenerarAsync(id, formato, ct);
+                if (comprobante == null)
+                {
+                    return NotFound(new { message = "Venta no encontrada" });
+                }
+
+                return File(comprobante.Content, comprobante.ContentType, comprobante.FileName);
+            }
+            catch (ValidationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
             }
         }
     }

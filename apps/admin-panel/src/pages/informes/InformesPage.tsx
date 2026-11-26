@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { CircleHelpIcon } from 'lucide-react';
 import { useInformes } from '@/hooks/useInformes';
 import { FilterBar } from '@/components/informes/FilterBar';
 import { ReportSection } from '@/components/informes/ReportSection';
+import { HelpTip } from '@/components/ui/help-tip';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableCaption } from '@/components/ui/table';
 import type { InformesFilter } from '@/types/informes.types';
@@ -70,13 +70,9 @@ export function InformesPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-1.5 text-sm text-muted-foreground">
                   <span>Compras totales</span>
-                  <span
-                    title="Total invertido en compras de reposición de stock realizadas en el periodo, sin incluir compras anuladas."
-                    aria-label="Total invertido en compras de reposición de stock realizadas en el periodo, sin incluir compras anuladas."
-                    className="cursor-help text-muted-foreground"
-                  >
-                    <CircleHelpIcon className="h-4 w-4" />
-                  </span>
+                  <HelpTip label="Ayuda sobre compras totales">
+                    Total invertido en compras de reposición de stock realizadas en el periodo, sin incluir compras anuladas.
+                  </HelpTip>
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -90,10 +86,16 @@ export function InformesPage() {
             </Card>
             <Card>
               <CardHeader>
-                <CardTitle className="text-sm text-muted-foreground">Ventas anuladas</CardTitle>
+                <CardTitle className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                  <span>Costo de lo vendido</span>
+                  <HelpTip label="Ayuda sobre el costo de lo vendido">
+                    Costo de compra de las llaves y productos vendidos en el periodo, sin incluir ventas anuladas.
+                  </HelpTip>
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{ventasResumen.data.ventasAnuladas}</div>
+                <div className="text-2xl font-bold">{currency.format(ventasResumen.data.costoVendido)}</div>
+                <p className="text-xs text-muted-foreground">Costo de las llaves y productos vendidos</p>
               </CardContent>
             </Card>
           </div>
