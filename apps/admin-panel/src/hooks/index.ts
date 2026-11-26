@@ -13,7 +13,7 @@ export { useAlertasStock as useAlertasStockProductos, useProductos, useProducto,
 export { useCategorias, useCategoria, useCreateCategoria, useUpdateCategoria, useDeleteCategoria, canManageCategorias } from './useCategorias';
 
 // Ventas hooks
-export { useVentas, useVenta, useVentaDetalles, useVentaPagos, useCreateVenta, useAnularVenta, canAnularVenta } from './useVentas';
+export { useVentas, useVenta, useVentaDetalles, useVentaPagos, useCreateVenta, useAnularVenta, useComprobanteVenta, canAnularVenta } from './useVentas';
 
 // Clientes hooks (Phase 6)
 export { useClientes, useCliente, useClienteSaldo, useClienteVentas, useCreateCliente, useUpdateCliente, useDeleteCliente, canManageClientes, canViewClientes } from './useClientes';

@@ -39,9 +39,12 @@ export interface VentasResumenResponse {
   totalVentas: number;
   cantidadVentas: number;
   ticketPromedio: number;
-  ventasAnuladas: number;
+  /** Cantidad de ventas anuladas. Se conserva por compatibilidad; el informe ya no la muestra. */
+  ventasAnuladas?: number;
   periodo: string;
   ganancia: number;
+  /** Costo de compra de lo vendido: precio de compra actual * cantidad, sin ventas anuladas. */
+  costoVendido: number;
 }
 
 export interface TopProductoResponse {

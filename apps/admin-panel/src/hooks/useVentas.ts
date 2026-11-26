@@ -218,3 +218,25 @@ export function useAnularVenta() {
     },
   });
 }
+
+export type FormatoComprobante = 'png' | 'pdf';
+
+/**
+ * Genera el comprobante de una venta en imagen PNG o PDF para compartir o descargar.
+ * GET /api/v1/ventas/{id}/comprobante?formato=png|pdf
+ */
+export function useComprobanteVenta() {
+  return useMutation({
+    mutationFn: async ({ id, formato }: { id: number; formato: FormatoComprobante }) => {
+      const response = await api.get<Blob>(`/api/v1/ventas/${id}/comprobante`, {
+        params: { formato },
+        responseType: 'blob',
+      });
+      return {
+        blob: response.data,
+        filename: `venta-${id}.${formato}`,
+        contentType: formato === 'pdf' ? 'application/pdf' : 'image/png',
+      };
+    },
+  });
+}

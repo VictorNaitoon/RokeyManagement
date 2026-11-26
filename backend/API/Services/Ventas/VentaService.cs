@@ -68,51 +68,20 @@ namespace API.Services.Ventas
             // 4. Calcular total de la venta
             var totalVenta = request.Detalles.Sum(d => d.Cantidad * d.PrecioUnitario);
 
-            // 5. Validar límite de crédito si el cliente tiene fiado habilitado
-            if (request.IdCliente.HasValue && request.IdCliente.Value > 0)
-            {
-                await ValidarCreditoClienteAsync(request.IdCliente.Value, request.Pagos, totalVenta, ct);
-            }
+            // 5. Resolver el cliente: id existente, nombre escrito o "Consumidor Final"
+            var cliente = await ResolverClienteAsync(request, ct);
 
-            // 6. Validar suma de pagos
+            // 6. Validar límite de crédito si el cliente tiene fiado habilitado
+            await ValidarCreditoClienteAsync(cliente.Id, request.Pagos, totalVenta, ct);
+
+            // 7. Validar suma de pagos
             var sumaPagos = request.Pagos.Sum(p => p.Monto);
             if (sumaPagos != totalVenta)
             {
                 throw new InvalidOperationException("La suma de pagos debe coincidir con el total de la venta");
             }
 
-            // 7. Si no hay cliente, usar "Consumidor Final"
-            int idCliente;
-            if (request.IdCliente.HasValue && request.IdCliente.Value > 0)
-            {
-                idCliente = request.IdCliente.Value;
-            }
-            else
-            {
-                // Buscar o crear cliente "Consumidor Final" para este negocio
-                var consumidorFinal = await _context.Clientes
-                    .FirstOrDefaultAsync(c => c.Id_negocio == _currentUser.NegocioId && c.Nombre == "Consumidor Final", ct);
-
-                if (consumidorFinal == null)
-                {
-                    consumidorFinal = new Cliente
-                    {
-                        Id_negocio = _currentUser.NegocioId,
-                        Nombre = "Consumidor Final",
-                        Apellido = "",
-                        Documento = "0",
-                        CondicionIVA = "Consumidor Final",
-                        Telefono = "",
-                        Email = "",
-                        Direccion = "",
-                        FechaAlta = DateTime.UtcNow
-                    };
-                    _context.Clientes.Add(consumidorFinal);
-                    await _context.SaveChangesAsync(ct);
-                    _logger.LogInformation("Cliente 'Consumidor Final' creado para el negocio {NegocioId}", _currentUser.NegocioId);
-                }
-                idCliente = consumidorFinal.Id;
-            }
+            var idCliente = cliente.Id;
 
             // 8. Usar transacción para atomicidad
             using var transaction = await _context.Database.BeginTransactionAsync(ct);
@@ -538,6 +507,85 @@ namespace API.Services.Ventas
                 Detalles = detalles,
                 Pagos = pagos
             };
+        }
+
+        /// <summary>
+        /// Resuelve el cliente de la venta:
+        /// 1. Si viene <see cref="CrearVentaRequest.IdCliente"/>, debe existir en el negocio.
+        /// 2. Si viene <see cref="CrearVentaRequest.NombreCliente"/>, se reutiliza el cliente
+        ///    del negocio con ese nombre o se crea uno nuevo.
+        /// 3. Si no viene ninguno, se usa el cliente "Consumidor Final".
+        /// </summary>
+        private async Task<Cliente> ResolverClienteAsync(CrearVentaRequest request, CancellationToken ct)
+        {
+            if (request.IdCliente.HasValue && request.IdCliente.Value > 0)
+            {
+                var cliente = await _context.Clientes
+                    .FirstOrDefaultAsync(c => c.Id == request.IdCliente.Value
+                                              && c.Id_negocio == _currentUser.NegocioId, ct);
+
+                if (cliente == null)
+                {
+                    throw new InvalidOperationException(
+                        "El cliente seleccionado no existe o no pertenece al negocio");
+                }
+
+                return cliente;
+            }
+
+            var nombre = request.NombreCliente?.Trim();
+            if (!string.IsNullOrWhiteSpace(nombre))
+            {
+                var nombreNormalizado = nombre.ToLower();
+                var cliente = await _context.Clientes
+                    .FirstOrDefaultAsync(c => c.Id_negocio == _currentUser.NegocioId
+                                              && c.Nombre.ToLower() == nombreNormalizado, ct);
+
+                if (cliente != null)
+                {
+                    return cliente;
+                }
+
+                cliente = new Cliente
+                {
+                    Id_negocio = _currentUser.NegocioId,
+                    Nombre = nombre,
+                    FechaAlta = DateTime.UtcNow,
+                    Activo = true
+                };
+                _context.Clientes.Add(cliente);
+                await _context.SaveChangesAsync(ct);
+                _logger.LogInformation(
+                    "Cliente '{NombreCliente}' creado para el negocio {NegocioId}",
+                    nombre, _currentUser.NegocioId);
+
+                return cliente;
+            }
+
+            // Sin datos de cliente: buscar o crear "Consumidor Final" para este negocio
+            var consumidorFinal = await _context.Clientes
+                .FirstOrDefaultAsync(c => c.Id_negocio == _currentUser.NegocioId && c.Nombre == "Consumidor Final", ct);
+
+            if (consumidorFinal == null)
+            {
+                consumidorFinal = new Cliente
+                {
+                    Id_negocio = _currentUser.NegocioId,
+                    Nombre = "Consumidor Final",
+                    Apellido = "",
+                    Documento = "0",
+                    CondicionIVA = "Consumidor Final",
+                    Telefono = "",
+                    Email = "",
+                    Direccion = "",
+                    FechaAlta = DateTime.UtcNow
+                };
+                _context.Clientes.Add(consumidorFinal);
+                await _context.SaveChangesAsync(ct);
+                _logger.LogInformation("Cliente 'Consumidor Final' creado para el negocio {NegocioId}", _currentUser.NegocioId);
+            }
+
+            return consumidorFinal;
         }
 
         /// <summary>
