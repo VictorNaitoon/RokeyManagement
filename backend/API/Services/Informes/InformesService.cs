@@ -115,6 +115,24 @@ namespace API.Services.Informes
             ).SumAsync(ct);
         }
 
+        /// <summary>
+        /// Costo de la mercaderia vendida: (costo actual del producto) * cantidad.
+        /// Misma base de datos y mismo filtro que la ganancia por margen.
+        /// </summary>
+        private async Task<decimal> CalcularCostoVendidoAsync(
+            IReadOnlyList<int> ventasActivasIds, int negocioId, CancellationToken ct)
+        {
+            if (ventasActivasIds.Count == 0) return 0;
+
+            return await (
+                from d in _context.DetallesVenta.AsNoTracking()
+                join p in _context.Productos on d.IdProducto equals p.Id
+                where ventasActivasIds.Contains(d.IdVenta)
+                    && p.Id_negocio == negocioId
+                select p.PrecioCompra * d.Cantidad
+            ).SumAsync(ct);
+        }
+
         public async Task<VentasResumenResponse> GetVentasResumenAsync(DateTime? fechaDesde, DateTime? fechaHasta, string? preset, CancellationToken ct)
         {
             var (desde, hasta) = ResolveDateRange(fechaDesde, fechaHasta, preset);
@@ -135,6 +153,8 @@ namespace API.Services.Informes
             // Margen real por producto, igual que CajaService.ObtenerGananciaAsync.
             var ganancia = await CalcularGananciaMargenAsync(
                 ventasActivas.Select(v => v.Id).ToList(), negocioId, ct);
+            var costoVendido = await CalcularCostoVendidoAsync(
+                ventasActivas.Select(v => v.Id).ToList(), negocioId, ct);
 
             return new VentasResumenResponse(
                 TotalVentas: totalVentas,
@@ -142,7 +162,8 @@ namespace API.Services.Informes
                 TicketPromedio: ticketPromedio,
                 VentasAnuladas: ventasAnuladas.Count,
                 Periodo: $"{desde:yyyy-MM-dd} al {hasta:yyyy-MM-dd}",
-                Ganancia: ganancia
+                Ganancia: ganancia,
+                CostoVendido: costoVendido
             );
         }
 

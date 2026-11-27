@@ -253,12 +253,12 @@ public class DocxFormatter
 
     private static Table BuildVentasResumen(VentasResumenResponse dto)
     {
-        var t = CreateTable("Total Ventas", "Cantidad", "Ticket Promedio", "Anuladas", "Periodo", "Ganancia");
+        var t = CreateTable("Total Ventas", "Cantidad", "Ticket Promedio", "Costo Vendido", "Periodo", "Ganancia");
         var row = new TableRow();
         row.Append(Cell(FormatCurrency(dto.TotalVentas)));
         row.Append(Cell(dto.CantidadVentas.ToString()));
         row.Append(Cell(FormatCurrency(dto.TicketPromedio)));
-        row.Append(Cell(dto.VentasAnuladas.ToString()));
+        row.Append(Cell(FormatCurrency(dto.CostoVendido)));
         row.Append(Cell(dto.Periodo));
         row.Append(Cell(FormatCurrency(dto.Ganancia)));
         t.Append(row);
