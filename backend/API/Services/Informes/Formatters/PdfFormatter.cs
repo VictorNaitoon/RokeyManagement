@@ -191,14 +191,14 @@ public class PdfFormatter
             HeaderCell(h.Cell(), "Total Ventas");
             HeaderCell(h.Cell(), "Cantidad");
             HeaderCell(h.Cell(), "Ticket Promedio");
-            HeaderCell(h.Cell(), "Anuladas");
+            HeaderCell(h.Cell(), "Costo Vendido");
             HeaderCell(h.Cell(), "Periodo");
             HeaderCell(h.Cell(), "Ganancia");
         });
         BodyCell(table.Cell(), FormatCurrency(dto.TotalVentas));
         BodyCell(table.Cell(), dto.CantidadVentas.ToString());
         BodyCell(table.Cell(), FormatCurrency(dto.TicketPromedio));
-        BodyCell(table.Cell(), dto.VentasAnuladas.ToString());
+        BodyCell(table.Cell(), FormatCurrency(dto.CostoVendido));
         BodyCell(table.Cell(), dto.Periodo);
         BodyCell(table.Cell(), FormatCurrency(dto.Ganancia));
     }
